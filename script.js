@@ -1,7 +1,7 @@
 const subs = {
-  A6: { nome: "👑 Trono de Papel", cor: "#6B21A8" },
-  A1: { nome: "🔥 Chama Eterna", cor: "#b91c1c" },
-  A2: { nome: "📖 Página Livre", cor: "#0ea5e9" }
+  A6: { nome: "👑 Trono de Papel", cor: "#6B21A8", tituloFicha: "👑 𝐓𝐑𝐎𝐍𝐎 𝐃𝐄 𝐏𝐀𝐏𝐄𝐋 👑 𝐀-𝟔" },
+  A1: { nome: "🔥 Chama Eterna", cor: "#b91c1c", tituloFicha: "🔥 𝐂𝐇𝐀𝐌𝐀 𝐄𝐓𝐄𝐑𝐍𝐀 🔥 𝐀-𝟏" },
+  A2: { nome: "📖 Página Livre", cor: "#0ea5e9", tituloFicha: "📖 𝐏𝐀́𝐆𝐈𝐍𝐀 𝐋𝐈𝐕𝐑𝐄 📖 𝐀-𝟐" }
 };
 
 const diasSemana = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"];
@@ -101,6 +101,7 @@ function telaDashboard() {
       <button onclick="telaObras()">📚 Obras</button>
       <button onclick="telaGrade()">📅 Grade Semanal</button>
       <button onclick="telaVerificacoes()">📜 Verificações</button>
+      <button onclick="telaVisualizarFicha()">👁 Visualizar Ficha</button>
 
       <br><br>
 
@@ -637,6 +638,8 @@ function telaVerificacoes(diaSelecionado = "Segunda") {
       pontos: 0
     };
 
+    const pontosAcumulados = calcularPontosAcumulados(index);
+
     return `
       <div class="verificacao-card">
         <div class="verificacao-topo">
@@ -645,9 +648,16 @@ function telaVerificacoes(diaSelecionado = "Segunda") {
             <span>${membro.user}</span>
           </div>
 
-          <div class="pontos-box">
-            <small>Pontos</small>
-            <strong id="pontos_membro_${index}">${dadosMembro.pontos || 0}</strong>
+          <div class="pontos-duplo">
+            <div class="pontos-box">
+              <small>Hoje</small>
+              <strong id="pontos_membro_${index}">${dadosMembro.pontos || 0}</strong>
+            </div>
+
+            <div class="pontos-box">
+              <small>Semana</small>
+              <strong>${pontosAcumulados}</strong>
+            </div>
           </div>
         </div>
 
@@ -735,6 +745,7 @@ function telaVerificacoes(diaSelecionado = "Segunda") {
       </div>
 
       <button onclick="salvarVerificacao('${diaSelecionado}')">Salvar Verificação</button>
+      <button onclick="telaVisualizarFicha('${diaSelecionado}')">👁 Visualizar Ficha</button>
       <button onclick="telaDashboard()">⬅ Voltar</button>
     </div>
   `;
@@ -899,6 +910,209 @@ function salvarVerificacao(diaSelecionado) {
   alert("Verificação salva com sucesso!");
 
   telaDashboard();
+}
+
+/* =========================
+   PONTOS ACUMULADOS
+========================= */
+
+function calcularPontosAcumulados(membroIndex) {
+  const sub = localStorage.getItem("sub");
+  const verificacoes = JSON.parse(localStorage.getItem("verificacoes_" + sub)) || {};
+
+  let total = 0;
+
+  diasSemana.forEach(dia => {
+    if (verificacoes[dia] && verificacoes[dia][membroIndex]) {
+      total += Number(verificacoes[dia][membroIndex].pontos || 0);
+    }
+  });
+
+  return total;
+}
+
+function contarDiasComVerificacao(membroIndex) {
+  const sub = localStorage.getItem("sub");
+  const verificacoes = JSON.parse(localStorage.getItem("verificacoes_" + sub)) || {};
+
+  let total = 0;
+
+  diasSemana.forEach(dia => {
+    if (verificacoes[dia] && verificacoes[dia][membroIndex]) {
+      total++;
+    }
+  });
+
+  return total;
+}
+
+/* =========================
+   VISUALIZAR FICHA
+========================= */
+
+function telaVisualizarFicha(diaSelecionado = "Segunda") {
+  const sub = localStorage.getItem("sub");
+
+  const membros = JSON.parse(localStorage.getItem("membros_" + sub)) || [];
+  const grade = JSON.parse(localStorage.getItem("grade_" + sub)) || {};
+  const verificacoes = JSON.parse(localStorage.getItem("verificacoes_" + sub)) || {};
+
+  if (membros.length === 0) {
+    app.innerHTML = `
+      <div class="page-box">
+        <h2>Visualizar Ficha</h2>
+        <p class="empty-message">Você precisa cadastrar membros antes de gerar a ficha.</p>
+        <button onclick="telaMembros()">Cadastrar Membro</button>
+        <button onclick="telaDashboard()">⬅ Voltar</button>
+      </div>
+    `;
+
+    aplicarTema();
+    return;
+  }
+
+  if (!verificacoes[diaSelecionado]) {
+    app.innerHTML = `
+      <div class="page-box">
+        <h2>Visualizar Ficha</h2>
+
+        <label>Dia da semana</label>
+        <select id="diaFicha" onchange="telaVisualizarFicha(this.value)">
+          ${diasSemana.map(dia => `
+            <option value="${dia}" ${dia === diaSelecionado ? "selected" : ""}>${dia}</option>
+          `).join("")}
+        </select>
+
+        <p class="empty-message">Ainda não existe verificação salva para este dia.</p>
+
+        <button onclick="telaVerificacoes('${diaSelecionado}')">Fazer Verificação</button>
+        <button onclick="telaDashboard()">⬅ Voltar</button>
+      </div>
+    `;
+
+    aplicarTema();
+    return;
+  }
+
+  const ficha = gerarFichaWhatsapp(diaSelecionado);
+
+  app.innerHTML = `
+    <div class="page-box ficha-box">
+      <div class="page-header">
+        <div>
+          <h2>Visualizar Ficha</h2>
+          <p>Confira a mensagem antes de enviar no WhatsApp.</p>
+        </div>
+      </div>
+
+      <label>Dia da semana</label>
+      <select id="diaFicha" onchange="telaVisualizarFicha(this.value)">
+        ${diasSemana.map(dia => `
+          <option value="${dia}" ${dia === diaSelecionado ? "selected" : ""}>${dia}</option>
+        `).join("")}
+      </select>
+
+      <textarea id="fichaTexto" readonly></textarea>
+
+      <button onclick="copiarFicha()">Copiar Ficha</button>
+      <button onclick="enviarWhatsapp()">Enviar pelo WhatsApp</button>
+      <button onclick="telaDashboard()">⬅ Voltar</button>
+    </div>
+  `;
+
+  document.getElementById("fichaTexto").value = ficha;
+
+  aplicarTema();
+}
+
+function gerarFichaWhatsapp(diaSelecionado) {
+  const sub = localStorage.getItem("sub");
+
+  const membros = JSON.parse(localStorage.getItem("membros_" + sub)) || [];
+  const verificacoes = JSON.parse(localStorage.getItem("verificacoes_" + sub)) || {};
+  const verificacaoDia = verificacoes[diaSelecionado] || {};
+
+  let texto = "";
+
+  texto += `ੈ✩‧₊˚ ${subs[sub].tituloFicha} ˚₊‧✩ੈ\n`;
+  texto += `━━━━━━━━━━━ ✦ ━━━━━━━━━━━\n`;
+  texto += `               📜 𝐕𝐄𝐑𝐈𝐅𝐈𝐂𝐀𝐂̧𝐀̃𝐎\n`;
+  texto += `━━━━━━━━━━━ ✦ ━━━━━━━━━━━\n\n`;
+
+  texto += `🌙 𝐋𝐞𝐮\n`;
+  texto += `☠ 𝐍𝐚̃𝐨 𝐥𝐞𝐮\n`;
+  texto += `💅 𝐉𝐮𝐬𝐭𝐢𝐟𝐢𝐜𝐚𝐝𝐨\n`;
+  texto += `🌼 𝐉𝐚́ 𝐡𝐚𝐯𝐢𝐚 𝐥𝐢𝐝𝐨 𝐚𝐧𝐭𝐞𝐬\n`;
+  texto += `🙍 𝐅𝐚𝐥𝐭𝐚 𝐚𝐥𝐠𝐨 (𝐜𝐨𝐦𝐞𝐧𝐭𝐚́𝐫𝐢𝐨 𝐨𝐮 𝐯𝐨𝐭𝐨)\n`;
+  texto += `✨ 𝐎𝐛𝐫𝐚 𝐝𝐨 𝐝𝐢𝐚\n`;
+  texto += `⏳ 𝐒𝐞𝐦 𝐨𝐛𝐫𝐚\n`;
+  texto += `⚰ 𝐒𝐚𝐢𝐮 𝐝𝐨 𝐠𝐫𝐮𝐩𝐨\n`;
+  texto += `🧕🏻 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐞𝐦 𝐚𝐧𝐝𝐚𝐦𝐞𝐧𝐭𝐨 𝐧𝐨 𝐦𝐨𝐦𝐞𝐧𝐭𝐨 𝐝𝐚 𝐯𝐞𝐫𝐢𝐟𝐢𝐜𝐚𝐜̧𝐚̃𝐨\n`;
+  texto += `⚠ 𝐈𝐧𝐟𝐫𝐚𝐜̧𝐚̃𝐨 𝐝𝐚𝐬 𝐫𝐞𝐠𝐫𝐚𝐬\n`;
+  texto += `🚫 𝐈𝐧𝐟𝐫𝐚𝐜̧𝐚̃𝐨 𝐧𝐨 𝐭𝐞𝐦𝐩𝐨 𝐝𝐞 𝐥𝐞𝐢𝐭𝐮𝐫𝐚\n`;
+  texto += `📲 𝐏𝐫𝐢𝐧𝐭𝐬 𝐧𝐨 𝐩𝐯\n`;
+  texto += `⛔ 𝐑𝐞𝐦𝐨𝐯𝐢𝐝𝐨 𝐩𝐨𝐫 𝐢𝐧𝐟𝐫𝐚𝐜̧𝐚̃𝐨 𝐝𝐚𝐬 𝐫𝐞𝐠𝐫𝐚𝐬\n`;
+  texto += `⏰ 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐟𝐞𝐢𝐭𝐚 𝐞𝐦 𝐭𝐞𝐦𝐩𝐨 𝐞𝐬𝐭𝐢𝐦𝐚𝐝𝐨\n\n`;
+
+  texto += `━━━━━━━━━━━ ✦ ━━━━━━━━━━━\n`;
+  texto += `           📖 𝐅𝐈𝐂𝐇𝐀 𝐃𝐎 𝐋𝐄𝐈𝐓𝐎𝐑\n`;
+  texto += `━━━━━━━━━━━ ✦ ━━━━━━━━━━━\n\n`;
+
+  membros.forEach((membro, index) => {
+    const dados = verificacaoDia[index] || {};
+    const pontosAcumulados = calcularPontosAcumulados(index);
+    const diasComVerificacao = contarDiasComVerificacao(index);
+
+    const obra1Status = dados.obra1Status || "";
+    const obra2Status = dados.obra2Status || "";
+
+    const feedbacks = [];
+
+    if (dados.obra1Feedback) feedbacks.push("Obra 01");
+    if (dados.obra2Feedback) feedbacks.push("Obra 02");
+
+    texto += `━━━━━━━━━━━ ✦ ━━━━━━━━━━━\n\n`;
+    texto += `👑 𝐍𝐨𝐦𝐞: ${membro.nome}\n`;
+    texto += `♜ 𝐔𝐬𝐞𝐫: ${membro.user}\n\n`;
+
+    texto += `🌙 𝐒𝐞𝐦𝐚𝐧𝐚𝐬: 0\n`;
+    texto += `📅 𝐃𝐢𝐚𝐬: ${diasComVerificacao}\n`;
+    texto += `⭐ 𝐏𝐨𝐧𝐭𝐨𝐬: ${pontosAcumulados}\n`;
+    texto += `💬 𝐅𝐞𝐞𝐝𝐛𝐚𝐜𝐤: ${feedbacks.join(", ")}\n`;
+    texto += `🔮 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐋𝐮𝐧𝐚𝐫: \n\n`;
+
+    texto += `📖 𝐎𝐛𝐫𝐚 𝟎𝟏: ${obra1Status}\n`;
+    texto += `📖 𝐎𝐛𝐫𝐚 𝟎𝟐: ${obra2Status}\n\n`;
+
+    texto += `🔮 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 Extra: \n\n`;
+  });
+
+  texto += `━━━━━━━━━━━ ✦ ━━━━━━━━━━━\n\n`;
+
+  texto += `‎🚨𝐀𝐓𝐄𝐍𝐂̧𝐀̃𝐎🚨\n`;
+  texto += `‎\n`;
+  texto += `‎𝐏𝐚𝐫𝐚 𝐠𝐚𝐫𝐚𝐧𝐭𝐢𝐫 𝐚 𝐨𝐫𝐠𝐚𝐧𝐢𝐳𝐚𝐜̧𝐚̃𝐨 𝐞 𝐞𝐟𝐢𝐜𝐢𝐞̂𝐧𝐜𝐢𝐚 𝐝𝐨 𝐠𝐫𝐮𝐩𝐨, 𝐞́ 𝐢𝐦𝐩𝐨𝐫𝐭𝐚𝐧𝐭𝐞 𝐪𝐮𝐞 𝐭𝐨𝐝𝐨𝐬 𝐞𝐬𝐭𝐞𝐣𝐚𝐦 𝐞𝐦 𝐝𝐢𝐚 𝐜𝐨𝐦 𝐬𝐮𝐚𝐬 𝐥𝐞𝐢𝐭𝐮𝐫𝐚𝐬. 𝐒𝐞 𝐯𝐨𝐜𝐞̂ 𝐟𝐢𝐜𝐨𝐮 𝐝𝐞𝐯𝐞𝐧𝐝𝐨 𝐥𝐞𝐢𝐭𝐮𝐫𝐚, 𝐩𝐨𝐫 𝐟𝐚𝐯𝐨𝐫, 𝐞𝐧𝐯𝐢𝐞 𝐨𝐬 𝐩𝐫𝐢𝐧𝐭𝐬 𝐧𝐨 𝐩𝐫𝐢𝐯𝐚𝐝𝐨 𝐩𝐚𝐫𝐚 𝐪𝐮𝐞 𝐞𝐮 𝐩𝐨𝐬𝐬𝐚 𝐚𝐭𝐮𝐚𝐥𝐢𝐳𝐚𝐫 𝐬𝐞𝐮𝐬 𝐫𝐞𝐠𝐢𝐬𝐭𝐫𝐨𝐬.\n`;
+  texto += `‎\n`;
+  texto += `‎𝐈𝐬𝐬𝐨 𝐞𝐯𝐢𝐭𝐚𝐫𝐚́ 𝐪𝐮𝐞 𝐞𝐮 𝐩𝐞𝐫𝐜𝐚 𝐭𝐞𝐦𝐩𝐨 𝐜𝐨𝐧𝐟𝐞𝐫𝐢𝐧𝐝𝐨 𝐚 𝐦𝐞𝐬𝐦𝐚 𝐜𝐨𝐢𝐬𝐚 𝐝𝐮𝐚𝐬 𝐯𝐞𝐳𝐞𝐬. 𝐀𝐥𝐞́𝐦 𝐝𝐢𝐬𝐬𝐨, 𝐬𝐞 𝐯𝐨𝐜𝐞̂ 𝐞𝐧𝐜𝐨𝐧𝐭𝐫𝐚𝐫 𝐚𝐥𝐠𝐮𝐦 𝐞𝐫𝐫𝐨 𝐧𝐚𝐬 𝐯𝐞𝐫𝐢𝐟𝐢𝐜𝐚𝐜̧𝐨̃𝐞𝐬, 𝐧𝐚̃𝐨 𝐡𝐞𝐬𝐢𝐭𝐞 𝐞𝐦 𝐦𝐞 𝐜𝐡𝐚𝐦𝐚𝐫 𝐧𝐨 𝐩𝐫𝐢𝐯𝐚𝐝𝐨. 𝐄𝐬𝐭𝐨𝐮 𝐚𝐪𝐮𝐢 𝐩𝐚𝐫𝐚 𝐚𝐣𝐮𝐝𝐚𝐫 𝐞 𝐫𝐞𝐬𝐨𝐥𝐯𝐞𝐫 𝐪𝐮𝐚𝐥𝐪𝐮𝐞𝐫 𝐩𝐫𝐨𝐛𝐥𝐞𝐦𝐚!\n`;
+  texto += `‎\n`;
+  texto += `‎😉 𝐕𝐚𝐦𝐨𝐬 𝐦𝐚𝐧𝐭𝐞𝐫 𝐨 𝐠𝐫𝐮𝐩𝐨 𝐨𝐫𝐠𝐚𝐧𝐢𝐳𝐚𝐝𝐨 𝐞 𝐟𝐨𝐜𝐚𝐝𝐨 𝐧𝐚𝐬 𝐡𝐢𝐬𝐭𝐨́𝐫𝐢𝐚𝐬 𝐢𝐧𝐜𝐫𝐢́𝐯𝐞𝐢𝐬 𝐪𝐮𝐞 𝐜𝐨𝐦𝐩𝐚𝐫𝐭𝐢𝐥𝐡𝐚𝐦𝐨𝐬! 𝐎𝐛𝐫𝐢𝐠𝐚𝐝𝐚 𝐩𝐞𝐥𝐚 𝐜𝐨𝐨𝐩𝐞𝐫𝐚𝐜̧𝐚̃𝐨! 📚👍`;
+
+  return texto;
+}
+
+function copiarFicha() {
+  const texto = document.getElementById("fichaTexto").value;
+
+  navigator.clipboard.writeText(texto)
+    .then(() => alert("Ficha copiada!"))
+    .catch(() => alert("Não foi possível copiar automaticamente. Selecione o texto e copie manualmente."));
+}
+
+function enviarWhatsapp() {
+  const texto = document.getElementById("fichaTexto").value;
+  const url = "https://wa.me/?text=" + encodeURIComponent(texto);
+
+  window.open(url, "_blank");
 }
 
 /* =========================
