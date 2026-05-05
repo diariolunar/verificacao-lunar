@@ -39,7 +39,7 @@ footer small {
   box-sizing: border-box;
 }
 
-/* CARD PRINCIPAL */
+/* CARD SIMPLES */
 .login-box {
   background: #1a1a1a;
   padding: 30px;
@@ -55,6 +55,52 @@ footer small {
 
 .login-box p {
   color: #d1d1d1;
+}
+
+/* PÁGINAS MAIORES */
+.page-box {
+  background: #1a1a1a;
+  padding: 30px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 900px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.page-box h2 {
+  margin-top: 0;
+}
+
+.page-box p {
+  color: #d1d1d1;
+}
+
+/* CABEÇALHO DAS PÁGINAS */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.page-header button {
+  width: auto;
+  min-width: 160px;
+}
+
+/* FORMULÁRIOS */
+.form-box {
+  max-width: 500px;
+}
+
+.form-box label {
+  display: block;
+  margin-top: 12px;
+  margin-bottom: 4px;
+  font-weight: bold;
 }
 
 /* CAMPOS */
@@ -86,28 +132,56 @@ button:hover {
   opacity: 0.85;
 }
 
-/* LISTAS */
-ul {
-  padding-left: 18px;
+/* LISTAGEM */
+.list-area {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-li {
-  margin-bottom: 10px;
+.item-card {
+  background: #252525;
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  align-items: center;
+  text-align: left;
 }
 
-li button {
+.item-card strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.item-card span {
+  color: #d1d1d1;
+  font-size: 14px;
+}
+
+.item-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.item-actions button {
   width: auto;
-  padding: 6px 10px;
-  margin-left: 8px;
+  min-width: 80px;
+  padding: 8px 10px;
+  margin-top: 0;
+}
+
+.empty-message {
+  background: #252525;
+  padding: 14px;
+  border-radius: 10px;
+  text-align: center;
 }
 
 /* GRADE SEMANAL */
 .grade-box {
-  width: 90%;
-  max-width: 800px;
-  max-height: 80vh;
-  overflow-y: auto;
-  text-align: center;
+  max-width: 900px;
 }
 
 .linha-grade {
@@ -124,12 +198,35 @@ li button {
 }
 
 /* RESPONSIVO */
-@media (max-width: 600px) {
+@media (max-width: 700px) {
   .main-content {
     align-items: flex-start;
   }
 
-  .login-box {
+  .login-box,
+  .page-box {
+    width: 100%;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .page-header button {
+    width: 100%;
+  }
+
+  .item-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .item-actions {
+    flex-direction: column;
+  }
+
+  .item-actions button {
     width: 100%;
   }
 
