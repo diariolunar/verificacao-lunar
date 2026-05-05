@@ -1,3 +1,22 @@
+import { auth, db } from "./firebase.js";
+
+import {
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  addDoc,
+  setDoc,
+  updateDoc,
+  deleteDoc
+} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
 const subs = {
   A6: {
     nome: "👑 Trono de Papel",
@@ -42,6 +61,7 @@ const statusLeitura = [
 const statusQueCompletamLeitura = ["🌙", "✨"];
 
 const app = document.getElementById("app");
+let usuarioAtual = null;
 
 async function carregarComponentes() {
   const header = await fetch("header.html").then(res => res.text());
@@ -49,24 +69,115 @@ async function carregarComponentes() {
 
   document.getElementById("header").innerHTML = header;
   document.getElementById("footer").innerHTML = footer;
-
-  iniciarApp();
 }
 
-function iniciarApp() {
-  const logado = localStorage.getItem("logado");
-  const sub = localStorage.getItem("sub");
+function getSubAtual() {
+  return localStorage.getItem("sub");
+}
 
-  if (!logado) {
+function caminhoSub(sub) {
+  return doc(db, "subs", sub);
+}
+
+function escapeHTML(texto) {
+  return String(texto || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+async function buscarMembros() {
+  const sub = getSubAtual();
+  const ref = collection(db, "subs", sub, "membros");
+  const snap = await getDocs(ref);
+
+  return snap.docs.map(docSnap => ({
+    id: docSnap.id,
+    ...docSnap.data()
+  }));
+}
+
+async function buscarObras() {
+  const sub = getSubAtual();
+  const ref = collection(db, "subs", sub, "obras");
+  const snap = await getDocs(ref);
+
+  return snap.docs.map(docSnap => ({
+    id: docSnap.id,
+    ...docSnap.data()
+  }));
+}
+
+async function buscarGrade() {
+  const sub = getSubAtual();
+  const ref = doc(db, "subs", sub, "config", "gradeSemanal");
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) return {};
+  return snap.data();
+}
+
+async function salvarGradeBanco(grade) {
+  const sub = getSubAtual();
+  const ref = doc(db, "subs", sub, "config", "gradeSemanal");
+  await setDoc(ref, grade);
+}
+
+async function buscarVerificacoes() {
+  const sub = getSubAtual();
+  const ref = collection(db, "subs", sub, "verificacoes");
+  const snap = await getDocs(ref);
+
+  const dados = {};
+
+  snap.docs.forEach(docSnap => {
+    dados[docSnap.id] = docSnap.data();
+  });
+
+  return dados;
+}
+
+async function buscarVerificacaoDia(dia) {
+  const sub = getSubAtual();
+  const ref = doc(db, "subs", sub, "verificacoes", dia);
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) return null;
+  return snap.data();
+}
+
+async function salvarVerificacaoBanco(dia, dados) {
+  const sub = getSubAtual();
+  const ref = doc(db, "subs", sub, "verificacoes", dia);
+  await setDoc(ref, dados);
+}
+
+/* =========================
+   INÍCIO / AUTH
+========================= */
+
+await carregarComponentes();
+
+onAuthStateChanged(auth, async user => {
+  usuarioAtual = user;
+
+  if (!user) {
     telaLogin();
-  } else if (!sub) {
+    return;
+  }
+
+  const sub = getSubAtual();
+
+  if (!sub) {
     telaSubs();
   } else {
-    telaDashboard();
+    await telaDashboard();
   }
 
   aplicarTema();
-}
+});
 
 /* =========================
    LOGIN / SUBS / DASHBOARD
@@ -104,8 +215,8 @@ function telaSubs() {
   aplicarTema();
 }
 
-function telaDashboard() {
-  const sub = localStorage.getItem("sub");
+async function telaDashboard() {
+  const sub = getSubAtual();
 
   app.innerHTML = `
     <div class="login-box dashboard-box">
@@ -132,25 +243,24 @@ function telaDashboard() {
    MEMBROS
 ========================= */
 
-function telaMembros() {
-  const sub = localStorage.getItem("sub");
-  const membros = JSON.parse(localStorage.getItem("membros_" + sub)) || [];
+async function telaMembros() {
+  const membros = await buscarMembros();
 
   let lista = "";
 
   if (membros.length === 0) {
     lista = `<p class="empty-message">Nenhum membro cadastrado ainda.</p>`;
   } else {
-    lista = membros.map((membro, index) => `
+    lista = membros.map(membro => `
       <div class="item-card">
         <div>
-          <strong>${membro.nome}</strong>
-          <span>${membro.user}</span>
+          <strong>${escapeHTML(membro.nome)}</strong>
+          <span>${escapeHTML(membro.user)}</span>
         </div>
 
         <div class="item-actions">
-          <button onclick="editarMembro(${index})">Editar</button>
-          <button onclick="removerMembro(${index})">Excluir</button>
+          <button onclick="formMembro('${membro.id}')">Editar</button>
+          <button onclick="removerMembro('${membro.id}')">Excluir</button>
         </div>
       </div>
     `).join("");
@@ -178,24 +288,31 @@ function telaMembros() {
   aplicarTema();
 }
 
-function formMembro(index = null) {
-  const sub = localStorage.getItem("sub");
-  const membros = JSON.parse(localStorage.getItem("membros_" + sub)) || [];
+async function formMembro(id = null) {
+  let membro = { nome: "", user: "" };
+  const editando = Boolean(id);
 
-  const editando = index !== null;
-  const membro = editando ? membros[index] : { nome: "", user: "" };
+  if (editando) {
+    const sub = getSubAtual();
+    const ref = doc(db, "subs", sub, "membros", id);
+    const snap = await getDoc(ref);
+
+    if (snap.exists()) {
+      membro = snap.data();
+    }
+  }
 
   app.innerHTML = `
     <div class="page-box form-box">
       <h2>${editando ? "Editar Membro" : "Cadastrar Membro"}</h2>
 
       <label>Nome</label>
-      <input id="nomeMembro" placeholder="Nome do membro" value="${membro.nome}">
+      <input id="nomeMembro" placeholder="Nome do membro" value="${escapeHTML(membro.nome)}">
 
       <label>User</label>
-      <input id="userMembro" placeholder="@user" value="${membro.user}">
+      <input id="userMembro" placeholder="@user" value="${escapeHTML(membro.user)}">
 
-      <button onclick="${editando ? `salvarEdicaoMembro(${index})` : "adicionarMembro()"}">
+      <button onclick="${editando ? `salvarEdicaoMembro('${id}')` : "adicionarMembro()"}">
         ${editando ? "Salvar Alterações" : "Cadastrar Membro"}
       </button>
 
@@ -206,8 +323,8 @@ function formMembro(index = null) {
   aplicarTema();
 }
 
-function adicionarMembro() {
-  const sub = localStorage.getItem("sub");
+async function adicionarMembro() {
+  const sub = getSubAtual();
 
   const nome = document.getElementById("nomeMembro").value.trim();
   const user = document.getElementById("userMembro").value.trim();
@@ -217,21 +334,17 @@ function adicionarMembro() {
     return;
   }
 
-  let membros = JSON.parse(localStorage.getItem("membros_" + sub)) || [];
+  await addDoc(collection(db, "subs", sub, "membros"), {
+    nome,
+    user,
+    criadoEm: new Date().toISOString()
+  });
 
-  membros.push({ nome, user });
-
-  localStorage.setItem("membros_" + sub, JSON.stringify(membros));
-
-  telaMembros();
+  await telaMembros();
 }
 
-function editarMembro(index) {
-  formMembro(index);
-}
-
-function salvarEdicaoMembro(index) {
-  const sub = localStorage.getItem("sub");
+async function salvarEdicaoMembro(id) {
+  const sub = getSubAtual();
 
   const nome = document.getElementById("nomeMembro").value.trim();
   const user = document.getElementById("userMembro").value.trim();
@@ -241,72 +354,60 @@ function salvarEdicaoMembro(index) {
     return;
   }
 
-  let membros = JSON.parse(localStorage.getItem("membros_" + sub)) || [];
+  await updateDoc(doc(db, "subs", sub, "membros", id), {
+    nome,
+    user
+  });
 
-  membros[index] = { nome, user };
-
-  localStorage.setItem("membros_" + sub, JSON.stringify(membros));
-
-  telaMembros();
+  await telaMembros();
 }
 
-function removerMembro(index) {
+async function removerMembro(id) {
   const confirmar = confirm("Tem certeza que deseja excluir este membro?");
 
   if (!confirmar) return;
 
-  const sub = localStorage.getItem("sub");
+  const sub = getSubAtual();
 
-  let membros = JSON.parse(localStorage.getItem("membros_" + sub)) || [];
-  let obras = JSON.parse(localStorage.getItem("obras_" + sub)) || [];
+  await deleteDoc(doc(db, "subs", sub, "membros", id));
 
-  membros.splice(index, 1);
+  const obras = await buscarObras();
 
-  obras = obras.filter(obra => obra.membroIndex !== index);
-  obras = obras.map(obra => {
-    if (obra.membroIndex > index) {
-      return {
-        ...obra,
-        membroIndex: obra.membroIndex - 1
-      };
+  for (const obra of obras) {
+    if (obra.membroId === id) {
+      await deleteDoc(doc(db, "subs", sub, "obras", obra.id));
     }
+  }
 
-    return obra;
-  });
-
-  localStorage.setItem("membros_" + sub, JSON.stringify(membros));
-  localStorage.setItem("obras_" + sub, JSON.stringify(obras));
-
-  telaMembros();
+  await telaMembros();
 }
 
 /* =========================
    OBRAS
 ========================= */
 
-function telaObras() {
-  const sub = localStorage.getItem("sub");
-  const membros = JSON.parse(localStorage.getItem("membros_" + sub)) || [];
-  const obras = JSON.parse(localStorage.getItem("obras_" + sub)) || [];
+async function telaObras() {
+  const membros = await buscarMembros();
+  const obras = await buscarObras();
 
   let lista = "";
 
   if (obras.length === 0) {
     lista = `<p class="empty-message">Nenhuma obra cadastrada ainda.</p>`;
   } else {
-    lista = obras.map((obra, index) => {
-      const membro = membros[obra.membroIndex];
+    lista = obras.map(obra => {
+      const membro = membros.find(m => m.id === obra.membroId);
 
       return `
         <div class="item-card">
           <div>
-            <strong>${obra.titulo}</strong>
-            <span>Responsável: ${membro ? `${membro.nome} (${membro.user})` : "Membro removido"}</span>
+            <strong>${escapeHTML(obra.titulo)}</strong>
+            <span>Responsável: ${membro ? `${escapeHTML(membro.nome)} (${escapeHTML(membro.user)})` : "Membro removido"}</span>
           </div>
 
           <div class="item-actions">
-            <button onclick="editarObra(${index})">Editar</button>
-            <button onclick="removerObra(${index})">Excluir</button>
+            <button onclick="formObra('${obra.id}')">Editar</button>
+            <button onclick="removerObra('${obra.id}')">Excluir</button>
           </div>
         </div>
       `;
@@ -335,11 +436,10 @@ function telaObras() {
   aplicarTema();
 }
 
-function formObra(index = null) {
-  const sub = localStorage.getItem("sub");
+async function formObra(id = null) {
+  const sub = getSubAtual();
 
-  const membros = JSON.parse(localStorage.getItem("membros_" + sub)) || [];
-  const obras = JSON.parse(localStorage.getItem("obras_" + sub)) || [];
+  const membros = await buscarMembros();
 
   if (membros.length === 0) {
     app.innerHTML = `
@@ -355,12 +455,21 @@ function formObra(index = null) {
     return;
   }
 
-  const editando = index !== null;
-  const obra = editando ? obras[index] : { titulo: "", membroIndex: "" };
+  let obra = { titulo: "", membroId: "" };
+  const editando = Boolean(id);
 
-  const opcoesMembros = membros.map((membro, i) => `
-    <option value="${i}" ${Number(obra.membroIndex) === i ? "selected" : ""}>
-      ${membro.nome} (${membro.user})
+  if (editando) {
+    const ref = doc(db, "subs", sub, "obras", id);
+    const snap = await getDoc(ref);
+
+    if (snap.exists()) {
+      obra = snap.data();
+    }
+  }
+
+  const opcoesMembros = membros.map(membro => `
+    <option value="${membro.id}" ${obra.membroId === membro.id ? "selected" : ""}>
+      ${escapeHTML(membro.nome)} (${escapeHTML(membro.user)})
     </option>
   `).join("");
 
@@ -369,7 +478,7 @@ function formObra(index = null) {
       <h2>${editando ? "Editar Obra" : "Cadastrar Obra"}</h2>
 
       <label>Título da obra</label>
-      <input id="tituloObra" placeholder="Título da obra" value="${obra.titulo}">
+      <input id="tituloObra" placeholder="Título da obra" value="${escapeHTML(obra.titulo)}">
 
       <label>Membro responsável</label>
       <select id="membroObra">
@@ -377,7 +486,7 @@ function formObra(index = null) {
         ${opcoesMembros}
       </select>
 
-      <button onclick="${editando ? `salvarEdicaoObra(${index})` : "adicionarObra()"}">
+      <button onclick="${editando ? `salvarEdicaoObra('${id}')` : "adicionarObra()"}">
         ${editando ? "Salvar Alterações" : "Cadastrar Obra"}
       </button>
 
@@ -388,110 +497,75 @@ function formObra(index = null) {
   aplicarTema();
 }
 
-function adicionarObra() {
-  const sub = localStorage.getItem("sub");
+async function adicionarObra() {
+  const sub = getSubAtual();
 
   const titulo = document.getElementById("tituloObra").value.trim();
-  const membroIndex = document.getElementById("membroObra").value;
+  const membroId = document.getElementById("membroObra").value;
 
-  if (!titulo || membroIndex === "") {
+  if (!titulo || !membroId) {
     alert("Preencha o título e selecione o membro.");
     return;
   }
 
-  let obras = JSON.parse(localStorage.getItem("obras_" + sub)) || [];
-
-  obras.push({
+  await addDoc(collection(db, "subs", sub, "obras"), {
     titulo,
-    membroIndex: Number(membroIndex)
+    membroId,
+    criadoEm: new Date().toISOString()
   });
 
-  localStorage.setItem("obras_" + sub, JSON.stringify(obras));
-
-  telaObras();
+  await telaObras();
 }
 
-function editarObra(index) {
-  formObra(index);
-}
-
-function salvarEdicaoObra(index) {
-  const sub = localStorage.getItem("sub");
+async function salvarEdicaoObra(id) {
+  const sub = getSubAtual();
 
   const titulo = document.getElementById("tituloObra").value.trim();
-  const membroIndex = document.getElementById("membroObra").value;
+  const membroId = document.getElementById("membroObra").value;
 
-  if (!titulo || membroIndex === "") {
+  if (!titulo || !membroId) {
     alert("Preencha o título e selecione o membro.");
     return;
   }
 
-  let obras = JSON.parse(localStorage.getItem("obras_" + sub)) || [];
-
-  obras[index] = {
+  await updateDoc(doc(db, "subs", sub, "obras", id), {
     titulo,
-    membroIndex: Number(membroIndex)
-  };
+    membroId
+  });
 
-  localStorage.setItem("obras_" + sub, JSON.stringify(obras));
-
-  telaObras();
+  await telaObras();
 }
 
-function removerObra(index) {
+async function removerObra(id) {
   const confirmar = confirm("Tem certeza que deseja excluir esta obra?");
 
   if (!confirmar) return;
 
-  const sub = localStorage.getItem("sub");
+  const sub = getSubAtual();
 
-  let obras = JSON.parse(localStorage.getItem("obras_" + sub)) || [];
+  await deleteDoc(doc(db, "subs", sub, "obras", id));
 
-  obras.splice(index, 1);
-
-  localStorage.setItem("obras_" + sub, JSON.stringify(obras));
-
-  limparObraRemovidaDaGrade(index);
-
-  telaObras();
-}
-
-function limparObraRemovidaDaGrade(indexRemovido) {
-  const sub = localStorage.getItem("sub");
-  let grade = JSON.parse(localStorage.getItem("grade_" + sub)) || {};
+  const grade = await buscarGrade();
 
   diasSemana.forEach(dia => {
     if (!grade[dia]) return;
 
-    if (Number(grade[dia].obra1) === indexRemovido) {
-      grade[dia].obra1 = "";
-    }
-
-    if (Number(grade[dia].obra2) === indexRemovido) {
-      grade[dia].obra2 = "";
-    }
-
-    if (Number(grade[dia].obra1) > indexRemovido) {
-      grade[dia].obra1 = String(Number(grade[dia].obra1) - 1);
-    }
-
-    if (Number(grade[dia].obra2) > indexRemovido) {
-      grade[dia].obra2 = String(Number(grade[dia].obra2) - 1);
-    }
+    if (grade[dia].obra1 === id) grade[dia].obra1 = "";
+    if (grade[dia].obra2 === id) grade[dia].obra2 = "";
   });
 
-  localStorage.setItem("grade_" + sub, JSON.stringify(grade));
+  await salvarGradeBanco(grade);
+
+  await telaObras();
 }
 
 /* =========================
    GRADE SEMANAL
 ========================= */
 
-function telaGrade() {
-  const sub = localStorage.getItem("sub");
-
-  const obras = JSON.parse(localStorage.getItem("obras_" + sub)) || [];
-  const grade = JSON.parse(localStorage.getItem("grade_" + sub)) || {};
+async function telaGrade() {
+  const obras = await buscarObras();
+  const grade = await buscarGrade();
 
   if (obras.length === 0) {
     app.innerHTML = `
@@ -507,27 +581,25 @@ function telaGrade() {
     return;
   }
 
-  const opcoesObras = obras.map((obra, index) => `
-    <option value="${index}">${obra.titulo}</option>
+  const opcoesObras = obras.map(obra => `
+    <option value="${obra.id}">${escapeHTML(obra.titulo)}</option>
   `).join("");
 
-  const linhas = diasSemana.map(dia => {
-    return `
-      <div class="linha-grade">
-        <label class="dia-grade">${dia}</label>
+  const linhas = diasSemana.map(dia => `
+    <div class="linha-grade">
+      <label class="dia-grade">${dia}</label>
 
-        <select id="${dia}_obra1">
-          <option value="">Obra 1</option>
-          ${opcoesObras}
-        </select>
+      <select id="${dia}_obra1">
+        <option value="">Obra 1</option>
+        ${opcoesObras}
+      </select>
 
-        <select id="${dia}_obra2">
-          <option value="">Obra 2</option>
-          ${opcoesObras}
-        </select>
-      </div>
-    `;
-  }).join("");
+      <select id="${dia}_obra2">
+        <option value="">Obra 2</option>
+        ${opcoesObras}
+      </select>
+    </div>
+  `).join("");
 
   app.innerHTML = `
     <div class="page-box grade-box">
@@ -547,17 +619,15 @@ function telaGrade() {
 
   diasSemana.forEach(dia => {
     if (grade[dia]) {
-      document.getElementById(`${dia}_obra1`).value = grade[dia].obra1 ?? "";
-      document.getElementById(`${dia}_obra2`).value = grade[dia].obra2 ?? "";
+      document.getElementById(`${dia}_obra1`).value = grade[dia].obra1 || "";
+      document.getElementById(`${dia}_obra2`).value = grade[dia].obra2 || "";
     }
   });
 
   aplicarTema();
 }
 
-function salvarGrade() {
-  const sub = localStorage.getItem("sub");
-
+async function salvarGrade() {
   const novaGrade = {};
 
   diasSemana.forEach(dia => {
@@ -567,24 +637,22 @@ function salvarGrade() {
     };
   });
 
-  localStorage.setItem("grade_" + sub, JSON.stringify(novaGrade));
+  await salvarGradeBanco(novaGrade);
 
   alert("Grade salva com sucesso!");
 
-  telaDashboard();
+  await telaDashboard();
 }
 
 /* =========================
    VERIFICAÇÕES
 ========================= */
 
-function telaVerificacoes(diaSelecionado = "Segunda") {
-  const sub = localStorage.getItem("sub");
-
-  const membros = JSON.parse(localStorage.getItem("membros_" + sub)) || [];
-  const obras = JSON.parse(localStorage.getItem("obras_" + sub)) || [];
-  const grade = JSON.parse(localStorage.getItem("grade_" + sub)) || {};
-  const verificacoes = JSON.parse(localStorage.getItem("verificacoes_" + sub)) || {};
+async function telaVerificacoes(diaSelecionado = "Segunda") {
+  const membros = await buscarMembros();
+  const obras = await buscarObras();
+  const grade = await buscarGrade();
+  const verificacaoDia = await buscarVerificacaoDia(diaSelecionado);
 
   if (membros.length === 0) {
     app.innerHTML = `
@@ -616,7 +684,7 @@ function telaVerificacoes(diaSelecionado = "Segunda") {
 
   const dadosDia = grade[diaSelecionado];
 
-  if (!dadosDia || dadosDia.obra1 === "" || dadosDia.obra2 === "") {
+  if (!dadosDia || !dadosDia.obra1 || !dadosDia.obra2) {
     app.innerHTML = `
       <div class="page-box">
         <h2>Verificações</h2>
@@ -639,13 +707,11 @@ function telaVerificacoes(diaSelecionado = "Segunda") {
     return;
   }
 
-  const obra1 = obras[Number(dadosDia.obra1)];
-  const obra2 = obras[Number(dadosDia.obra2)];
+  const obra1 = obras.find(obra => obra.id === dadosDia.obra1);
+  const obra2 = obras.find(obra => obra.id === dadosDia.obra2);
 
-  const verificacaoDia = verificacoes[diaSelecionado] || {};
-
-  const linhasMembros = membros.map((membro, index) => {
-    const dadosMembro = verificacaoDia[index] || {
+  const linhasMembros = membros.map(membro => {
+    const dadosMembro = verificacaoDia?.membros?.[membro.id] || {
       obra1Status: "",
       obra1Feedback: false,
       obra2Status: "",
@@ -653,25 +719,23 @@ function telaVerificacoes(diaSelecionado = "Segunda") {
       pontos: 0
     };
 
-    const pontosAcumulados = calcularPontosAcumulados(index);
-
     return `
       <div class="verificacao-card">
         <div class="verificacao-topo">
           <div>
-            <strong>${membro.nome}</strong>
-            <span>${membro.user}</span>
+            <strong>${escapeHTML(membro.nome)}</strong>
+            <span>${escapeHTML(membro.user)}</span>
           </div>
 
           <div class="pontos-duplo">
             <div class="pontos-box">
               <small>Hoje</small>
-              <strong id="pontos_membro_${index}">${dadosMembro.pontos || 0}</strong>
+              <strong id="pontos_membro_${membro.id}">${dadosMembro.pontos || 0}</strong>
             </div>
 
             <div class="pontos-box">
               <small>Semana</small>
-              <strong>${pontosAcumulados}</strong>
+              <strong id="semana_membro_${membro.id}">...</strong>
             </div>
           </div>
         </div>
@@ -679,46 +743,46 @@ function telaVerificacoes(diaSelecionado = "Segunda") {
         <div class="verificacao-grid">
           <div class="obra-verificacao">
             <h3>Obra 1</h3>
-            <p>${obra1 ? obra1.titulo : "Obra não encontrada"}</p>
+            <p>${obra1 ? escapeHTML(obra1.titulo) : "Obra não encontrada"}</p>
 
             <label>Status da leitura</label>
-            <select id="membro_${index}_obra1Status" onchange="atualizarPontosTela(${index})">
+            <select id="membro_${membro.id}_obra1Status" onchange="atualizarPontosTela('${membro.id}')">
               ${gerarOpcoesStatus(dadosMembro.obra1Status)}
             </select>
 
             <label class="checkbox-label">
               <input 
                 type="checkbox" 
-                id="membro_${index}_obra1Feedback"
-                onchange="atualizarPontosTela(${index})"
+                id="membro_${membro.id}_obra1Feedback"
+                onchange="atualizarPontosTela('${membro.id}')"
                 ${dadosMembro.obra1Feedback ? "checked" : ""}
               >
               Feedback entregue (+20)
             </label>
 
-            <small id="aviso_${index}_obra1" class="feedback-aviso"></small>
+            <small id="aviso_${membro.id}_obra1" class="feedback-aviso"></small>
           </div>
 
           <div class="obra-verificacao">
             <h3>Obra 2</h3>
-            <p>${obra2 ? obra2.titulo : "Obra não encontrada"}</p>
+            <p>${obra2 ? escapeHTML(obra2.titulo) : "Obra não encontrada"}</p>
 
             <label>Status da leitura</label>
-            <select id="membro_${index}_obra2Status" onchange="atualizarPontosTela(${index})">
+            <select id="membro_${membro.id}_obra2Status" onchange="atualizarPontosTela('${membro.id}')">
               ${gerarOpcoesStatus(dadosMembro.obra2Status)}
             </select>
 
             <label class="checkbox-label">
               <input 
                 type="checkbox" 
-                id="membro_${index}_obra2Feedback"
-                onchange="atualizarPontosTela(${index})"
+                id="membro_${membro.id}_obra2Feedback"
+                onchange="atualizarPontosTela('${membro.id}')"
                 ${dadosMembro.obra2Feedback ? "checked" : ""}
               >
               Feedback entregue (+20)
             </label>
 
-            <small id="aviso_${index}_obra2" class="feedback-aviso"></small>
+            <small id="aviso_${membro.id}_obra2" class="feedback-aviso"></small>
           </div>
         </div>
       </div>
@@ -746,12 +810,12 @@ function telaVerificacoes(diaSelecionado = "Segunda") {
       <div class="resumo-obras">
         <div>
           <strong>Obra 1</strong>
-          <span>${obra1 ? obra1.titulo : "Obra não encontrada"}</span>
+          <span>${obra1 ? escapeHTML(obra1.titulo) : "Obra não encontrada"}</span>
         </div>
 
         <div>
           <strong>Obra 2</strong>
-          <span>${obra2 ? obra2.titulo : "Obra não encontrada"}</span>
+          <span>${obra2 ? escapeHTML(obra2.titulo) : "Obra não encontrada"}</span>
         </div>
       </div>
 
@@ -765,7 +829,10 @@ function telaVerificacoes(diaSelecionado = "Segunda") {
     </div>
   `;
 
-  membros.forEach((_, index) => atualizarPontosTela(index));
+  for (const membro of membros) {
+    atualizarPontosTela(membro.id);
+    document.getElementById(`semana_membro_${membro.id}`).textContent = await calcularPontosAcumulados(membro.id);
+  }
 
   aplicarTema();
 }
@@ -784,32 +851,25 @@ function calcularPontos(obra1Status, obra1Feedback, obra2Status, obra2Feedback) 
   const obra1Completa = statusQueCompletamLeitura.includes(obra1Status);
   const obra2Completa = statusQueCompletamLeitura.includes(obra2Status);
 
-  if (!obra1Completa || !obra2Completa) {
-    return 0;
-  }
+  if (!obra1Completa || !obra2Completa) return 0;
 
   pontos += 10;
 
-  if (obra1Status === "🌙" && obra1Feedback) {
-    pontos += 20;
-  }
-
-  if (obra2Status === "🌙" && obra2Feedback) {
-    pontos += 20;
-  }
+  if (obra1Status === "🌙" && obra1Feedback) pontos += 20;
+  if (obra2Status === "🌙" && obra2Feedback) pontos += 20;
 
   return pontos;
 }
 
-function atualizarPontosTela(index) {
-  const obra1Status = document.getElementById(`membro_${index}_obra1Status`)?.value || "";
-  const obra2Status = document.getElementById(`membro_${index}_obra2Status`)?.value || "";
+function atualizarPontosTela(membroId) {
+  const obra1Status = document.getElementById(`membro_${membroId}_obra1Status`)?.value || "";
+  const obra2Status = document.getElementById(`membro_${membroId}_obra2Status`)?.value || "";
 
-  const obra1FeedbackCampo = document.getElementById(`membro_${index}_obra1Feedback`);
-  const obra2FeedbackCampo = document.getElementById(`membro_${index}_obra2Feedback`);
+  const obra1FeedbackCampo = document.getElementById(`membro_${membroId}_obra1Feedback`);
+  const obra2FeedbackCampo = document.getElementById(`membro_${membroId}_obra2Feedback`);
 
-  const avisoObra1 = document.getElementById(`aviso_${index}_obra1`);
-  const avisoObra2 = document.getElementById(`aviso_${index}_obra2`);
+  const avisoObra1 = document.getElementById(`aviso_${membroId}_obra1`);
+  const avisoObra2 = document.getElementById(`aviso_${membroId}_obra2`);
 
   const obra1Completa = statusQueCompletamLeitura.includes(obra1Status);
   const obra2Completa = statusQueCompletamLeitura.includes(obra2Status);
@@ -827,45 +887,28 @@ function atualizarPontosTela(index) {
       obra2FeedbackCampo.disabled = true;
     }
 
-    if (avisoObra1) {
-      avisoObra1.textContent = "Feedback só conta se as duas leituras do dia estiverem completas.";
-    }
-
-    if (avisoObra2) {
-      avisoObra2.textContent = "Feedback só conta se as duas leituras do dia estiverem completas.";
-    }
+    if (avisoObra1) avisoObra1.textContent = "Feedback só conta se as duas leituras do dia estiverem completas.";
+    if (avisoObra2) avisoObra2.textContent = "Feedback só conta se as duas leituras do dia estiverem completas.";
   } else {
     if (obra1FeedbackCampo) {
       if (obra1Status === "🌙") {
         obra1FeedbackCampo.disabled = false;
-
-        if (avisoObra1) {
-          avisoObra1.textContent = "";
-        }
+        if (avisoObra1) avisoObra1.textContent = "";
       } else {
         obra1FeedbackCampo.checked = false;
         obra1FeedbackCampo.disabled = true;
-
-        if (avisoObra1) {
-          avisoObra1.textContent = "Não pode entregar feedback da própria obra.";
-        }
+        if (avisoObra1) avisoObra1.textContent = "Não pode entregar feedback da própria obra.";
       }
     }
 
     if (obra2FeedbackCampo) {
       if (obra2Status === "🌙") {
         obra2FeedbackCampo.disabled = false;
-
-        if (avisoObra2) {
-          avisoObra2.textContent = "";
-        }
+        if (avisoObra2) avisoObra2.textContent = "";
       } else {
         obra2FeedbackCampo.checked = false;
         obra2FeedbackCampo.disabled = true;
-
-        if (avisoObra2) {
-          avisoObra2.textContent = "Não pode entregar feedback da própria obra.";
-        }
+        if (avisoObra2) avisoObra2.textContent = "Não pode entregar feedback da própria obra.";
       }
     }
   }
@@ -875,41 +918,41 @@ function atualizarPontosTela(index) {
 
   const pontos = calcularPontos(obra1Status, obra1Feedback, obra2Status, obra2Feedback);
 
-  const campoPontos = document.getElementById(`pontos_membro_${index}`);
+  const campoPontos = document.getElementById(`pontos_membro_${membroId}`);
 
   if (campoPontos) {
     campoPontos.textContent = pontos;
   }
 }
 
-function salvarVerificacao(diaSelecionado) {
-  const sub = localStorage.getItem("sub");
+async function salvarVerificacao(diaSelecionado) {
+  const membros = await buscarMembros();
 
-  const membros = JSON.parse(localStorage.getItem("membros_" + sub)) || [];
-  let verificacoes = JSON.parse(localStorage.getItem("verificacoes_" + sub)) || {};
+  const dados = {
+    dia: diaSelecionado,
+    atualizadoEm: new Date().toISOString(),
+    membros: {}
+  };
 
-  verificacoes[diaSelecionado] = {};
-
-  membros.forEach((membro, index) => {
-    const obra1Status = document.getElementById(`membro_${index}_obra1Status`).value;
-    const obra2Status = document.getElementById(`membro_${index}_obra2Status`).value;
+  membros.forEach(membro => {
+    const obra1Status = document.getElementById(`membro_${membro.id}_obra1Status`).value;
+    const obra2Status = document.getElementById(`membro_${membro.id}_obra2Status`).value;
 
     const obra1Completa = statusQueCompletamLeitura.includes(obra1Status);
     const obra2Completa = statusQueCompletamLeitura.includes(obra2Status);
-
     const leituraCompleta = obra1Completa && obra2Completa;
 
     const obra1Feedback = leituraCompleta && obra1Status === "🌙"
-      ? document.getElementById(`membro_${index}_obra1Feedback`).checked
+      ? document.getElementById(`membro_${membro.id}_obra1Feedback`).checked
       : false;
 
     const obra2Feedback = leituraCompleta && obra2Status === "🌙"
-      ? document.getElementById(`membro_${index}_obra2Feedback`).checked
+      ? document.getElementById(`membro_${membro.id}_obra2Feedback`).checked
       : false;
 
     const pontos = calcularPontos(obra1Status, obra1Feedback, obra2Status, obra2Feedback);
 
-    verificacoes[diaSelecionado][index] = {
+    dados.membros[membro.id] = {
       nome: membro.nome,
       user: membro.user,
       obra1Status,
@@ -920,90 +963,79 @@ function salvarVerificacao(diaSelecionado) {
     };
   });
 
-  localStorage.setItem("verificacoes_" + sub, JSON.stringify(verificacoes));
+  await salvarVerificacaoBanco(diaSelecionado, dados);
 
-  alert("Verificação salva com sucesso!");
+  alert("Verificação salva no banco de dados!");
 
-  telaDashboard();
+  await telaDashboard();
 }
 
 /* =========================
-   PONTOS / DIAS / EMOJIS ACUMULADOS
+   ACUMULADOS
 ========================= */
 
-function calcularPontosAcumulados(membroIndex) {
-  const sub = localStorage.getItem("sub");
-  const verificacoes = JSON.parse(localStorage.getItem("verificacoes_" + sub)) || {};
+async function calcularPontosAcumulados(membroId) {
+  const verificacoes = await buscarVerificacoes();
 
   let total = 0;
 
   diasSemana.forEach(dia => {
-    if (verificacoes[dia] && verificacoes[dia][membroIndex]) {
-      total += Number(verificacoes[dia][membroIndex].pontos || 0);
+    if (verificacoes[dia]?.membros?.[membroId]) {
+      total += Number(verificacoes[dia].membros[membroId].pontos || 0);
     }
   });
 
   return total;
 }
 
-function contarDiasComVerificacao() {
-  const sub = localStorage.getItem("sub");
-  const verificacoes = JSON.parse(localStorage.getItem("verificacoes_" + sub)) || {};
+async function contarDiasComVerificacao() {
+  const verificacoes = await buscarVerificacoes();
 
   let total = 0;
 
   diasSemana.forEach(dia => {
-    if (verificacoes[dia]) {
-      total++;
-    }
+    if (verificacoes[dia]) total++;
   });
 
   return total;
 }
 
-function obterUltimoDiaVerificado() {
-  const sub = localStorage.getItem("sub");
-  const verificacoes = JSON.parse(localStorage.getItem("verificacoes_" + sub)) || {};
+async function obterUltimoDiaVerificado() {
+  const verificacoes = await buscarVerificacoes();
 
   let ultimoDia = null;
 
   diasSemana.forEach(dia => {
-    if (verificacoes[dia]) {
-      ultimoDia = dia;
-    }
+    if (verificacoes[dia]) ultimoDia = dia;
   });
 
   return ultimoDia;
 }
 
-function gerarEmojisAcumulados(membroIndex, campoStatus) {
-  const sub = localStorage.getItem("sub");
-  const verificacoes = JSON.parse(localStorage.getItem("verificacoes_" + sub)) || {};
+async function gerarEmojisAcumulados(membroId, campoStatus) {
+  const verificacoes = await buscarVerificacoes();
 
   let emojis = "";
 
   diasSemana.forEach(dia => {
-    if (verificacoes[dia] && verificacoes[dia][membroIndex]) {
-      emojis += verificacoes[dia][membroIndex][campoStatus] || "";
+    if (verificacoes[dia]?.membros?.[membroId]) {
+      emojis += verificacoes[dia].membros[membroId][campoStatus] || "";
     }
   });
 
   return emojis;
 }
 
-function verificarFeedbackAcumulado(membroIndex) {
-  const sub = localStorage.getItem("sub");
-  const verificacoes = JSON.parse(localStorage.getItem("verificacoes_" + sub)) || {};
+async function verificarFeedbackAcumulado(membroId) {
+  const verificacoes = await buscarVerificacoes();
 
   let teveFeedback = false;
 
   diasSemana.forEach(dia => {
-    if (verificacoes[dia] && verificacoes[dia][membroIndex]) {
-      const dados = verificacoes[dia][membroIndex];
+    const dados = verificacoes[dia]?.membros?.[membroId];
 
-      if (dados.obra1Feedback || dados.obra2Feedback) {
-        teveFeedback = true;
-      }
+    if (dados?.obra1Feedback || dados?.obra2Feedback) {
+      teveFeedback = true;
     }
   });
 
@@ -1014,11 +1046,9 @@ function verificarFeedbackAcumulado(membroIndex) {
    VISUALIZAR FICHA
 ========================= */
 
-function telaVisualizarFicha() {
-  const sub = localStorage.getItem("sub");
-
-  const membros = JSON.parse(localStorage.getItem("membros_" + sub)) || [];
-  const ultimoDia = obterUltimoDiaVerificado();
+async function telaVisualizarFicha() {
+  const membros = await buscarMembros();
+  const ultimoDia = await obterUltimoDiaVerificado();
 
   if (membros.length === 0) {
     app.innerHTML = `
@@ -1050,7 +1080,8 @@ function telaVisualizarFicha() {
     return;
   }
 
-  const ficha = gerarFichaWhatsapp();
+  const ficha = await gerarFichaWhatsapp();
+  const dias = await contarDiasComVerificacao();
 
   app.innerHTML = `
     <div class="page-box ficha-box">
@@ -1058,14 +1089,13 @@ function telaVisualizarFicha() {
         <div>
           <h2>Visualizar Ficha</h2>
           <p>Confira a mensagem antes de enviar no WhatsApp.</p>
-          <p><strong>Dias acumulados:</strong> ${contarDiasComVerificacao()}</p>
+          <p><strong>Dias acumulados:</strong> ${dias}</p>
         </div>
       </div>
 
       <textarea id="fichaTexto" readonly></textarea>
 
       <button onclick="copiarFicha()">Copiar Ficha</button>
-      <button onclick="enviarWhatsapp()">Enviar pelo WhatsApp</button>
       <button onclick="telaDashboard()">⬅ Voltar</button>
     </div>
   `;
@@ -1075,47 +1105,15 @@ function telaVisualizarFicha() {
   aplicarTema();
 }
 
-function gerarFichaWhatsapp() {
-  const sub = localStorage.getItem("sub");
-
-  const modelo = subs[sub].modeloFicha;
-
-  if (modelo === "trono") {
-    return gerarFichaTrono();
-  }
-
-  if (modelo === "chama") {
-    return gerarFichaChama();
-  }
-
-  if (modelo === "pagina") {
-    return gerarFichaPagina();
-  }
-
-  return gerarFichaPadrao();
+async function gerarFichaWhatsapp() {
+  return await montarFichaBase();
 }
 
-function gerarFichaTrono() {
-  return montarFichaBase();
-}
+async function montarFichaBase() {
+  const sub = getSubAtual();
 
-function gerarFichaChama() {
-  return montarFichaBase();
-}
-
-function gerarFichaPagina() {
-  return montarFichaBase();
-}
-
-function gerarFichaPadrao() {
-  return montarFichaBase();
-}
-
-function montarFichaBase() {
-  const sub = localStorage.getItem("sub");
-
-  const membros = JSON.parse(localStorage.getItem("membros_" + sub)) || [];
-  const diasAcumulados = contarDiasComVerificacao();
+  const membros = await buscarMembros();
+  const diasAcumulados = await contarDiasComVerificacao();
 
   let texto = "";
 
@@ -1143,13 +1141,11 @@ function montarFichaBase() {
   texto += `           📖 𝐅𝐈𝐂𝐇𝐀 𝐃𝐎 𝐋𝐄𝐈𝐓𝐎𝐑\n`;
   texto += `━━━━━━━━━━━ ✦ ━━━━━━━━━━━\n\n`;
 
-  membros.forEach((membro, index) => {
-    const pontosAcumulados = calcularPontosAcumulados(index);
-
-    const emojisObra1 = gerarEmojisAcumulados(index, "obra1Status");
-    const emojisObra2 = gerarEmojisAcumulados(index, "obra2Status");
-
-    const teveFeedback = verificarFeedbackAcumulado(index);
+  for (const membro of membros) {
+    const pontosAcumulados = await calcularPontosAcumulados(membro.id);
+    const emojisObra1 = await gerarEmojisAcumulados(membro.id, "obra1Status");
+    const emojisObra2 = await gerarEmojisAcumulados(membro.id, "obra2Status");
+    const teveFeedback = await verificarFeedbackAcumulado(membro.id);
     const feedbackTexto = teveFeedback ? "✅" : "";
 
     texto += `━━━━━━━━━━━ ✦ ━━━━━━━━━━━\n\n`;
@@ -1166,7 +1162,7 @@ function montarFichaBase() {
     texto += `📖 𝐎𝐛𝐫𝐚 𝟎𝟐: ${emojisObra2}\n\n`;
 
     texto += `🔮 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 Extra: \n\n`;
-  });
+  }
 
   texto += `━━━━━━━━━━━ ✦ ━━━━━━━━━━━\n\n`;
 
@@ -1189,18 +1185,11 @@ function copiarFicha() {
     .catch(() => alert("Não foi possível copiar automaticamente. Selecione o texto e copie manualmente."));
 }
 
-function enviarWhatsapp() {
-  const texto = document.getElementById("fichaTexto").value;
-  const url = "https://wa.me/?text=" + encodeURIComponent(texto);
-
-  window.open(url, "_blank");
-}
-
 /* =========================
    LOGIN E CONTROLE
 ========================= */
 
-function login() {
+async function login() {
   const email = document.getElementById("email").value.trim();
   const senha = document.getElementById("senha").value.trim();
 
@@ -1209,23 +1198,33 @@ function login() {
     return;
   }
 
-  localStorage.setItem("logado", "true");
-  location.reload();
+  try {
+    await signInWithEmailAndPassword(auth, email, senha);
+  } catch (error) {
+    alert("Erro ao entrar. Verifique o e-mail e a senha.");
+  }
 }
 
-function logout() {
-  localStorage.clear();
-  location.reload();
-}
-
-function trocarSub() {
+async function logout() {
   localStorage.removeItem("sub");
-  location.reload();
+  await signOut(auth);
 }
 
-function selecionarSub(sub) {
+async function trocarSub() {
+  localStorage.removeItem("sub");
+  telaSubs();
+}
+
+async function selecionarSub(sub) {
   localStorage.setItem("sub", sub);
-  location.reload();
+
+  await setDoc(caminhoSub(sub), {
+    nome: subs[sub].nome,
+    codigo: sub,
+    atualizadoEm: new Date().toISOString()
+  }, { merge: true });
+
+  await telaDashboard();
 }
 
 /* =========================
@@ -1233,10 +1232,13 @@ function selecionarSub(sub) {
 ========================= */
 
 function aplicarTema() {
-  const sub = localStorage.getItem("sub");
+  const sub = getSubAtual();
   const titulo = document.getElementById("titulo-sub");
 
-  if (!sub || !subs[sub] || !titulo) return;
+  if (!sub || !subs[sub] || !titulo) {
+    if (titulo) titulo.textContent = "🌙 Verificação Lunar";
+    return;
+  }
 
   titulo.textContent = subs[sub].nome;
 
@@ -1250,4 +1252,34 @@ function aplicarTema() {
   });
 }
 
-carregarComponentes();
+/* =========================
+   EXPOR FUNÇÕES NO HTML
+========================= */
+
+window.login = login;
+window.logout = logout;
+window.trocarSub = trocarSub;
+window.selecionarSub = selecionarSub;
+
+window.telaDashboard = telaDashboard;
+window.telaMembros = telaMembros;
+window.formMembro = formMembro;
+window.adicionarMembro = adicionarMembro;
+window.salvarEdicaoMembro = salvarEdicaoMembro;
+window.removerMembro = removerMembro;
+
+window.telaObras = telaObras;
+window.formObra = formObra;
+window.adicionarObra = adicionarObra;
+window.salvarEdicaoObra = salvarEdicaoObra;
+window.removerObra = removerObra;
+
+window.telaGrade = telaGrade;
+window.salvarGrade = salvarGrade;
+
+window.telaVerificacoes = telaVerificacoes;
+window.atualizarPontosTela = atualizarPontosTela;
+window.salvarVerificacao = salvarVerificacao;
+
+window.telaVisualizarFicha = telaVisualizarFicha;
+window.copiarFicha = copiarFicha;
