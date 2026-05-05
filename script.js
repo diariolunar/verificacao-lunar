@@ -1,7 +1,22 @@
 const subs = {
-  A6: { nome: "👑 Trono de Papel", cor: "#6B21A8", tituloFicha: "👑 𝐓𝐑𝐎𝐍𝐎 𝐃𝐄 𝐏𝐀𝐏𝐄𝐋 👑 𝐀-𝟔" },
-  A1: { nome: "🔥 Chama Eterna", cor: "#b91c1c", tituloFicha: "🔥 𝐂𝐇𝐀𝐌𝐀 𝐄𝐓𝐄𝐑𝐍𝐀 🔥 𝐀-𝟏" },
-  A2: { nome: "📖 Página Livre", cor: "#0ea5e9", tituloFicha: "📖 𝐏𝐀́𝐆𝐈𝐍𝐀 𝐋𝐈𝐕𝐑𝐄 📖 𝐀-𝟐" }
+  A6: {
+    nome: "👑 Trono de Papel",
+    cor: "#6B21A8",
+    tituloFicha: "👑 𝐓𝐑𝐎𝐍𝐎 𝐃𝐄 𝐏𝐀𝐏𝐄𝐋 👑 𝐀-𝟔",
+    modeloFicha: "trono"
+  },
+  A1: {
+    nome: "🔥 Chama Eterna",
+    cor: "#b91c1c",
+    tituloFicha: "🔥 𝐂𝐇𝐀𝐌𝐀 𝐄𝐓𝐄𝐑𝐍𝐀 🔥 𝐀-𝟏",
+    modeloFicha: "chama"
+  },
+  A2: {
+    nome: "📖 Página Livre",
+    cor: "#0ea5e9",
+    tituloFicha: "📖 𝐏𝐀́𝐆𝐈𝐍𝐀 𝐋𝐈𝐕𝐑𝐄 📖 𝐀-𝟐",
+    modeloFicha: "pagina"
+  }
 };
 
 const diasSemana = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"];
@@ -745,7 +760,7 @@ function telaVerificacoes(diaSelecionado = "Segunda") {
       </div>
 
       <button onclick="salvarVerificacao('${diaSelecionado}')">Salvar Verificação</button>
-      <button onclick="telaVisualizarFicha('${diaSelecionado}')">👁 Visualizar Ficha</button>
+      <button onclick="telaVisualizarFicha()">👁 Visualizar Ficha</button>
       <button onclick="telaDashboard()">⬅ Voltar</button>
     </div>
   `;
@@ -913,7 +928,7 @@ function salvarVerificacao(diaSelecionado) {
 }
 
 /* =========================
-   PONTOS ACUMULADOS
+   PONTOS / DIAS ACUMULADOS
 ========================= */
 
 function calcularPontosAcumulados(membroIndex) {
@@ -931,14 +946,14 @@ function calcularPontosAcumulados(membroIndex) {
   return total;
 }
 
-function contarDiasComVerificacao(membroIndex) {
+function contarDiasComVerificacao() {
   const sub = localStorage.getItem("sub");
   const verificacoes = JSON.parse(localStorage.getItem("verificacoes_" + sub)) || {};
 
   let total = 0;
 
   diasSemana.forEach(dia => {
-    if (verificacoes[dia] && verificacoes[dia][membroIndex]) {
+    if (verificacoes[dia]) {
       total++;
     }
   });
@@ -946,16 +961,30 @@ function contarDiasComVerificacao(membroIndex) {
   return total;
 }
 
+function obterUltimoDiaVerificado() {
+  const sub = localStorage.getItem("sub");
+  const verificacoes = JSON.parse(localStorage.getItem("verificacoes_" + sub)) || {};
+
+  let ultimoDia = null;
+
+  diasSemana.forEach(dia => {
+    if (verificacoes[dia]) {
+      ultimoDia = dia;
+    }
+  });
+
+  return ultimoDia;
+}
+
 /* =========================
    VISUALIZAR FICHA
 ========================= */
 
-function telaVisualizarFicha(diaSelecionado = "Segunda") {
+function telaVisualizarFicha() {
   const sub = localStorage.getItem("sub");
 
   const membros = JSON.parse(localStorage.getItem("membros_" + sub)) || [];
-  const grade = JSON.parse(localStorage.getItem("grade_" + sub)) || {};
-  const verificacoes = JSON.parse(localStorage.getItem("verificacoes_" + sub)) || {};
+  const ultimoDia = obterUltimoDiaVerificado();
 
   if (membros.length === 0) {
     app.innerHTML = `
@@ -971,21 +1000,14 @@ function telaVisualizarFicha(diaSelecionado = "Segunda") {
     return;
   }
 
-  if (!verificacoes[diaSelecionado]) {
+  if (!ultimoDia) {
     app.innerHTML = `
       <div class="page-box">
         <h2>Visualizar Ficha</h2>
 
-        <label>Dia da semana</label>
-        <select id="diaFicha" onchange="telaVisualizarFicha(this.value)">
-          ${diasSemana.map(dia => `
-            <option value="${dia}" ${dia === diaSelecionado ? "selected" : ""}>${dia}</option>
-          `).join("")}
-        </select>
+        <p class="empty-message">Ainda não existe nenhuma verificação salva nesta semana.</p>
 
-        <p class="empty-message">Ainda não existe verificação salva para este dia.</p>
-
-        <button onclick="telaVerificacoes('${diaSelecionado}')">Fazer Verificação</button>
+        <button onclick="telaVerificacoes()">Fazer Verificação</button>
         <button onclick="telaDashboard()">⬅ Voltar</button>
       </div>
     `;
@@ -994,7 +1016,7 @@ function telaVisualizarFicha(diaSelecionado = "Segunda") {
     return;
   }
 
-  const ficha = gerarFichaWhatsapp(diaSelecionado);
+  const ficha = gerarFichaWhatsapp();
 
   app.innerHTML = `
     <div class="page-box ficha-box">
@@ -1002,15 +1024,9 @@ function telaVisualizarFicha(diaSelecionado = "Segunda") {
         <div>
           <h2>Visualizar Ficha</h2>
           <p>Confira a mensagem antes de enviar no WhatsApp.</p>
+          <p><strong>Última verificação usada:</strong> ${ultimoDia}</p>
         </div>
       </div>
-
-      <label>Dia da semana</label>
-      <select id="diaFicha" onchange="telaVisualizarFicha(this.value)">
-        ${diasSemana.map(dia => `
-          <option value="${dia}" ${dia === diaSelecionado ? "selected" : ""}>${dia}</option>
-        `).join("")}
-      </select>
 
       <textarea id="fichaTexto" readonly></textarea>
 
@@ -1025,12 +1041,51 @@ function telaVisualizarFicha(diaSelecionado = "Segunda") {
   aplicarTema();
 }
 
-function gerarFichaWhatsapp(diaSelecionado) {
+function gerarFichaWhatsapp() {
+  const sub = localStorage.getItem("sub");
+
+  const modelo = subs[sub].modeloFicha;
+
+  if (modelo === "trono") {
+    return gerarFichaTrono();
+  }
+
+  if (modelo === "chama") {
+    return gerarFichaChama();
+  }
+
+  if (modelo === "pagina") {
+    return gerarFichaPagina();
+  }
+
+  return gerarFichaPadrao();
+}
+
+function gerarFichaTrono() {
+  return montarFichaBase();
+}
+
+function gerarFichaChama() {
+  return montarFichaBase();
+}
+
+function gerarFichaPagina() {
+  return montarFichaBase();
+}
+
+function gerarFichaPadrao() {
+  return montarFichaBase();
+}
+
+function montarFichaBase() {
   const sub = localStorage.getItem("sub");
 
   const membros = JSON.parse(localStorage.getItem("membros_" + sub)) || [];
   const verificacoes = JSON.parse(localStorage.getItem("verificacoes_" + sub)) || {};
-  const verificacaoDia = verificacoes[diaSelecionado] || {};
+
+  const ultimoDia = obterUltimoDiaVerificado();
+  const verificacaoDia = verificacoes[ultimoDia] || {};
+  const diasAcumulados = contarDiasComVerificacao();
 
   let texto = "";
 
@@ -1061,24 +1116,21 @@ function gerarFichaWhatsapp(diaSelecionado) {
   membros.forEach((membro, index) => {
     const dados = verificacaoDia[index] || {};
     const pontosAcumulados = calcularPontosAcumulados(index);
-    const diasComVerificacao = contarDiasComVerificacao(index);
 
     const obra1Status = dados.obra1Status || "";
     const obra2Status = dados.obra2Status || "";
 
-    const feedbacks = [];
-
-    if (dados.obra1Feedback) feedbacks.push("Obra 01");
-    if (dados.obra2Feedback) feedbacks.push("Obra 02");
+    const teveFeedback = dados.obra1Feedback || dados.obra2Feedback;
+    const feedbackTexto = teveFeedback ? "✅" : "";
 
     texto += `━━━━━━━━━━━ ✦ ━━━━━━━━━━━\n\n`;
     texto += `👑 𝐍𝐨𝐦𝐞: ${membro.nome}\n`;
     texto += `♜ 𝐔𝐬𝐞𝐫: ${membro.user}\n\n`;
 
     texto += `🌙 𝐒𝐞𝐦𝐚𝐧𝐚𝐬: 0\n`;
-    texto += `📅 𝐃𝐢𝐚𝐬: ${diasComVerificacao}\n`;
+    texto += `📅 𝐃𝐢𝐚𝐬: ${diasAcumulados}\n`;
     texto += `⭐ 𝐏𝐨𝐧𝐭𝐨𝐬: ${pontosAcumulados}\n`;
-    texto += `💬 𝐅𝐞𝐞𝐝𝐛𝐚𝐜𝐤: ${feedbacks.join(", ")}\n`;
+    texto += `💬 𝐅𝐞𝐞𝐝𝐛𝐚𝐜𝐤: ${feedbackTexto}\n`;
     texto += `🔮 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐋𝐮𝐧𝐚𝐫: \n\n`;
 
     texto += `📖 𝐎𝐛𝐫𝐚 𝟎𝟏: ${obra1Status}\n`;
