@@ -1,13 +1,3 @@
-function carregarComponente(id, arquivo, callback) {
-  fetch(arquivo)
-    .then(res => res.text())
-    .then(data => {
-      document.getElementById(id).innerHTML = data;
-      if (callback) callback();
-    });
-}
-
-// 🌙 CONFIG DOS SUBS
 const subs = {
   A6: {
     nome: "👑 Trono de Papel",
@@ -23,32 +13,30 @@ const subs = {
   }
 };
 
-// CARREGAR HEADER COM CONFIG
-carregarComponente("header", "header.html", aplicarTema);
-carregarComponente("footer", "footer.html");
-
 const app = document.getElementById("app");
 
-// 🔐 LOGIN
-const usuarioLogado = localStorage.getItem("logado");
+async function carregarComponentes() {
+  const header = await fetch("header.html").then(res => res.text());
+  const footer = await fetch("footer.html").then(res => res.text());
 
-// 🎨 APLICAR TEMA
-function aplicarTema() {
-  const sub = localStorage.getItem("sub");
+  document.getElementById("header").innerHTML = header;
+  document.getElementById("footer").innerHTML = footer;
 
-  if (sub && subs[sub]) {
-    const config = subs[sub];
-
-    document.getElementById("titulo-sub").innerText = config.nome;
-
-    document.querySelector("header").style.borderBottom =
-      "2px solid " + config.cor;
-
-    document.querySelector("button")?.style.background = config.cor;
-  }
+  iniciarApp();
 }
 
-// 🧱 LOGIN
+function iniciarApp() {
+  const usuarioLogado = localStorage.getItem("logado");
+
+  if (usuarioLogado === "true") {
+    telaSubs();
+  } else {
+    telaLogin();
+  }
+
+  aplicarTema();
+}
+
 function telaLogin() {
   app.innerHTML = `
     <div class="login-box">
@@ -63,7 +51,6 @@ function telaLogin() {
   `;
 }
 
-// 🌙 SUBS
 function telaSubs() {
   app.innerHTML = `
     <div class="login-box">
@@ -73,41 +60,52 @@ function telaSubs() {
       <button onclick="selecionarSub('A1')">🔥 Chama Eterna</button>
       <button onclick="selecionarSub('A2')">📖 Página Livre</button>
 
-      <br><br>
       <button onclick="logout()">Sair</button>
     </div>
   `;
 }
 
-// 🔓 LOGIN
 function login() {
   const email = document.getElementById("email").value;
   const senha = document.getElementById("senha").value;
 
-  if (email && senha) {
-    localStorage.setItem("logado", "true");
-    location.reload();
-  } else {
-    alert("Preencha os campos");
+  if (!email || !senha) {
+    alert("Preencha e-mail e senha.");
+    return;
   }
+
+  localStorage.setItem("logado", "true");
+  location.reload();
 }
 
-// 🔒 LOGOUT
 function logout() {
   localStorage.removeItem("logado");
   localStorage.removeItem("sub");
   location.reload();
 }
 
-// 🎯 ESCOLHER SUB
 function selecionarSub(sub) {
   localStorage.setItem("sub", sub);
-  location.reload();
+  aplicarTema();
+  alert("Sub selecionado: " + subs[sub].nome);
 }
 
-// 🔁 CONTROLE
-if (usuarioLogado) {
-  telaSubs();
-} else {
-  telaLogin();
+function aplicarTema() {
+  const subSelecionado = localStorage.getItem("sub");
+  const titulo = document.getElementById("titulo-sub");
+
+  if (!subSelecionado || !subs[subSelecionado] || !titulo) {
+    return;
+  }
+
+  const tema = subs[subSelecionado];
+
+  titulo.textContent = tema.nome;
+  document.querySelector("header").style.borderBottomColor = tema.cor;
+
+  document.querySelectorAll("button").forEach(botao => {
+    botao.style.background = tema.cor;
+  });
 }
+
+carregarComponentes();
