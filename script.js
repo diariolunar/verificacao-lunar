@@ -6,6 +6,26 @@ const subs = {
 
 const diasSemana = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"];
 
+const statusLeitura = [
+  { emoji: "", texto: "Selecione" },
+  { emoji: "🌙", texto: "Leu" },
+  { emoji: "☠", texto: "Não leu" },
+  { emoji: "💅", texto: "Justificado" },
+  { emoji: "🌼", texto: "Já havia lido antes" },
+  { emoji: "🙍", texto: "Falta algo" },
+  { emoji: "✨", texto: "Obra do dia" },
+  { emoji: "⏳", texto: "Sem obra" },
+  { emoji: "⚰", texto: "Saiu do grupo" },
+  { emoji: "🧕🏻", texto: "Leitura em andamento" },
+  { emoji: "⚠", texto: "Infração das regras" },
+  { emoji: "🚫", texto: "Infração no tempo de leitura" },
+  { emoji: "📲", texto: "Prints no pv" },
+  { emoji: "⛔", texto: "Removido por infração" },
+  { emoji: "⏰", texto: "Leitura feita em tempo estimado" }
+];
+
+const statusQuePontuamLeitura = ["🌙", "✨", "🌼", "⏰"];
+
 const app = document.getElementById("app");
 
 async function carregarComponentes() {
@@ -32,6 +52,10 @@ function iniciarApp() {
 
   aplicarTema();
 }
+
+/* =========================
+   LOGIN / SUBS / DASHBOARD
+========================= */
 
 function telaLogin() {
   app.innerHTML = `
@@ -76,7 +100,7 @@ function telaDashboard() {
       <button onclick="telaMembros()">👥 Membros</button>
       <button onclick="telaObras()">📚 Obras</button>
       <button onclick="telaGrade()">📅 Grade Semanal</button>
-      <button onclick="alert('Em breve')">📜 Verificações</button>
+      <button onclick="telaVerificacoes()">📜 Verificações</button>
 
       <br><br>
 
@@ -99,9 +123,7 @@ function telaMembros() {
   let lista = "";
 
   if (membros.length === 0) {
-    lista = `
-      <p class="empty-message">Nenhum membro cadastrado ainda.</p>
-    `;
+    lista = `<p class="empty-message">Nenhum membro cadastrado ainda.</p>`;
   } else {
     lista = membros.map((membro, index) => `
       <div class="item-card">
@@ -254,9 +276,7 @@ function telaObras() {
   let lista = "";
 
   if (obras.length === 0) {
-    lista = `
-      <p class="empty-message">Nenhuma obra cadastrada ainda.</p>
-    `;
+    lista = `<p class="empty-message">Nenhuma obra cadastrada ainda.</p>`;
   } else {
     lista = obras.map((obra, index) => {
       const membro = membros[obra.membroIndex];
@@ -537,6 +557,251 @@ function salvarGrade() {
   localStorage.setItem("grade_" + sub, JSON.stringify(novaGrade));
 
   alert("Grade salva com sucesso!");
+
+  telaDashboard();
+}
+
+/* =========================
+   VERIFICAÇÕES
+========================= */
+
+function telaVerificacoes(diaSelecionado = "Segunda") {
+  const sub = localStorage.getItem("sub");
+
+  const membros = JSON.parse(localStorage.getItem("membros_" + sub)) || [];
+  const obras = JSON.parse(localStorage.getItem("obras_" + sub)) || [];
+  const grade = JSON.parse(localStorage.getItem("grade_" + sub)) || {};
+  const verificacoes = JSON.parse(localStorage.getItem("verificacoes_" + sub)) || {};
+
+  if (membros.length === 0) {
+    app.innerHTML = `
+      <div class="page-box">
+        <h2>Verificações</h2>
+        <p class="empty-message">Você precisa cadastrar membros antes de fazer verificações.</p>
+        <button onclick="telaMembros()">Cadastrar Membro</button>
+        <button onclick="telaDashboard()">⬅ Voltar</button>
+      </div>
+    `;
+
+    aplicarTema();
+    return;
+  }
+
+  if (obras.length === 0) {
+    app.innerHTML = `
+      <div class="page-box">
+        <h2>Verificações</h2>
+        <p class="empty-message">Você precisa cadastrar obras antes de fazer verificações.</p>
+        <button onclick="telaObras()">Cadastrar Obra</button>
+        <button onclick="telaDashboard()">⬅ Voltar</button>
+      </div>
+    `;
+
+    aplicarTema();
+    return;
+  }
+
+  const dadosDia = grade[diaSelecionado];
+
+  if (!dadosDia || dadosDia.obra1 === "" || dadosDia.obra2 === "") {
+    app.innerHTML = `
+      <div class="page-box">
+        <h2>Verificações</h2>
+
+        <label>Dia da semana</label>
+        <select id="diaVerificacao" onchange="telaVerificacoes(this.value)">
+          ${diasSemana.map(dia => `
+            <option value="${dia}" ${dia === diaSelecionado ? "selected" : ""}>${dia}</option>
+          `).join("")}
+        </select>
+
+        <p class="empty-message">A grade deste dia ainda não está completa. Selecione Obra 1 e Obra 2 na grade semanal.</p>
+
+        <button onclick="telaGrade()">Montar Grade</button>
+        <button onclick="telaDashboard()">⬅ Voltar</button>
+      </div>
+    `;
+
+    aplicarTema();
+    return;
+  }
+
+  const obra1 = obras[Number(dadosDia.obra1)];
+  const obra2 = obras[Number(dadosDia.obra2)];
+
+  const verificacaoDia = verificacoes[diaSelecionado] || {};
+
+  const linhasMembros = membros.map((membro, index) => {
+    const dadosMembro = verificacaoDia[index] || {
+      obra1Status: "",
+      obra1Feedback: false,
+      obra2Status: "",
+      obra2Feedback: false,
+      pontos: 0
+    };
+
+    return `
+      <div class="verificacao-card">
+        <div class="verificacao-membro">
+          <strong>${membro.nome}</strong>
+          <span>${membro.user}</span>
+        </div>
+
+        <div class="verificacao-grid">
+          <div>
+            <label>Obra 1: ${obra1 ? obra1.titulo : "Obra não encontrada"}</label>
+            <select id="membro_${index}_obra1Status" onchange="atualizarPontosTela(${index})">
+              ${gerarOpcoesStatus(dadosMembro.obra1Status)}
+            </select>
+
+            <label class="checkbox-label">
+              <input 
+                type="checkbox" 
+                id="membro_${index}_obra1Feedback"
+                onchange="atualizarPontosTela(${index})"
+                ${dadosMembro.obra1Feedback ? "checked" : ""}
+              >
+              Feedback entregue (+20)
+            </label>
+          </div>
+
+          <div>
+            <label>Obra 2: ${obra2 ? obra2.titulo : "Obra não encontrada"}</label>
+            <select id="membro_${index}_obra2Status" onchange="atualizarPontosTela(${index})">
+              ${gerarOpcoesStatus(dadosMembro.obra2Status)}
+            </select>
+
+            <label class="checkbox-label">
+              <input 
+                type="checkbox" 
+                id="membro_${index}_obra2Feedback"
+                onchange="atualizarPontosTela(${index})"
+                ${dadosMembro.obra2Feedback ? "checked" : ""}
+              >
+              Feedback entregue (+20)
+            </label>
+          </div>
+
+          <div class="pontos-box">
+            <strong>Pontos</strong>
+            <span id="pontos_membro_${index}">${dadosMembro.pontos || 0}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  app.innerHTML = `
+    <div class="page-box verificacao-box">
+      <div class="page-header">
+        <div>
+          <h2>Verificações</h2>
+          <p>Marque o resultado da leitura e a entrega dos feedbacks.</p>
+        </div>
+      </div>
+
+      <label>Dia da semana</label>
+      <select id="diaVerificacao" onchange="telaVerificacoes(this.value)">
+        ${diasSemana.map(dia => `
+          <option value="${dia}" ${dia === diaSelecionado ? "selected" : ""}>${dia}</option>
+        `).join("")}
+      </select>
+
+      <div class="resumo-obras">
+        <p><strong>Obra 1:</strong> ${obra1 ? obra1.titulo : "Obra não encontrada"}</p>
+        <p><strong>Obra 2:</strong> ${obra2 ? obra2.titulo : "Obra não encontrada"}</p>
+      </div>
+
+      <div class="list-area">
+        ${linhasMembros}
+      </div>
+
+      <button onclick="salvarVerificacao('${diaSelecionado}')">Salvar Verificação</button>
+      <button onclick="telaDashboard()">⬅ Voltar</button>
+    </div>
+  `;
+
+  membros.forEach((_, index) => atualizarPontosTela(index));
+
+  aplicarTema();
+}
+
+function gerarOpcoesStatus(valorAtual) {
+  return statusLeitura.map(status => `
+    <option value="${status.emoji}" ${status.emoji === valorAtual ? "selected" : ""}>
+      ${status.emoji ? status.emoji + " " : ""}${status.texto}
+    </option>
+  `).join("");
+}
+
+function calcularPontos(obra1Status, obra1Feedback, obra2Status, obra2Feedback) {
+  let pontos = 0;
+
+  const obra1Pontua = statusQuePontuamLeitura.includes(obra1Status);
+  const obra2Pontua = statusQuePontuamLeitura.includes(obra2Status);
+
+  if (obra1Pontua && obra2Pontua) {
+    pontos += 10;
+  }
+
+  if (obra1Feedback) {
+    pontos += 20;
+  }
+
+  if (obra2Feedback) {
+    pontos += 20;
+  }
+
+  return pontos;
+}
+
+function atualizarPontosTela(index) {
+  const obra1Status = document.getElementById(`membro_${index}_obra1Status`)?.value || "";
+  const obra2Status = document.getElementById(`membro_${index}_obra2Status`)?.value || "";
+
+  const obra1Feedback = document.getElementById(`membro_${index}_obra1Feedback`)?.checked || false;
+  const obra2Feedback = document.getElementById(`membro_${index}_obra2Feedback`)?.checked || false;
+
+  const pontos = calcularPontos(obra1Status, obra1Feedback, obra2Status, obra2Feedback);
+
+  const campoPontos = document.getElementById(`pontos_membro_${index}`);
+
+  if (campoPontos) {
+    campoPontos.textContent = pontos;
+  }
+}
+
+function salvarVerificacao(diaSelecionado) {
+  const sub = localStorage.getItem("sub");
+
+  const membros = JSON.parse(localStorage.getItem("membros_" + sub)) || [];
+  let verificacoes = JSON.parse(localStorage.getItem("verificacoes_" + sub)) || {};
+
+  verificacoes[diaSelecionado] = {};
+
+  membros.forEach((membro, index) => {
+    const obra1Status = document.getElementById(`membro_${index}_obra1Status`).value;
+    const obra2Status = document.getElementById(`membro_${index}_obra2Status`).value;
+
+    const obra1Feedback = document.getElementById(`membro_${index}_obra1Feedback`).checked;
+    const obra2Feedback = document.getElementById(`membro_${index}_obra2Feedback`).checked;
+
+    const pontos = calcularPontos(obra1Status, obra1Feedback, obra2Status, obra2Feedback);
+
+    verificacoes[diaSelecionado][index] = {
+      nome: membro.nome,
+      user: membro.user,
+      obra1Status,
+      obra1Feedback,
+      obra2Status,
+      obra2Feedback,
+      pontos
+    };
+  });
+
+  localStorage.setItem("verificacoes_" + sub, JSON.stringify(verificacoes));
+
+  alert("Verificação salva com sucesso!");
 
   telaDashboard();
 }
