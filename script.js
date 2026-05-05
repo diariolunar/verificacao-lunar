@@ -1,16 +1,7 @@
 const subs = {
-  A6: {
-    nome: "👑 Trono de Papel",
-    cor: "#6B21A8"
-  },
-  A1: {
-    nome: "🔥 Chama Eterna",
-    cor: "#b91c1c"
-  },
-  A2: {
-    nome: "📖 Página Livre",
-    cor: "#0ea5e9"
-  }
+  A6: { nome: "👑 Trono de Papel", cor: "#6B21A8" },
+  A1: { nome: "🔥 Chama Eterna", cor: "#b91c1c" },
+  A2: { nome: "📖 Página Livre", cor: "#0ea5e9" }
 };
 
 const app = document.getElementById("app");
@@ -26,16 +17,12 @@ async function carregarComponentes() {
 }
 
 function iniciarApp() {
-  const usuarioLogado = localStorage.getItem("logado");
-  const subSelecionado = localStorage.getItem("sub");
+  const logado = localStorage.getItem("logado");
+  const sub = localStorage.getItem("sub");
 
-  if (!usuarioLogado) {
-    telaLogin();
-  } else if (!subSelecionado) {
-    telaSubs();
-  } else {
-    telaDashboard();
-  }
+  if (!logado) telaLogin();
+  else if (!sub) telaSubs();
+  else telaDashboard();
 
   aplicarTema();
 }
@@ -45,17 +32,14 @@ function telaLogin() {
   app.innerHTML = `
     <div class="login-box">
       <h2>Verificação Lunar</h2>
-      <p>Login do ADM</p>
-
-      <input id="email" type="email" placeholder="E-mail">
+      <input id="email" placeholder="E-mail">
       <input id="senha" type="password" placeholder="Senha">
-
       <button onclick="login()">Entrar</button>
     </div>
   `;
 }
 
-// 🌙 ESCOLHER SUB
+// 🌙 SUBS
 function telaSubs() {
   app.innerHTML = `
     <div class="login-box">
@@ -76,13 +60,11 @@ function telaDashboard() {
 
   app.innerHTML = `
     <div class="login-box">
-      <h2>Dashboard do Sub</h2>
+      <h2>${subs[sub].nome}</h2>
 
-      <p><strong>Sub atual:</strong> ${subs[sub].nome}</p>
-
-      <button onclick="alert('Membros em breve')">👥 Membros</button>
-      <button onclick="alert('Obras em breve')">📚 Obras</button>
-      <button onclick="alert('Verificações em breve')">📜 Verificações</button>
+      <button onclick="telaMembros()">👥 Membros</button>
+      <button onclick="alert('Em breve')">📚 Obras</button>
+      <button onclick="alert('Em breve')">📜 Verificações</button>
 
       <br><br>
 
@@ -92,13 +74,78 @@ function telaDashboard() {
   `;
 }
 
+// 👥 TELA DE MEMBROS
+function telaMembros() {
+  const sub = localStorage.getItem("sub");
+  const membros = JSON.parse(localStorage.getItem("membros_" + sub)) || [];
+
+  let lista = membros.map((m, i) => `
+    <li>
+      ${m.nome} (${m.user})
+      <button onclick="removerMembro(${i})">❌</button>
+    </li>
+  `).join("");
+
+  app.innerHTML = `
+    <div class="login-box">
+      <h2>Membros</h2>
+
+      <input id="nome" placeholder="Nome">
+      <input id="user" placeholder="@user">
+
+      <button onclick="adicionarMembro()">Adicionar</button>
+
+      <ul style="text-align:left; margin-top:10px;">
+        ${lista}
+      </ul>
+
+      <br>
+      <button onclick="telaDashboard()">⬅ Voltar</button>
+    </div>
+  `;
+}
+
+// ➕ ADICIONAR
+function adicionarMembro() {
+  const sub = localStorage.getItem("sub");
+
+  const nome = document.getElementById("nome").value;
+  const user = document.getElementById("user").value;
+
+  if (!nome || !user) {
+    alert("Preencha tudo");
+    return;
+  }
+
+  let membros = JSON.parse(localStorage.getItem("membros_" + sub)) || [];
+
+  membros.push({ nome, user });
+
+  localStorage.setItem("membros_" + sub, JSON.stringify(membros));
+
+  telaMembros();
+}
+
+// ❌ REMOVER
+function removerMembro(index) {
+  const sub = localStorage.getItem("sub");
+
+  let membros = JSON.parse(localStorage.getItem("membros_" + sub)) || [];
+
+  membros.splice(index, 1);
+
+  localStorage.setItem("membros_" + sub, JSON.stringify(membros));
+
+  telaMembros();
+}
+
 // 🔓 LOGIN
 function login() {
   const email = document.getElementById("email").value;
   const senha = document.getElementById("senha").value;
 
   if (!email || !senha) {
-    alert("Preencha e-mail e senha.");
+    alert("Preencha os campos");
     return;
   }
 
@@ -118,7 +165,7 @@ function trocarSub() {
   location.reload();
 }
 
-// 🎯 ESCOLHER SUB
+// 🎯 SELECIONAR SUB
 function selecionarSub(sub) {
   localStorage.setItem("sub", sub);
   location.reload();
@@ -126,18 +173,16 @@ function selecionarSub(sub) {
 
 // 🎨 TEMA
 function aplicarTema() {
-  const subSelecionado = localStorage.getItem("sub");
+  const sub = localStorage.getItem("sub");
   const titulo = document.getElementById("titulo-sub");
 
-  if (!subSelecionado || !subs[subSelecionado] || !titulo) return;
+  if (!sub || !subs[sub] || !titulo) return;
 
-  const tema = subs[subSelecionado];
-
-  titulo.textContent = tema.nome;
-  document.querySelector("header").style.borderBottomColor = tema.cor;
+  titulo.textContent = subs[sub].nome;
+  document.querySelector("header").style.borderBottomColor = subs[sub].cor;
 
   document.querySelectorAll("button").forEach(btn => {
-    btn.style.background = tema.cor;
+    btn.style.background = subs[sub].cor;
   });
 }
 
