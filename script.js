@@ -19,19 +19,19 @@ import {
 
 const subs = {
   A6: {
-    nome: "👑 Trono de Papel",
+    nome: "A-6 👑 Trono de Papel",
     cor: "#16A34A",
     tituloFicha: "👑 𝐓𝐑𝐎𝐍𝐎 𝐃𝐄 𝐏𝐀𝐏𝐄𝐋 👑 𝐀-𝟔",
     modeloFicha: "trono"
   },
   A1: {
-    nome: "🔥 Chama Eterna",
+    nome: "A-1 🔥 Chama Eterna",
     cor: "#b91c1c",
     tituloFicha: "🌜 𝐎𝐧𝐝𝐞 𝐚 𝐋𝐮𝐚 𝐢𝐥𝐮𝐦𝐢𝐧𝐚 𝐨𝐬 𝐥𝐢𝐯𝐫𝐨𝐬: 𝐋𝐮𝐧𝐚 𝐀-𝟏 🌛",
     modeloFicha: "chama"
   },
   A2: {
-    nome: "📖 Página Livre",
+    nome: "A-2 📖 Página Livre",
     cor: "#0ea5e9",
     tituloFicha: "🧚‍♂PAGINA LIVRE 𝑨-𝟐 🧝‍♀🧌🦹‍♂🧞‍♂ VERIFICAÇÕES 🧛‍♂🧜‍♂",
     modeloFicha: "pagina"
@@ -260,6 +260,7 @@ async function telaMembros() {
         <div>
           <strong>${escapeHTML(membro.nome)}</strong>
           <span>${escapeHTML(membro.user)}</span>
+          <span>Semana: ${membro.semana ?? 0}</span>
         </div>
 
         <div class="item-actions">
@@ -293,7 +294,7 @@ async function telaMembros() {
 }
 
 async function formMembro(id = null) {
-  let membro = { nome: "", user: "" };
+  let membro = { nome: "", user: "", semana: 0 };
   const editando = Boolean(id);
 
   if (editando) {
@@ -302,7 +303,10 @@ async function formMembro(id = null) {
     const snap = await getDoc(ref);
 
     if (snap.exists()) {
-      membro = snap.data();
+      membro = {
+        semana: 0,
+        ...snap.data()
+      };
     }
   }
 
@@ -315,6 +319,9 @@ async function formMembro(id = null) {
 
       <label>User</label>
       <input id="userMembro" placeholder="@user" value="${escapeHTML(membro.user)}">
+
+      <label>Semana atual</label>
+      <input id="semanaMembro" type="number" min="0" placeholder="Ex: 2" value="${membro.semana ?? 0}">
 
       <button onclick="${editando ? `salvarEdicaoMembro('${id}')` : "adicionarMembro()"}">
         ${editando ? "Salvar Alterações" : "Cadastrar Membro"}
@@ -332,6 +339,7 @@ async function adicionarMembro() {
 
   const nome = document.getElementById("nomeMembro").value.trim();
   const user = document.getElementById("userMembro").value.trim();
+  const semana = Number(document.getElementById("semanaMembro").value || 0);
 
   if (!nome || !user) {
     alert("Preencha nome e user.");
@@ -341,6 +349,7 @@ async function adicionarMembro() {
   await addDoc(collection(db, "subs", sub, "membros"), {
     nome,
     user,
+    semana,
     criadoEm: new Date().toISOString()
   });
 
@@ -352,6 +361,7 @@ async function salvarEdicaoMembro(id) {
 
   const nome = document.getElementById("nomeMembro").value.trim();
   const user = document.getElementById("userMembro").value.trim();
+  const semana = Number(document.getElementById("semanaMembro").value || 0);
 
   if (!nome || !user) {
     alert("Preencha nome e user.");
@@ -360,7 +370,8 @@ async function salvarEdicaoMembro(id) {
 
   await updateDoc(doc(db, "subs", sub, "membros", id), {
     nome,
-    user
+    user,
+    semana
   });
 
   await telaMembros();
@@ -733,6 +744,7 @@ async function telaVerificacoes(diaSelecionado = "Segunda") {
           <div>
             <strong>${escapeHTML(membro.nome)}</strong>
             <span>${escapeHTML(membro.user)}</span>
+            <span>Semana: ${membro.semana ?? 0}</span>
           </div>
 
           <div class="pontos-duplo">
@@ -1104,6 +1116,7 @@ async function salvarVerificacao(diaSelecionado) {
     dados.membros[membro.id] = {
       nome: membro.nome,
       user: membro.user,
+      semana: membro.semana ?? 0,
       obra1Status,
       obra1Feedback,
       obra1Extra,
@@ -1301,7 +1314,7 @@ async function montarFichaTrono() {
     texto += `👑 𝐍𝐨𝐦𝐞: ${membro.nome}\n`;
     texto += `♜ 𝐔𝐬𝐞𝐫: ${membro.user}\n\n`;
 
-    texto += `🌙 𝐒𝐞𝐦𝐚𝐧𝐚𝐬: 0\n`;
+    texto += `🌙 𝐒𝐞𝐦𝐚𝐧𝐚𝐬: ${membro.semana ?? 0}\n`;
     texto += `📅 𝐃𝐢𝐚𝐬: ${diasAcumulados}\n`;
     texto += `⭐ 𝐏𝐨𝐧𝐭𝐨𝐬: ${pontosAcumulados}\n`;
     texto += `💬 𝐅𝐞𝐞𝐝𝐛𝐚𝐜𝐤: ${feedbackTexto}\n`;
@@ -1341,7 +1354,7 @@ async function montarFichaChama() {
     texto += `📙𝐍𝐨𝐦𝐞: ${membro.nome}\n`;
     texto += `🦐𝐔𝐬𝐞𝐫: ${membro.user}\n\n`;
 
-    texto += `🏆  semanas: 0\n`;
+    texto += `🏆  semanas: ${membro.semana ?? 0}\n`;
     texto += `💌  Dias: ${diasAcumulados}\n`;
     texto += `👑 Pontos: ${pontosAcumulados}\n`;
     texto += `📈 Feedback: ${feedbackTexto}\n`;
@@ -1380,7 +1393,7 @@ async function montarFichaPagina() {
     texto += `🧝‍♀ Nome: ${membro.nome}\n`;
     texto += `🦇 User: ${membro.user}\n\n`;
 
-    texto += `🌎 Semanas: 0\n`;
+    texto += `🌎 Semanas: ${membro.semana ?? 0}\n`;
     texto += `🗺 Dias: ${diasAcumulados}\n`;
     texto += `🧭 Pontos: ${pontosAcumulados}\n`;
     texto += `🏗 Feedback: ${feedbackTexto}\n`;
