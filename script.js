@@ -1,20 +1,54 @@
-function carregarComponente(id, arquivo) {
+function carregarComponente(id, arquivo, callback) {
   fetch(arquivo)
     .then(res => res.text())
     .then(data => {
       document.getElementById(id).innerHTML = data;
+      if (callback) callback();
     });
 }
 
-carregarComponente("header", "header.html");
+// 🌙 CONFIG DOS SUBS
+const subs = {
+  A6: {
+    nome: "👑 Trono de Papel",
+    cor: "#6B21A8"
+  },
+  A1: {
+    nome: "🔥 Chama Eterna",
+    cor: "#b91c1c"
+  },
+  A2: {
+    nome: "📖 Página Livre",
+    cor: "#0ea5e9"
+  }
+};
+
+// CARREGAR HEADER COM CONFIG
+carregarComponente("header", "header.html", aplicarTema);
 carregarComponente("footer", "footer.html");
 
 const app = document.getElementById("app");
 
-// 🔐 VERIFICAR LOGIN
+// 🔐 LOGIN
 const usuarioLogado = localStorage.getItem("logado");
 
-// 🧱 TELA DE LOGIN
+// 🎨 APLICAR TEMA
+function aplicarTema() {
+  const sub = localStorage.getItem("sub");
+
+  if (sub && subs[sub]) {
+    const config = subs[sub];
+
+    document.getElementById("titulo-sub").innerText = config.nome;
+
+    document.querySelector("header").style.borderBottom =
+      "2px solid " + config.cor;
+
+    document.querySelector("button")?.style.background = config.cor;
+  }
+}
+
+// 🧱 LOGIN
 function telaLogin() {
   app.innerHTML = `
     <div class="login-box">
@@ -29,7 +63,7 @@ function telaLogin() {
   `;
 }
 
-// 🌙 TELA DE SELEÇÃO DE SUB
+// 🌙 SUBS
 function telaSubs() {
   app.innerHTML = `
     <div class="login-box">
@@ -45,7 +79,7 @@ function telaSubs() {
   `;
 }
 
-// 🔓 LOGIN SIMPLES (TEMPORÁRIO)
+// 🔓 LOGIN
 function login() {
   const email = document.getElementById("email").value;
   const senha = document.getElementById("senha").value;
@@ -61,16 +95,17 @@ function login() {
 // 🔒 LOGOUT
 function logout() {
   localStorage.removeItem("logado");
+  localStorage.removeItem("sub");
   location.reload();
 }
 
 // 🎯 ESCOLHER SUB
 function selecionarSub(sub) {
   localStorage.setItem("sub", sub);
-  alert("Você entrou no sub " + sub);
+  location.reload();
 }
 
-// 🔁 CONTROLE DE TELA
+// 🔁 CONTROLE
 if (usuarioLogado) {
   telaSubs();
 } else {
