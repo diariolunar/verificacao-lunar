@@ -197,6 +197,86 @@ button:hover {
   text-align: left;
 }
 
+/* VERIFICAÇÕES */
+.verificacao-box {
+  max-width: 1100px;
+}
+
+.resumo-obras {
+  background: #252525;
+  padding: 14px;
+  border-radius: 10px;
+  margin: 15px 0;
+}
+
+.resumo-obras p {
+  margin: 5px 0;
+}
+
+.verificacao-card {
+  background: #252525;
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.verificacao-membro {
+  margin-bottom: 14px;
+}
+
+.verificacao-membro strong {
+  display: block;
+  font-size: 18px;
+}
+
+.verificacao-membro span {
+  color: #d1d1d1;
+  font-size: 14px;
+}
+
+.verificacao-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 120px;
+  gap: 15px;
+  align-items: start;
+}
+
+.verificacao-grid label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.checkbox-label {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  font-weight: normal !important;
+  margin-top: 8px;
+  color: #d1d1d1;
+}
+
+.checkbox-label input {
+  width: auto;
+  margin: 0;
+}
+
+.pontos-box {
+  background: #1a1a1a;
+  padding: 12px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.pontos-box strong {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.pontos-box span {
+  font-size: 24px;
+  font-weight: bold;
+}
+
 /* RESPONSIVO */
 @media (max-width: 700px) {
   .main-content {
@@ -237,5 +317,9 @@ button:hover {
   .dia-grade {
     text-align: center;
     margin-top: 10px;
+  }
+
+  .verificacao-grid {
+    grid-template-columns: 1fr;
   }
 }
