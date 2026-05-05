@@ -928,7 +928,7 @@ function salvarVerificacao(diaSelecionado) {
 }
 
 /* =========================
-   PONTOS / DIAS ACUMULADOS
+   PONTOS / DIAS / EMOJIS ACUMULADOS
 ========================= */
 
 function calcularPontosAcumulados(membroIndex) {
@@ -974,6 +974,40 @@ function obterUltimoDiaVerificado() {
   });
 
   return ultimoDia;
+}
+
+function gerarEmojisAcumulados(membroIndex, campoStatus) {
+  const sub = localStorage.getItem("sub");
+  const verificacoes = JSON.parse(localStorage.getItem("verificacoes_" + sub)) || {};
+
+  let emojis = "";
+
+  diasSemana.forEach(dia => {
+    if (verificacoes[dia] && verificacoes[dia][membroIndex]) {
+      emojis += verificacoes[dia][membroIndex][campoStatus] || "";
+    }
+  });
+
+  return emojis;
+}
+
+function verificarFeedbackAcumulado(membroIndex) {
+  const sub = localStorage.getItem("sub");
+  const verificacoes = JSON.parse(localStorage.getItem("verificacoes_" + sub)) || {};
+
+  let teveFeedback = false;
+
+  diasSemana.forEach(dia => {
+    if (verificacoes[dia] && verificacoes[dia][membroIndex]) {
+      const dados = verificacoes[dia][membroIndex];
+
+      if (dados.obra1Feedback || dados.obra2Feedback) {
+        teveFeedback = true;
+      }
+    }
+  });
+
+  return teveFeedback;
 }
 
 /* =========================
@@ -1024,7 +1058,7 @@ function telaVisualizarFicha() {
         <div>
           <h2>Visualizar Ficha</h2>
           <p>Confira a mensagem antes de enviar no WhatsApp.</p>
-          <p><strong>Última verificação usada:</strong> ${ultimoDia}</p>
+          <p><strong>Dias acumulados:</strong> ${contarDiasComVerificacao()}</p>
         </div>
       </div>
 
@@ -1081,10 +1115,6 @@ function montarFichaBase() {
   const sub = localStorage.getItem("sub");
 
   const membros = JSON.parse(localStorage.getItem("membros_" + sub)) || [];
-  const verificacoes = JSON.parse(localStorage.getItem("verificacoes_" + sub)) || {};
-
-  const ultimoDia = obterUltimoDiaVerificado();
-  const verificacaoDia = verificacoes[ultimoDia] || {};
   const diasAcumulados = contarDiasComVerificacao();
 
   let texto = "";
@@ -1114,13 +1144,12 @@ function montarFichaBase() {
   texto += `━━━━━━━━━━━ ✦ ━━━━━━━━━━━\n\n`;
 
   membros.forEach((membro, index) => {
-    const dados = verificacaoDia[index] || {};
     const pontosAcumulados = calcularPontosAcumulados(index);
 
-    const obra1Status = dados.obra1Status || "";
-    const obra2Status = dados.obra2Status || "";
+    const emojisObra1 = gerarEmojisAcumulados(index, "obra1Status");
+    const emojisObra2 = gerarEmojisAcumulados(index, "obra2Status");
 
-    const teveFeedback = dados.obra1Feedback || dados.obra2Feedback;
+    const teveFeedback = verificarFeedbackAcumulado(index);
     const feedbackTexto = teveFeedback ? "✅" : "";
 
     texto += `━━━━━━━━━━━ ✦ ━━━━━━━━━━━\n\n`;
@@ -1133,8 +1162,8 @@ function montarFichaBase() {
     texto += `💬 𝐅𝐞𝐞𝐝𝐛𝐚𝐜𝐤: ${feedbackTexto}\n`;
     texto += `🔮 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐋𝐮𝐧𝐚𝐫: \n\n`;
 
-    texto += `📖 𝐎𝐛𝐫𝐚 𝟎𝟏: ${obra1Status}\n`;
-    texto += `📖 𝐎𝐛𝐫𝐚 𝟎𝟐: ${obra2Status}\n\n`;
+    texto += `📖 𝐎𝐛𝐫𝐚 𝟎𝟏: ${emojisObra1}\n`;
+    texto += `📖 𝐎𝐛𝐫𝐚 𝟎𝟐: ${emojisObra2}\n\n`;
 
     texto += `🔮 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 Extra: \n\n`;
   });
