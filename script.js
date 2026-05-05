@@ -29,7 +29,6 @@ function iniciarApp() {
   aplicarTema();
 }
 
-// LOGIN
 function telaLogin() {
   app.innerHTML = `
     <div class="login-box">
@@ -41,7 +40,6 @@ function telaLogin() {
   `;
 }
 
-// SUBS
 function telaSubs() {
   app.innerHTML = `
     <div class="login-box">
@@ -56,7 +54,6 @@ function telaSubs() {
   `;
 }
 
-// DASHBOARD
 function telaDashboard() {
   const sub = localStorage.getItem("sub");
 
@@ -79,7 +76,6 @@ function telaDashboard() {
   aplicarTema();
 }
 
-// MEMBROS
 function telaMembros() {
   const sub = localStorage.getItem("sub");
   const membros = JSON.parse(localStorage.getItem("membros_" + sub)) || [];
@@ -135,7 +131,6 @@ function removerMembro(i) {
   telaMembros();
 }
 
-// OBRAS
 function telaObras() {
   const sub = localStorage.getItem("sub");
   const membros = JSON.parse(localStorage.getItem("membros_" + sub)) || [];
@@ -147,7 +142,7 @@ function telaObras() {
 
   let lista = obras.map((o, i) => `
     <li>
-      ${o.titulo} (${membros[o.membroIndex]?.nome})
+      ${o.titulo} (${membros[o.membroIndex]?.nome || "Membro removido"})
       <button onclick="removerObra(${i})">❌</button>
     </li>
   `).join("");
@@ -158,13 +153,15 @@ function telaObras() {
 
       <input id="tituloObra" placeholder="Título">
       <select id="membroObra">
-        <option value="">Selecione</option>
+        <option value="">Selecione o membro</option>
         ${opcoes}
       </select>
 
       <button onclick="adicionarObra()">Adicionar</button>
 
-      <ul>${lista}</ul>
+      <ul style="text-align:left;">
+        ${lista}
+      </ul>
 
       <button onclick="telaDashboard()">⬅ Voltar</button>
     </div>
@@ -197,72 +194,81 @@ function removerObra(i) {
   telaObras();
 }
 
-// 📅 GRADE SEMANAL
 function telaGrade() {
   const sub = localStorage.getItem("sub");
   const obras = JSON.parse(localStorage.getItem("obras_" + sub)) || [];
   const grade = JSON.parse(localStorage.getItem("grade_" + sub)) || {};
 
-  let html = diasSemana.map(dia => {
-    let selecionadas = grade[dia] || [];
+  let opcoesObras = obras.map((obra, index) => `
+    <option value="${index}">${obra.titulo}</option>
+  `).join("");
 
-    let opcoes = obras.map((o, i) => {
-      const checked = selecionadas.includes(i) ? "checked" : "";
-      return `
-        <label>
-          <input type="checkbox" value="${i}" ${checked}>
-          ${o.titulo}
-        </label><br>
-      `;
-    }).join("");
+  let linhas = diasSemana.map(dia => {
+    const obra1 = grade[dia]?.obra1 ?? "";
+    const obra2 = grade[dia]?.obra2 ?? "";
 
     return `
-      <div style="margin-bottom:10px;">
-        <strong>${dia}</strong><br>
-        ${opcoes}
+      <div class="linha-grade">
+        <label class="dia-grade">${dia}</label>
+
+        <select id="${dia}_obra1">
+          <option value="">Obra 1</option>
+          ${opcoesObras}
+        </select>
+
+        <select id="${dia}_obra2">
+          <option value="">Obra 2</option>
+          ${opcoesObras}
+        </select>
       </div>
+
+      <script>
+        document.getElementById("${dia}_obra1").value = "${obra1}";
+        document.getElementById("${dia}_obra2").value = "${obra2}";
+      </script>
     `;
   }).join("");
 
   app.innerHTML = `
-    <div class="login-box" style="max-height:80vh; overflow:auto;">
+    <div class="login-box grade-box">
       <h2>Grade Semanal</h2>
+      <p>Selecione as duas obras de cada dia.</p>
 
-      ${html}
+      ${linhas}
 
       <button onclick="salvarGrade()">Salvar Grade</button>
-
-      <br><br>
       <button onclick="telaDashboard()">⬅ Voltar</button>
     </div>
   `;
+
+  diasSemana.forEach(dia => {
+    if (grade[dia]) {
+      document.getElementById(`${dia}_obra1`).value = grade[dia].obra1 ?? "";
+      document.getElementById(`${dia}_obra2`).value = grade[dia].obra2 ?? "";
+    }
+  });
 
   aplicarTema();
 }
 
 function salvarGrade() {
   const sub = localStorage.getItem("sub");
+
   let novaGrade = {};
 
   diasSemana.forEach(dia => {
-    const checkboxes = [...document.querySelectorAll(`strong:contains('${dia}')`)];
-  });
-
-  const blocos = document.querySelectorAll(".login-box div");
-
-  blocos.forEach((bloco, index) => {
-    const dia = diasSemana[index];
-    const checks = bloco.querySelectorAll("input:checked");
-
-    novaGrade[dia] = [...checks].map(c => Number(c.value));
+    novaGrade[dia] = {
+      obra1: document.getElementById(`${dia}_obra1`).value,
+      obra2: document.getElementById(`${dia}_obra2`).value
+    };
   });
 
   localStorage.setItem("grade_" + sub, JSON.stringify(novaGrade));
 
-  alert("Grade salva!");
+  alert("Grade salva com sucesso!");
+  telaDashboard();
 }
 
-// LOGIN / CONTROLE
 function login() {
   const email = document.getElementById("email").value;
   const senha = document.getElementById("senha").value;
@@ -288,7 +294,6 @@ function selecionarSub(sub) {
   location.reload();
 }
 
-// TEMA
 function aplicarTema() {
   const sub = localStorage.getItem("sub");
   const titulo = document.getElementById("titulo-sub");
