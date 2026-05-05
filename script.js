@@ -20,7 +20,7 @@ import {
 const subs = {
   A6: {
     nome: "👑 Trono de Papel",
-    cor: "#6B21A8",
+    cor: "#16A34A",
     tituloFicha: "👑 𝐓𝐑𝐎𝐍𝐎 𝐃𝐄 𝐏𝐀𝐏𝐄𝐋 👑 𝐀-𝟔",
     modeloFicha: "trono"
   },
