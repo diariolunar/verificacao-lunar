@@ -5,7 +5,6 @@ body {
   color: white;
 }
 
-/* HEADER */
 header {
   background: #1a1a1a;
   padding: 15px;
@@ -13,7 +12,6 @@ header {
   border-bottom: 2px solid #6B21A8;
 }
 
-/* FOOTER */
 footer {
   background: #1a1a1a;
   padding: 10px;
@@ -21,41 +19,41 @@ footer {
   border-top: 2px solid #6B21A8;
 }
 
-/* CONTEÚDO */
 .main-content {
+  min-height: calc(100vh - 120px);
   display: flex;
   justify-content: center;
   align-items: center;
-  height: calc(100vh - 120px);
 }
 
-/* LOGIN */
 .login-box {
   background: #1a1a1a;
   padding: 30px;
-  border-radius: 10px;
-  width: 300px;
+  border-radius: 12px;
+  width: 320px;
   text-align: center;
 }
 
 input {
   width: 100%;
-  padding: 10px;
+  box-sizing: border-box;
+  padding: 11px;
   margin: 10px 0;
   border: none;
-  border-radius: 5px;
+  border-radius: 6px;
 }
 
 button {
   width: 100%;
-  padding: 10px;
+  padding: 11px;
+  margin-top: 10px;
   background: #6B21A8;
   color: white;
   border: none;
-  border-radius: 5px;
+  border-radius: 6px;
   cursor: pointer;
 }
 
 button:hover {
-  background: #3B0764;
+  opacity: 0.85;
 }
