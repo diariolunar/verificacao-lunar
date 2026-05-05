@@ -113,7 +113,8 @@ footer small {
 
 /* CAMPOS */
 input,
-select {
+select,
+textarea {
   width: 100%;
   box-sizing: border-box;
   padding: 12px;
@@ -337,6 +338,11 @@ button:hover {
   font-size: 12px;
 }
 
+.pontos-duplo {
+  display: flex;
+  gap: 10px;
+}
+
 .pontos-box {
   background: #111;
   padding: 12px 16px;
@@ -354,6 +360,19 @@ button:hover {
 
 .pontos-box strong {
   font-size: 28px;
+}
+
+/* FICHA */
+.ficha-box {
+  max-width: 1000px;
+}
+
+.ficha-box textarea {
+  min-height: 520px;
+  resize: vertical;
+  font-family: "Courier New", monospace;
+  line-height: 1.4;
+  white-space: pre-wrap;
 }
 
 /* RESPONSIVO */
@@ -406,6 +425,10 @@ button:hover {
   .verificacao-topo {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .pontos-duplo {
+    flex-direction: column;
   }
 
   .pontos-box {
