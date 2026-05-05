@@ -27,13 +27,13 @@ const subs = {
   A1: {
     nome: "🔥 Chama Eterna",
     cor: "#b91c1c",
-    tituloFicha: "🔥 𝐂𝐇𝐀𝐌𝐀 𝐄𝐓𝐄𝐑𝐍𝐀 🔥 𝐀-𝟏",
+    tituloFicha: "🌜 𝐎𝐧𝐝𝐞 𝐚 𝐋𝐮𝐚 𝐢𝐥𝐮𝐦𝐢𝐧𝐚 𝐨𝐬 𝐥𝐢𝐯𝐫𝐨𝐬: 𝐋𝐮𝐧𝐚 𝐀-𝟏 🌛",
     modeloFicha: "chama"
   },
   A2: {
     nome: "📖 Página Livre",
     cor: "#0ea5e9",
-    tituloFicha: "📖 𝐏𝐀́𝐆𝐈𝐍𝐀 𝐋𝐈𝐕𝐑𝐄 📖 𝐀-𝟐",
+    tituloFicha: "🧚‍♂PAGINA LIVRE 𝑨-𝟐 🧝‍♀🧌🦹‍♂🧞‍♂ VERIFICAÇÕES 🧛‍♂🧜‍♂",
     modeloFicha: "pagina"
   }
 };
@@ -93,10 +93,12 @@ async function buscarMembros() {
   const ref = collection(db, "subs", sub, "membros");
   const snap = await getDocs(ref);
 
-  return snap.docs.map(docSnap => ({
-    id: docSnap.id,
-    ...docSnap.data()
-  }));
+  return snap.docs
+    .map(docSnap => ({
+      id: docSnap.id,
+      ...docSnap.data()
+    }))
+    .sort((a, b) => String(a.criadoEm || "").localeCompare(String(b.criadoEm || "")));
 }
 
 async function buscarObras() {
@@ -104,10 +106,12 @@ async function buscarObras() {
   const ref = collection(db, "subs", sub, "obras");
   const snap = await getDocs(ref);
 
-  return snap.docs.map(docSnap => ({
-    id: docSnap.id,
-    ...docSnap.data()
-  }));
+  return snap.docs
+    .map(docSnap => ({
+      id: docSnap.id,
+      ...docSnap.data()
+    }))
+    .sort((a, b) => String(a.criadoEm || "").localeCompare(String(b.criadoEm || "")));
 }
 
 async function buscarGrade() {
@@ -714,8 +718,12 @@ async function telaVerificacoes(diaSelecionado = "Segunda") {
     const dadosMembro = verificacaoDia?.membros?.[membro.id] || {
       obra1Status: "",
       obra1Feedback: false,
+      obra1Extra: false,
+      obra1ExtraQtd: 1,
       obra2Status: "",
       obra2Feedback: false,
+      obra2Extra: false,
+      obra2ExtraQtd: 1,
       pontos: 0
     };
 
@@ -760,6 +768,28 @@ async function telaVerificacoes(diaSelecionado = "Segunda") {
               Feedback entregue (+20)
             </label>
 
+            <label class="checkbox-label">
+              <input 
+                type="checkbox" 
+                id="membro_${membro.id}_obra1Extra"
+                onchange="atualizarPontosTela('${membro.id}')"
+                ${dadosMembro.obra1Extra ? "checked" : ""}
+              >
+              Teve capítulo extra? (+5 cada)
+            </label>
+
+            <div id="extraBox_${membro.id}_obra1" style="display:none;">
+              <label>Quantidade de capítulos extras</label>
+              <input 
+                type="number"
+                min="1"
+                id="membro_${membro.id}_obra1ExtraQtd"
+                value="${dadosMembro.obra1ExtraQtd || 1}"
+                onchange="atualizarPontosTela('${membro.id}')"
+                oninput="atualizarPontosTela('${membro.id}')"
+              >
+            </div>
+
             <small id="aviso_${membro.id}_obra1" class="feedback-aviso"></small>
           </div>
 
@@ -782,6 +812,28 @@ async function telaVerificacoes(diaSelecionado = "Segunda") {
               Feedback entregue (+20)
             </label>
 
+            <label class="checkbox-label">
+              <input 
+                type="checkbox" 
+                id="membro_${membro.id}_obra2Extra"
+                onchange="atualizarPontosTela('${membro.id}')"
+                ${dadosMembro.obra2Extra ? "checked" : ""}
+              >
+              Teve capítulo extra? (+5 cada)
+            </label>
+
+            <div id="extraBox_${membro.id}_obra2" style="display:none;">
+              <label>Quantidade de capítulos extras</label>
+              <input 
+                type="number"
+                min="1"
+                id="membro_${membro.id}_obra2ExtraQtd"
+                value="${dadosMembro.obra2ExtraQtd || 1}"
+                onchange="atualizarPontosTela('${membro.id}')"
+                oninput="atualizarPontosTela('${membro.id}')"
+              >
+            </div>
+
             <small id="aviso_${membro.id}_obra2" class="feedback-aviso"></small>
           </div>
         </div>
@@ -794,7 +846,7 @@ async function telaVerificacoes(diaSelecionado = "Segunda") {
       <div class="page-header">
         <div>
           <h2>Verificações</h2>
-          <p>Marque o resultado da leitura e a entrega dos feedbacks.</p>
+          <p>Marque o resultado da leitura, feedbacks e capítulos extras.</p>
         </div>
       </div>
 
@@ -845,7 +897,16 @@ function gerarOpcoesStatus(valorAtual) {
   `).join("");
 }
 
-function calcularPontos(obra1Status, obra1Feedback, obra2Status, obra2Feedback) {
+function calcularPontos(
+  obra1Status,
+  obra1Feedback,
+  obra1Extra,
+  obra1ExtraQtd,
+  obra2Status,
+  obra2Feedback,
+  obra2Extra,
+  obra2ExtraQtd
+) {
   let pontos = 0;
 
   const obra1Completa = statusQueCompletamLeitura.includes(obra1Status);
@@ -858,7 +919,46 @@ function calcularPontos(obra1Status, obra1Feedback, obra2Status, obra2Feedback) 
   if (obra1Status === "🌙" && obra1Feedback) pontos += 20;
   if (obra2Status === "🌙" && obra2Feedback) pontos += 20;
 
+  if (obra1Status === "🌙" && obra1Extra) {
+    pontos += Math.max(1, Number(obra1ExtraQtd || 1)) * 5;
+  }
+
+  if (obra2Status === "🌙" && obra2Extra) {
+    pontos += Math.max(1, Number(obra2ExtraQtd || 1)) * 5;
+  }
+
   return pontos;
+}
+
+function controlarExtras(membroId, obraNumero, statusObra, leituraCompleta) {
+  const extraCampo = document.getElementById(`membro_${membroId}_obra${obraNumero}Extra`);
+  const extraQtdCampo = document.getElementById(`membro_${membroId}_obra${obraNumero}ExtraQtd`);
+  const extraBox = document.getElementById(`extraBox_${membroId}_obra${obraNumero}`);
+
+  if (!extraCampo || !extraQtdCampo || !extraBox) return;
+
+  const podeTerExtra = leituraCompleta && statusObra === "🌙";
+
+  if (!podeTerExtra) {
+    extraCampo.checked = false;
+    extraCampo.disabled = true;
+    extraQtdCampo.value = 1;
+    extraBox.style.display = "none";
+    return;
+  }
+
+  extraCampo.disabled = false;
+
+  if (extraCampo.checked) {
+    extraBox.style.display = "block";
+
+    if (!extraQtdCampo.value || Number(extraQtdCampo.value) < 1) {
+      extraQtdCampo.value = 1;
+    }
+  } else {
+    extraQtdCampo.value = 1;
+    extraBox.style.display = "none";
+  }
 }
 
 function atualizarPontosTela(membroId) {
@@ -887,8 +987,8 @@ function atualizarPontosTela(membroId) {
       obra2FeedbackCampo.disabled = true;
     }
 
-    if (avisoObra1) avisoObra1.textContent = "Feedback só conta se as duas leituras do dia estiverem completas.";
-    if (avisoObra2) avisoObra2.textContent = "Feedback só conta se as duas leituras do dia estiverem completas.";
+    if (avisoObra1) avisoObra1.textContent = "Feedback e capítulos extras só contam se as duas leituras do dia estiverem completas.";
+    if (avisoObra2) avisoObra2.textContent = "Feedback e capítulos extras só contam se as duas leituras do dia estiverem completas.";
   } else {
     if (obra1FeedbackCampo) {
       if (obra1Status === "🌙") {
@@ -897,7 +997,7 @@ function atualizarPontosTela(membroId) {
       } else {
         obra1FeedbackCampo.checked = false;
         obra1FeedbackCampo.disabled = true;
-        if (avisoObra1) avisoObra1.textContent = "Não pode entregar feedback da própria obra.";
+        if (avisoObra1) avisoObra1.textContent = "Não pode entregar feedback nem capítulo extra da própria obra.";
       }
     }
 
@@ -908,15 +1008,39 @@ function atualizarPontosTela(membroId) {
       } else {
         obra2FeedbackCampo.checked = false;
         obra2FeedbackCampo.disabled = true;
-        if (avisoObra2) avisoObra2.textContent = "Não pode entregar feedback da própria obra.";
+        if (avisoObra2) avisoObra2.textContent = "Não pode entregar feedback nem capítulo extra da própria obra.";
       }
     }
   }
 
+  controlarExtras(membroId, 1, obra1Status, leituraCompleta);
+  controlarExtras(membroId, 2, obra2Status, leituraCompleta);
+
   const obra1Feedback = obra1Status === "🌙" ? obra1FeedbackCampo?.checked || false : false;
   const obra2Feedback = obra2Status === "🌙" ? obra2FeedbackCampo?.checked || false : false;
 
-  const pontos = calcularPontos(obra1Status, obra1Feedback, obra2Status, obra2Feedback);
+  const obra1ExtraCampo = document.getElementById(`membro_${membroId}_obra1Extra`);
+  const obra2ExtraCampo = document.getElementById(`membro_${membroId}_obra2Extra`);
+
+  const obra1ExtraQtdCampo = document.getElementById(`membro_${membroId}_obra1ExtraQtd`);
+  const obra2ExtraQtdCampo = document.getElementById(`membro_${membroId}_obra2ExtraQtd`);
+
+  const obra1Extra = obra1Status === "🌙" ? obra1ExtraCampo?.checked || false : false;
+  const obra2Extra = obra2Status === "🌙" ? obra2ExtraCampo?.checked || false : false;
+
+  const obra1ExtraQtd = obra1Extra ? Math.max(1, Number(obra1ExtraQtdCampo?.value || 1)) : 0;
+  const obra2ExtraQtd = obra2Extra ? Math.max(1, Number(obra2ExtraQtdCampo?.value || 1)) : 0;
+
+  const pontos = calcularPontos(
+    obra1Status,
+    obra1Feedback,
+    obra1Extra,
+    obra1ExtraQtd,
+    obra2Status,
+    obra2Feedback,
+    obra2Extra,
+    obra2ExtraQtd
+  );
 
   const campoPontos = document.getElementById(`pontos_membro_${membroId}`);
 
@@ -950,15 +1074,44 @@ async function salvarVerificacao(diaSelecionado) {
       ? document.getElementById(`membro_${membro.id}_obra2Feedback`).checked
       : false;
 
-    const pontos = calcularPontos(obra1Status, obra1Feedback, obra2Status, obra2Feedback);
+    const obra1Extra = leituraCompleta && obra1Status === "🌙"
+      ? document.getElementById(`membro_${membro.id}_obra1Extra`).checked
+      : false;
+
+    const obra2Extra = leituraCompleta && obra2Status === "🌙"
+      ? document.getElementById(`membro_${membro.id}_obra2Extra`).checked
+      : false;
+
+    const obra1ExtraQtd = obra1Extra
+      ? Math.max(1, Number(document.getElementById(`membro_${membro.id}_obra1ExtraQtd`).value || 1))
+      : 0;
+
+    const obra2ExtraQtd = obra2Extra
+      ? Math.max(1, Number(document.getElementById(`membro_${membro.id}_obra2ExtraQtd`).value || 1))
+      : 0;
+
+    const pontos = calcularPontos(
+      obra1Status,
+      obra1Feedback,
+      obra1Extra,
+      obra1ExtraQtd,
+      obra2Status,
+      obra2Feedback,
+      obra2Extra,
+      obra2ExtraQtd
+    );
 
     dados.membros[membro.id] = {
       nome: membro.nome,
       user: membro.user,
       obra1Status,
       obra1Feedback,
+      obra1Extra,
+      obra1ExtraQtd,
       obra2Status,
       obra2Feedback,
+      obra2Extra,
+      obra2ExtraQtd,
       pontos
     };
   });
@@ -1106,12 +1259,21 @@ async function telaVisualizarFicha() {
 }
 
 async function gerarFichaWhatsapp() {
-  return await montarFichaBase();
-}
-
-async function montarFichaBase() {
   const sub = getSubAtual();
 
+  if (subs[sub].modeloFicha === "chama") {
+    return await montarFichaChama();
+  }
+
+  if (subs[sub].modeloFicha === "pagina") {
+    return await montarFichaPagina();
+  }
+
+  return await montarFichaTrono();
+}
+
+async function montarFichaTrono() {
+  const sub = getSubAtual();
   const membros = await buscarMembros();
   const diasAcumulados = await contarDiasComVerificacao();
 
@@ -1122,20 +1284,7 @@ async function montarFichaBase() {
   texto += `               📜 𝐕𝐄𝐑𝐈𝐅𝐈𝐂𝐀𝐂̧𝐀̃𝐎\n`;
   texto += `━━━━━━━━━━━ ✦ ━━━━━━━━━━━\n\n`;
 
-  texto += `🌙 𝐋𝐞𝐮\n`;
-  texto += `☠ 𝐍𝐚̃𝐨 𝐥𝐞𝐮\n`;
-  texto += `💅 𝐉𝐮𝐬𝐭𝐢𝐟𝐢𝐜𝐚𝐝𝐨\n`;
-  texto += `🌼 𝐉𝐚́ 𝐡𝐚𝐯𝐢𝐚 𝐥𝐢𝐝𝐨 𝐚𝐧𝐭𝐞𝐬\n`;
-  texto += `🙍 𝐅𝐚𝐥𝐭𝐚 𝐚𝐥𝐠𝐨 (𝐜𝐨𝐦𝐞𝐧𝐭𝐚́𝐫𝐢𝐨 𝐨𝐮 𝐯𝐨𝐭𝐨)\n`;
-  texto += `✨ 𝐎𝐛𝐫𝐚 𝐝𝐨 𝐝𝐢𝐚\n`;
-  texto += `⏳ 𝐒𝐞𝐦 𝐨𝐛𝐫𝐚\n`;
-  texto += `⚰ 𝐒𝐚𝐢𝐮 𝐝𝐨 𝐠𝐫𝐮𝐩𝐨\n`;
-  texto += `🧕🏻 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐞𝐦 𝐚𝐧𝐝𝐚𝐦𝐞𝐧𝐭𝐨 𝐧𝐨 𝐦𝐨𝐦𝐞𝐧𝐭𝐨 𝐝𝐚 𝐯𝐞𝐫𝐢𝐟𝐢𝐜𝐚𝐜̧𝐚̃𝐨\n`;
-  texto += `⚠ 𝐈𝐧𝐟𝐫𝐚𝐜̧𝐚̃𝐨 𝐝𝐚𝐬 𝐫𝐞𝐠𝐫𝐚𝐬\n`;
-  texto += `🚫 𝐈𝐧𝐟𝐫𝐚𝐜̧𝐚̃𝐨 𝐧𝐨 𝐭𝐞𝐦𝐩𝐨 𝐝𝐞 𝐥𝐞𝐢𝐭𝐮𝐫𝐚\n`;
-  texto += `📲 𝐏𝐫𝐢𝐧𝐭𝐬 𝐧𝐨 𝐩𝐯\n`;
-  texto += `⛔ 𝐑𝐞𝐦𝐨𝐯𝐢𝐝𝐨 𝐩𝐨𝐫 𝐢𝐧𝐟𝐫𝐚𝐜̧𝐚̃𝐨 𝐝𝐚𝐬 𝐫𝐞𝐠𝐫𝐚𝐬\n`;
-  texto += `⏰ 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐟𝐞𝐢𝐭𝐚 𝐞𝐦 𝐭𝐞𝐦𝐩𝐨 𝐞𝐬𝐭𝐢𝐦𝐚𝐝𝐨\n\n`;
+  texto += gerarLegendaTrono();
 
   texto += `━━━━━━━━━━━ ✦ ━━━━━━━━━━━\n`;
   texto += `           📖 𝐅𝐈𝐂𝐇𝐀 𝐃𝐎 𝐋𝐄𝐈𝐓𝐎𝐑\n`;
@@ -1165,14 +1314,159 @@ async function montarFichaBase() {
   }
 
   texto += `━━━━━━━━━━━ ✦ ━━━━━━━━━━━\n\n`;
+  texto += gerarMensagemAtencao();
 
-  texto += `‎🚨𝐀𝐓𝐄𝐍𝐂̧𝐀̃𝐎🚨\n`;
-  texto += `‎\n`;
-  texto += `‎𝐏𝐚𝐫𝐚 𝐠𝐚𝐫𝐚𝐧𝐭𝐢𝐫 𝐚 𝐨𝐫𝐠𝐚𝐧𝐢𝐳𝐚𝐜̧𝐚̃𝐨 𝐞 𝐞𝐟𝐢𝐜𝐢𝐞̂𝐧𝐜𝐢𝐚 𝐝𝐨 𝐠𝐫𝐮𝐩𝐨, 𝐞́ 𝐢𝐦𝐩𝐨𝐫𝐭𝐚𝐧𝐭𝐞 𝐪𝐮𝐞 𝐭𝐨𝐝𝐨𝐬 𝐞𝐬𝐭𝐞𝐣𝐚𝐦 𝐞𝐦 𝐝𝐢𝐚 𝐜𝐨𝐦 𝐬𝐮𝐚𝐬 𝐥𝐞𝐢𝐭𝐮𝐫𝐚𝐬. 𝐒𝐞 𝐯𝐨𝐜𝐞̂ 𝐟𝐢𝐜𝐨𝐮 𝐝𝐞𝐯𝐞𝐧𝐝𝐨 𝐥𝐞𝐢𝐭𝐮𝐫𝐚, 𝐩𝐨𝐫 𝐟𝐚𝐯𝐨𝐫, 𝐞𝐧𝐯𝐢𝐞 𝐨𝐬 𝐩𝐫𝐢𝐧𝐭𝐬 𝐧𝐨 𝐩𝐫𝐢𝐯𝐚𝐝𝐨 𝐩𝐚𝐫𝐚 𝐪𝐮𝐞 𝐞𝐮 𝐩𝐨𝐬𝐬𝐚 𝐚𝐭𝐮𝐚𝐥𝐢𝐳𝐚𝐫 𝐬𝐞𝐮𝐬 𝐫𝐞𝐠𝐢𝐬𝐭𝐫𝐨𝐬.\n`;
-  texto += `‎\n`;
-  texto += `‎𝐈𝐬𝐬𝐨 𝐞𝐯𝐢𝐭𝐚𝐫𝐚́ 𝐪𝐮𝐞 𝐞𝐮 𝐩𝐞𝐫𝐜𝐚 𝐭𝐞𝐦𝐩𝐨 𝐜𝐨𝐧𝐟𝐞𝐫𝐢𝐧𝐝𝐨 𝐚 𝐦𝐞𝐬𝐦𝐚 𝐜𝐨𝐢𝐬𝐚 𝐝𝐮𝐚𝐬 𝐯𝐞𝐳𝐞𝐬. 𝐀𝐥𝐞́𝐦 𝐝𝐢𝐬𝐬𝐨, 𝐬𝐞 𝐯𝐨𝐜𝐞̂ 𝐞𝐧𝐜𝐨𝐧𝐭𝐫𝐚𝐫 𝐚𝐥𝐠𝐮𝐦 𝐞𝐫𝐫𝐨 𝐧𝐚𝐬 𝐯𝐞𝐫𝐢𝐟𝐢𝐜𝐚𝐜̧𝐨̃𝐞𝐬, 𝐧𝐚̃𝐨 𝐡𝐞𝐬𝐢𝐭𝐞 𝐞𝐦 𝐦𝐞 𝐜𝐡𝐚𝐦𝐚𝐫 𝐧𝐨 𝐩𝐫𝐢𝐯𝐚𝐝𝐨. 𝐄𝐬𝐭𝐨𝐮 𝐚𝐪𝐮𝐢 𝐩𝐚𝐫𝐚 𝐚𝐣𝐮𝐝𝐚𝐫 𝐞 𝐫𝐞𝐬𝐨𝐥𝐯𝐞𝐫 𝐪𝐮𝐚𝐥𝐪𝐮𝐞𝐫 𝐩𝐫𝐨𝐛𝐥𝐞𝐦𝐚!\n`;
-  texto += `‎\n`;
-  texto += `‎😉 𝐕𝐚𝐦𝐨𝐬 𝐦𝐚𝐧𝐭𝐞𝐫 𝐨 𝐠𝐫𝐮𝐩𝐨 𝐨𝐫𝐠𝐚𝐧𝐢𝐳𝐚𝐝𝐨 𝐞 𝐟𝐨𝐜𝐚𝐝𝐨 𝐧𝐚𝐬 𝐡𝐢𝐬𝐭𝐨́𝐫𝐢𝐚𝐬 𝐢𝐧𝐜𝐫𝐢́𝐯𝐞𝐢𝐬 𝐪𝐮𝐞 𝐜𝐨𝐦𝐩𝐚𝐫𝐭𝐢𝐥𝐡𝐚𝐦𝐨𝐬! 𝐎𝐛𝐫𝐢𝐠𝐚𝐝𝐚 𝐩𝐞𝐥𝐚 𝐜𝐨𝐨𝐩𝐞𝐫𝐚𝐜̧𝐚̃𝐨! 📚👍`;
+  return texto;
+}
+
+async function montarFichaChama() {
+  const membros = await buscarMembros();
+  const diasAcumulados = await contarDiasComVerificacao();
+
+  let texto = "";
+
+  texto += `🌑👑 𝐕𝐄𝐑𝐈𝐅𝐈𝐂𝐀𝐂̧𝐎̃𝐄𝐒 👑🌑\n\n`;
+  texto += `🌜 𝐎𝐧𝐝𝐞 𝐚 𝐋𝐮𝐚 𝐢𝐥𝐮𝐦𝐢𝐧𝐚 𝐨𝐬 𝐥𝐢𝐯𝐫𝐨𝐬: 𝐋𝐮𝐧𝐚 𝐀-𝟏 🌛\n\n`;
+
+  texto += gerarLegendaChama();
+
+  for (const membro of membros) {
+    const pontosAcumulados = await calcularPontosAcumulados(membro.id);
+    const emojisObra1 = await gerarEmojisAcumulados(membro.id, "obra1Status");
+    const emojisObra2 = await gerarEmojisAcumulados(membro.id, "obra2Status");
+    const teveFeedback = await verificarFeedbackAcumulado(membro.id);
+    const feedbackTexto = teveFeedback ? "✅" : "";
+
+    texto += `_____________\n\n`;
+    texto += `📙𝐍𝐨𝐦𝐞: ${membro.nome}\n`;
+    texto += `🦐𝐔𝐬𝐞𝐫: ${membro.user}\n\n`;
+
+    texto += `🏆  semanas: 0\n`;
+    texto += `💌  Dias: ${diasAcumulados}\n`;
+    texto += `👑 Pontos: ${pontosAcumulados}\n`;
+    texto += `📈 Feedback: ${feedbackTexto}\n`;
+    texto += `LEITURA LUNAR:\n\n`;
+
+    texto += `Obra 01.: ${emojisObra1}\n`;
+    texto += `Obra 02.: ${emojisObra2}\n\n`;
+  }
+
+  texto += `—————————\n\n`;
+  texto += gerarMensagemAtencao();
+
+  return texto;
+}
+
+async function montarFichaPagina() {
+  const membros = await buscarMembros();
+  const diasAcumulados = await contarDiasComVerificacao();
+
+  let texto = "";
+
+  texto += `🧚‍♂PAGINA LIVRE 𝑨-𝟐 🧝‍♀🧌🦹‍♂🧞‍♂ VERIFICAÇÕES 🧛‍♂🧜‍♂\n\n`;
+
+  texto += gerarLegendaPagina();
+
+  for (const membro of membros) {
+    const pontosAcumulados = await calcularPontosAcumulados(membro.id);
+    const emojisObra1 = await gerarEmojisAcumulados(membro.id, "obra1Status");
+    const emojisObra2 = await gerarEmojisAcumulados(membro.id, "obra2Status");
+    const teveFeedback = await verificarFeedbackAcumulado(membro.id);
+    const feedbackTexto = teveFeedback ? "✅️" : "";
+
+    texto += `_______________\n\n`;
+    texto += `🧙‍♂🧚‍♂ PAGINA LIVRE 𝑨-𝟐 🧛‍♂🧜‍♂\n\n`;
+
+    texto += `🧝‍♀ Nome: ${membro.nome}\n`;
+    texto += `🦇 User: ${membro.user}\n\n`;
+
+    texto += `🌎 Semanas: 0\n`;
+    texto += `🗺 Dias: ${diasAcumulados}\n`;
+    texto += `🧭 Pontos: ${pontosAcumulados}\n`;
+    texto += `🏗 Feedback: ${feedbackTexto}\n`;
+    texto += `🌌 Leitura Lunar: \n\n`;
+
+    texto += `🏘 Obra 01: ${emojisObra1}\n`;
+    texto += `🏘 Obra 02: ${emojisObra2}\n\n`;
+  }
+
+  texto += `________________________\n\n`;
+  texto += gerarMensagemAtencao();
+
+  return texto;
+}
+
+function gerarLegendaTrono() {
+  let texto = "";
+
+  texto += `🌙 𝐋𝐞𝐮\n`;
+  texto += `☠ 𝐍𝐚̃𝐨 𝐥𝐞𝐮\n`;
+  texto += `💅 𝐉𝐮𝐬𝐭𝐢𝐟𝐢𝐜𝐚𝐝𝐨\n`;
+  texto += `🌼 𝐉𝐚́ 𝐡𝐚𝐯𝐢𝐚 𝐥𝐢𝐝𝐨 𝐚𝐧𝐭𝐞𝐬\n`;
+  texto += `🙍 𝐅𝐚𝐥𝐭𝐚 𝐚𝐥𝐠𝐨 (𝐜𝐨𝐦𝐞𝐧𝐭𝐚́𝐫𝐢𝐨 𝐨𝐮 𝐯𝐨𝐭𝐨)\n`;
+  texto += `✨ 𝐎𝐛𝐫𝐚 𝐝𝐨 𝐝𝐢𝐚\n`;
+  texto += `⏳ 𝐒𝐞𝐦 𝐨𝐛𝐫𝐚\n`;
+  texto += `⚰ 𝐒𝐚𝐢𝐮 𝐝𝐨 𝐠𝐫𝐮𝐩𝐨\n`;
+  texto += `🧕🏻 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐞𝐦 𝐚𝐧𝐝𝐚𝐦𝐞𝐧𝐭𝐨 𝐧𝐨 𝐦𝐨𝐦𝐞𝐧𝐭𝐨 𝐝𝐚 𝐯𝐞𝐫𝐢𝐟𝐢𝐜𝐚𝐜̧𝐚̃𝐨\n`;
+  texto += `⚠ 𝐈𝐧𝐟𝐫𝐚𝐜̧𝐚̃𝐨 𝐝𝐚𝐬 𝐫𝐞𝐠𝐫𝐚𝐬\n`;
+  texto += `🚫 𝐈𝐧𝐟𝐫𝐚𝐜̧𝐚̃𝐨 𝐧𝐨 𝐭𝐞𝐦𝐩𝐨 𝐝𝐞 𝐥𝐞𝐢𝐭𝐮𝐫𝐚\n`;
+  texto += `📲 𝐏𝐫𝐢𝐧𝐭𝐬 𝐧𝐨 𝐩𝐯\n`;
+  texto += `⛔ 𝐑𝐞𝐦𝐨𝐯𝐢𝐝𝐨 𝐩𝐨𝐫 𝐢𝐧𝐟𝐫𝐚𝐜̧𝐚̃𝐨 𝐝𝐚𝐬 𝐫𝐞𝐠𝐫𝐚𝐬\n`;
+  texto += `⏰ 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐟𝐞𝐢𝐭𝐚 𝐞𝐦 𝐭𝐞𝐦𝐩𝐨 𝐞𝐬𝐭𝐢𝐦𝐚𝐝𝐨\n\n`;
+
+  return texto;
+}
+
+function gerarLegendaChama() {
+  let texto = "";
+
+  texto += `🌙𝐋𝐞𝐮\n`;
+  texto += `☠𝐍𝐚̃𝐨 𝐥𝐞𝐮\n`;
+  texto += `💅 𝐉𝐮𝐬𝐭𝐢𝐟𝐢𝐜𝐚𝐝𝐨\n`;
+  texto += `🌼 𝐉𝐚́ 𝐡𝐚𝐯𝐢𝐚 𝐥𝐢𝐝𝐨 𝐚𝐧𝐭𝐞𝐬\n`;
+  texto += `🙍 𝐅𝐚𝐥𝐭𝐚 𝐚𝐥𝐠𝐨 (𝐜𝐨𝐦𝐞𝐧𝐭𝐚́𝐫𝐢𝐨 𝐨𝐮 𝐯𝐨𝐭𝐨)\n`;
+  texto += `✨𝐎𝐛𝐫𝐚 𝐝𝐨 𝐝𝐢𝐚\n`;
+  texto += `⏳ 𝐒𝐞𝐦 𝐨𝐛𝐫𝐚\n`;
+  texto += `⚰ 𝐒𝐚𝐢𝐮 𝐝𝐨 𝐠𝐫𝐮𝐩𝐨\n`;
+  texto += `🧕🏻 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐞𝐦 𝐚𝐧𝐝𝐚𝐦𝐞𝐧𝐭𝐨 𝐧𝐨 𝐦𝐨𝐦𝐞𝐧𝐭𝐨 𝐝𝐚 𝐯𝐞𝐫𝐢𝐟𝐢𝐜𝐚𝐜̧𝐚̃𝐨\n`;
+  texto += `⚠ 𝐈𝐧𝐟𝐫𝐚𝐜̧𝐚̃𝐨 𝐝𝐚𝐬 𝐫𝐞𝐠𝐫𝐚𝐬\n`;
+  texto += `📲 𝐏𝐫𝐢𝐧𝐭𝐬 𝐧𝐨 𝐩𝐯\n`;
+  texto += `⛔ 𝐑𝐞𝐦𝐨𝐯𝐢𝐝𝐨 𝐩𝐨𝐫 𝐢𝐧𝐟𝐫𝐚𝐜̧𝐚̃𝐨 𝐝𝐚𝐬 𝐫𝐞𝐠𝐫𝐚𝐬\n`;
+  texto += `⏰Leitura feita em tempo estimado\n\n\n`;
+  texto += `_____________\n\n`;
+
+  return texto;
+}
+
+function gerarLegendaPagina() {
+  let texto = "";
+
+  texto += `🌙 𝐋𝐞𝐮\n`;
+  texto += `☠ 𝐍𝐚̃𝐨 𝐥𝐞𝐮\n`;
+  texto += `💅 𝐉𝐮𝐬𝐭𝐢𝐟𝐢𝐜𝐚𝐝𝐨\n`;
+  texto += `🌼 𝐉𝐚́ 𝐡𝐚𝐯𝐢𝐚 𝐥𝐢𝐝𝐨 𝐚𝐧𝐭𝐞𝐬\n`;
+  texto += `🙍 𝐅𝐚𝐥𝐭𝐚 𝐚𝐥𝐠𝐨 (𝐜𝐨𝐦𝐞𝐧𝐭𝐚́𝐫𝐢𝐨 𝐨𝐮 𝐯𝐨𝐭𝐨)\n`;
+  texto += `✨𝐎𝐛𝐫𝐚 𝐝𝐨 𝐝𝐢𝐚\n`;
+  texto += `⏳ 𝐒𝐞𝐦 𝐨𝐛𝐫𝐚\n`;
+  texto += `⚰ 𝐒𝐚𝐢𝐮 𝐝𝐨 𝐠𝐫𝐮𝐩𝐨\n`;
+  texto += `🧕🏻 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐞𝐦 𝐚𝐧𝐝𝐚𝐦𝐞𝐧𝐭𝐨 𝐧𝐨 𝐦𝐨𝐦𝐞𝐧𝐭𝐨 𝐝𝐚 𝐯𝐞𝐫𝐢𝐟𝐢𝐜𝐚𝐜̧𝐚̃𝐨\n`;
+  texto += `⚠ 𝐈𝐧𝐟𝐫𝐚𝐜̧𝐚̃𝐨 𝐝𝐚𝐬 𝐫𝐞𝐠𝐫𝐚𝐬\n`;
+  texto += `🚫 𝐈𝐧𝐟𝐫𝐚𝐜̧𝐚̃𝐨 𝐧𝐨 𝐭𝐞𝐦𝐩𝐨 𝐝𝐞 𝐥𝐞𝐢𝐭𝐮𝐫𝐚 (𝐭𝐞𝐦𝐩𝐨 𝐢𝐧𝐟𝐞𝐫𝐢𝐨𝐫)\n`;
+  texto += `📲 𝐏𝐫𝐢𝐧𝐭𝐬 𝐧𝐨 𝐩𝐯\n`;
+  texto += `⛔ 𝐑𝐞𝐦𝐨𝐯𝐢𝐝𝐨 𝐩𝐨𝐫 𝐢𝐧𝐟𝐫𝐚𝐜̧𝐚̃𝐨 𝐝𝐚𝐬 𝐫𝐞𝐠𝐫𝐚𝐬\n`;
+  texto += `⏰ *Leitura não feita em tempo estimado*\n\n`;
+  texto += `_______________\n\n`;
+
+  return texto;
+}
+
+function gerarMensagemAtencao() {
+  let texto = "";
+
+  texto += `🚨𝐀𝐓𝐄𝐍𝐂̧𝐀̃𝐎🚨\n\n`;
+  texto += `𝐏𝐚𝐫𝐚 𝐠𝐚𝐫𝐚𝐧𝐭𝐢𝐫 𝐚 𝐨𝐫𝐠𝐚𝐧𝐢𝐳𝐚𝐜̧𝐚̃𝐨 𝐞 𝐞𝐟𝐢𝐜𝐢𝐞̂𝐧𝐜𝐢𝐚 𝐝𝐨 𝐠𝐫𝐮𝐩𝐨, 𝐞́ 𝐢𝐦𝐩𝐨𝐫𝐭𝐚𝐧𝐭𝐞 𝐪𝐮𝐞 𝐭𝐨𝐝𝐨𝐬 𝐞𝐬𝐭𝐞𝐣𝐚𝐦 𝐞𝐦 𝐝𝐢𝐚 𝐜𝐨𝐦 𝐬𝐮𝐚𝐬 𝐥𝐞𝐢𝐭𝐮𝐫𝐚𝐬. 𝐒𝐞 𝐯𝐨𝐜𝐞̂ 𝐟𝐢𝐜𝐨𝐮 𝐝𝐞𝐯𝐞𝐧𝐝𝐨 𝐥𝐞𝐢𝐭𝐮𝐫𝐚, 𝐩𝐨𝐫 𝐟𝐚𝐯𝐨𝐫, 𝐞𝐧𝐯𝐢𝐞 𝐨𝐬 𝐩𝐫𝐢𝐧𝐭𝐬 𝐧𝐨 𝐩𝐫𝐢𝐯𝐚𝐝𝐨 𝐩𝐚𝐫𝐚 𝐪𝐮𝐞 𝐞𝐮 𝐩𝐨𝐬𝐬𝐚 𝐚𝐭𝐮𝐚𝐥𝐢𝐳𝐚𝐫 𝐬𝐞𝐮𝐬 𝐫𝐞𝐠𝐢𝐬𝐭𝐫𝐨𝐬.\n\n`;
+  texto += `𝐈𝐬𝐬𝐨 𝐞𝐯𝐢𝐭𝐚𝐫𝐚́ 𝐪𝐮𝐞 𝐞𝐮 𝐩𝐞𝐫𝐜𝐚 𝐭𝐞𝐦𝐩𝐨 𝐜𝐨𝐧𝐟𝐞𝐫𝐢𝐧𝐝𝐨 𝐚 𝐦𝐞𝐬𝐦𝐚 𝐜𝐨𝐢𝐬𝐚 𝐝𝐮𝐚𝐬 𝐯𝐞𝐳𝐞𝐬. 𝐀𝐥𝐞́𝐦 𝐝𝐢𝐬𝐬𝐨, 𝐬𝐞 𝐯𝐨𝐜𝐞̂ 𝐞𝐧𝐜𝐨𝐧𝐭𝐫𝐚𝐫 𝐚𝐥𝐠𝐮𝐦 𝐞𝐫𝐫𝐨 𝐧𝐚𝐬 𝐯𝐞𝐫𝐢𝐟𝐢𝐜𝐚𝐜̧𝐨̃𝐞𝐬, 𝐧𝐚̃𝐨 𝐡𝐞𝐬𝐢𝐭𝐞 𝐞𝐦 𝐦𝐞 𝐜𝐡𝐚𝐦𝐚𝐫 𝐧𝐨 𝐩𝐫𝐢𝐯𝐚𝐝𝐨. 𝐄𝐬𝐭𝐨𝐮 𝐚𝐪𝐮𝐢 𝐩𝐚𝐫𝐚 𝐚𝐣𝐮𝐝𝐚𝐫 𝐞 𝐫𝐞𝐬𝐨𝐥𝐯𝐞𝐫 𝐪𝐮𝐚𝐥𝐪𝐮𝐞𝐫 𝐩𝐫𝐨𝐛𝐥𝐞𝐦𝐚!\n\n`;
+  texto += `😉 𝐕𝐚𝐦𝐨𝐬 𝐦𝐚𝐧𝐭𝐞𝐫 𝐨 𝐠𝐫𝐮𝐩𝐨 𝐨𝐫𝐠𝐚𝐧𝐢𝐳𝐚𝐝𝐨 𝐞 𝐟𝐨𝐜𝐚𝐝𝐨 𝐧𝐚𝐬 𝐡𝐢𝐬𝐭𝐨́𝐫𝐢𝐚𝐬 𝐢𝐧𝐜𝐫𝐢́𝐯𝐞𝐢𝐬 𝐪𝐮𝐞 𝐜𝐨𝐦𝐩𝐚𝐫𝐭𝐢𝐥𝐡𝐚𝐦𝐨𝐬! 𝐎𝐛𝐫𝐢𝐠𝐚𝐝𝐚 𝐩𝐞𝐥𝐚 𝐜𝐨𝐨𝐩𝐞𝐫𝐚𝐜̧𝐚̃𝐨! 📚`;
 
   return texto;
 }
