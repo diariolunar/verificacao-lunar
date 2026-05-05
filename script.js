@@ -4,6 +4,8 @@ const subs = {
   A2: { nome: "📖 Página Livre", cor: "#0ea5e9" }
 };
 
+const diasSemana = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
+
 const app = document.getElementById("app");
 
 async function carregarComponentes() {
@@ -39,7 +41,7 @@ function telaLogin() {
   `;
 }
 
-// ESCOLHER SUB
+// SUBS
 function telaSubs() {
   app.innerHTML = `
     <div class="login-box">
@@ -64,6 +66,7 @@ function telaDashboard() {
 
       <button onclick="telaMembros()">👥 Membros</button>
       <button onclick="telaObras()">📚 Obras</button>
+      <button onclick="telaGrade()">📅 Grade Semanal</button>
       <button onclick="alert('Em breve')">📜 Verificações</button>
 
       <br><br>
@@ -97,11 +100,10 @@ function telaMembros() {
 
       <button onclick="adicionarMembro()">Adicionar</button>
 
-      <ul style="text-align:left; margin-top:10px;">
+      <ul style="text-align:left;">
         ${lista}
       </ul>
 
-      <br>
       <button onclick="telaDashboard()">⬅ Voltar</button>
     </div>
   `;
@@ -111,31 +113,23 @@ function telaMembros() {
 
 function adicionarMembro() {
   const sub = localStorage.getItem("sub");
-
   const nome = document.getElementById("nome").value;
   const user = document.getElementById("user").value;
 
-  if (!nome || !user) {
-    alert("Preencha tudo");
-    return;
-  }
+  if (!nome || !user) return alert("Preencha tudo");
 
   let membros = JSON.parse(localStorage.getItem("membros_" + sub)) || [];
-
   membros.push({ nome, user });
 
   localStorage.setItem("membros_" + sub, JSON.stringify(membros));
-
   telaMembros();
 }
 
-function removerMembro(index) {
+function removerMembro(i) {
   const sub = localStorage.getItem("sub");
-
   let membros = JSON.parse(localStorage.getItem("membros_" + sub)) || [];
 
-  membros.splice(index, 1);
-
+  membros.splice(i, 1);
   localStorage.setItem("membros_" + sub, JSON.stringify(membros));
 
   telaMembros();
@@ -147,41 +141,31 @@ function telaObras() {
   const membros = JSON.parse(localStorage.getItem("membros_" + sub)) || [];
   const obras = JSON.parse(localStorage.getItem("obras_" + sub)) || [];
 
-  let opcoesMembros = membros.map((m, i) => `
-    <option value="${i}">${m.nome} (${m.user})</option>
+  let opcoes = membros.map((m, i) => `
+    <option value="${i}">${m.nome}</option>
   `).join("");
 
-  let listaObras = obras.map((obra, i) => {
-    const membro = membros[obra.membroIndex];
-
-    return `
-      <li>
-        <strong>${obra.titulo}</strong><br>
-        Responsável: ${membro ? membro.nome : "Membro removido"}
-        <button onclick="removerObra(${i})">❌</button>
-      </li>
-      <br>
-    `;
-  }).join("");
+  let lista = obras.map((o, i) => `
+    <li>
+      ${o.titulo} (${membros[o.membroIndex]?.nome})
+      <button onclick="removerObra(${i})">❌</button>
+    </li>
+  `).join("");
 
   app.innerHTML = `
     <div class="login-box">
       <h2>Obras</h2>
 
-      <input id="tituloObra" placeholder="Título da obra">
-
+      <input id="tituloObra" placeholder="Título">
       <select id="membroObra">
-        <option value="">Selecione o membro</option>
-        ${opcoesMembros}
+        <option value="">Selecione</option>
+        ${opcoes}
       </select>
 
-      <button onclick="adicionarObra()">Adicionar Obra</button>
+      <button onclick="adicionarObra()">Adicionar</button>
 
-      <ul style="text-align:left; margin-top:10px;">
-        ${listaObras}
-      </ul>
+      <ul>${lista}</ul>
 
-      <br>
       <button onclick="telaDashboard()">⬅ Voltar</button>
     </div>
   `;
@@ -191,37 +175,91 @@ function telaObras() {
 
 function adicionarObra() {
   const sub = localStorage.getItem("sub");
-
   const titulo = document.getElementById("tituloObra").value;
   const membroIndex = document.getElementById("membroObra").value;
 
-  if (!titulo || membroIndex === "") {
-    alert("Preencha o título e selecione o membro.");
-    return;
-  }
+  if (!titulo || membroIndex === "") return alert("Preencha tudo");
 
   let obras = JSON.parse(localStorage.getItem("obras_" + sub)) || [];
+  obras.push({ titulo, membroIndex: Number(membroIndex) });
 
-  obras.push({
-    titulo,
-    membroIndex: Number(membroIndex)
-  });
+  localStorage.setItem("obras_" + sub, JSON.stringify(obras));
+  telaObras();
+}
 
+function removerObra(i) {
+  const sub = localStorage.getItem("sub");
+  let obras = JSON.parse(localStorage.getItem("obras_" + sub)) || [];
+
+  obras.splice(i, 1);
   localStorage.setItem("obras_" + sub, JSON.stringify(obras));
 
   telaObras();
 }
 
-function removerObra(index) {
+// 📅 GRADE SEMANAL
+function telaGrade() {
   const sub = localStorage.getItem("sub");
+  const obras = JSON.parse(localStorage.getItem("obras_" + sub)) || [];
+  const grade = JSON.parse(localStorage.getItem("grade_" + sub)) || {};
 
-  let obras = JSON.parse(localStorage.getItem("obras_" + sub)) || [];
+  let html = diasSemana.map(dia => {
+    let selecionadas = grade[dia] || [];
 
-  obras.splice(index, 1);
+    let opcoes = obras.map((o, i) => {
+      const checked = selecionadas.includes(i) ? "checked" : "";
+      return `
+        <label>
+          <input type="checkbox" value="${i}" ${checked}>
+          ${o.titulo}
+        </label><br>
+      `;
+    }).join("");
 
-  localStorage.setItem("obras_" + sub, JSON.stringify(obras));
+    return `
+      <div style="margin-bottom:10px;">
+        <strong>${dia}</strong><br>
+        ${opcoes}
+      </div>
+    `;
+  }).join("");
 
-  telaObras();
+  app.innerHTML = `
+    <div class="login-box" style="max-height:80vh; overflow:auto;">
+      <h2>Grade Semanal</h2>
+
+      ${html}
+
+      <button onclick="salvarGrade()">Salvar Grade</button>
+
+      <br><br>
+      <button onclick="telaDashboard()">⬅ Voltar</button>
+    </div>
+  `;
+
+  aplicarTema();
+}
+
+function salvarGrade() {
+  const sub = localStorage.getItem("sub");
+  let novaGrade = {};
+
+  diasSemana.forEach(dia => {
+    const checkboxes = [...document.querySelectorAll(`strong:contains('${dia}')`)];
+  });
+
+  const blocos = document.querySelectorAll(".login-box div");
+
+  blocos.forEach((bloco, index) => {
+    const dia = diasSemana[index];
+    const checks = bloco.querySelectorAll("input:checked");
+
+    novaGrade[dia] = [...checks].map(c => Number(c.value));
+  });
+
+  localStorage.setItem("grade_" + sub, JSON.stringify(novaGrade));
+
+  alert("Grade salva!");
 }
 
 // LOGIN / CONTROLE
@@ -229,10 +267,7 @@ function login() {
   const email = document.getElementById("email").value;
   const senha = document.getElementById("senha").value;
 
-  if (!email || !senha) {
-    alert("Preencha os campos");
-    return;
-  }
+  if (!email || !senha) return alert("Preencha tudo");
 
   localStorage.setItem("logado", "true");
   location.reload();
