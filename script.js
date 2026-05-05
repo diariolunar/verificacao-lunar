@@ -27,16 +27,20 @@ async function carregarComponentes() {
 
 function iniciarApp() {
   const usuarioLogado = localStorage.getItem("logado");
+  const subSelecionado = localStorage.getItem("sub");
 
-  if (usuarioLogado === "true") {
+  if (!usuarioLogado) {
+    telaLogin();
+  } else if (!subSelecionado) {
     telaSubs();
   } else {
-    telaLogin();
+    telaDashboard();
   }
 
   aplicarTema();
 }
 
+// 🧱 LOGIN
 function telaLogin() {
   app.innerHTML = `
     <div class="login-box">
@@ -51,6 +55,7 @@ function telaLogin() {
   `;
 }
 
+// 🌙 ESCOLHER SUB
 function telaSubs() {
   app.innerHTML = `
     <div class="login-box">
@@ -65,6 +70,29 @@ function telaSubs() {
   `;
 }
 
+// 🚀 DASHBOARD
+function telaDashboard() {
+  const sub = localStorage.getItem("sub");
+
+  app.innerHTML = `
+    <div class="login-box">
+      <h2>Dashboard do Sub</h2>
+
+      <p><strong>Sub atual:</strong> ${subs[sub].nome}</p>
+
+      <button onclick="alert('Membros em breve')">👥 Membros</button>
+      <button onclick="alert('Obras em breve')">📚 Obras</button>
+      <button onclick="alert('Verificações em breve')">📜 Verificações</button>
+
+      <br><br>
+
+      <button onclick="trocarSub()">🔁 Trocar Sub</button>
+      <button onclick="logout()">Sair</button>
+    </div>
+  `;
+}
+
+// 🔓 LOGIN
 function login() {
   const email = document.getElementById("email").value;
   const senha = document.getElementById("senha").value;
@@ -78,33 +106,38 @@ function login() {
   location.reload();
 }
 
+// 🔒 LOGOUT
 function logout() {
-  localStorage.removeItem("logado");
+  localStorage.clear();
+  location.reload();
+}
+
+// 🔁 TROCAR SUB
+function trocarSub() {
   localStorage.removeItem("sub");
   location.reload();
 }
 
+// 🎯 ESCOLHER SUB
 function selecionarSub(sub) {
   localStorage.setItem("sub", sub);
-  aplicarTema();
-  alert("Sub selecionado: " + subs[sub].nome);
+  location.reload();
 }
 
+// 🎨 TEMA
 function aplicarTema() {
   const subSelecionado = localStorage.getItem("sub");
   const titulo = document.getElementById("titulo-sub");
 
-  if (!subSelecionado || !subs[subSelecionado] || !titulo) {
-    return;
-  }
+  if (!subSelecionado || !subs[subSelecionado] || !titulo) return;
 
   const tema = subs[subSelecionado];
 
   titulo.textContent = tema.nome;
   document.querySelector("header").style.borderBottomColor = tema.cor;
 
-  document.querySelectorAll("button").forEach(botao => {
-    botao.style.background = tema.cor;
+  document.querySelectorAll("button").forEach(btn => {
+    btn.style.background = tema.cor;
   });
 }
 
