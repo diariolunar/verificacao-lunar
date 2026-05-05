@@ -27,6 +27,7 @@ function iniciarApp() {
   aplicarTema();
 }
 
+// LOGIN
 function telaLogin() {
   app.innerHTML = `
     <div class="login-box">
@@ -38,6 +39,7 @@ function telaLogin() {
   `;
 }
 
+// ESCOLHER SUB
 function telaSubs() {
   app.innerHTML = `
     <div class="login-box">
@@ -52,6 +54,7 @@ function telaSubs() {
   `;
 }
 
+// DASHBOARD
 function telaDashboard() {
   const sub = localStorage.getItem("sub");
 
@@ -73,6 +76,7 @@ function telaDashboard() {
   aplicarTema();
 }
 
+// MEMBROS
 function telaMembros() {
   const sub = localStorage.getItem("sub");
   const membros = JSON.parse(localStorage.getItem("membros_" + sub)) || [];
@@ -107,6 +111,7 @@ function telaMembros() {
 
 function adicionarMembro() {
   const sub = localStorage.getItem("sub");
+
   const nome = document.getElementById("nome").value;
   const user = document.getElementById("user").value;
 
@@ -116,22 +121,27 @@ function adicionarMembro() {
   }
 
   let membros = JSON.parse(localStorage.getItem("membros_" + sub)) || [];
+
   membros.push({ nome, user });
 
   localStorage.setItem("membros_" + sub, JSON.stringify(membros));
+
   telaMembros();
 }
 
 function removerMembro(index) {
   const sub = localStorage.getItem("sub");
+
   let membros = JSON.parse(localStorage.getItem("membros_" + sub)) || [];
 
   membros.splice(index, 1);
 
   localStorage.setItem("membros_" + sub, JSON.stringify(membros));
+
   telaMembros();
 }
 
+// OBRAS
 function telaObras() {
   const sub = localStorage.getItem("sub");
   const membros = JSON.parse(localStorage.getItem("membros_" + sub)) || [];
@@ -147,8 +157,7 @@ function telaObras() {
     return `
       <li>
         <strong>${obra.titulo}</strong><br>
-        Responsável: ${membro ? membro.nome : "Membro removido"}<br>
-        Status: ${obra.status}
+        Responsável: ${membro ? membro.nome : "Membro removido"}
         <button onclick="removerObra(${i})">❌</button>
       </li>
       <br>
@@ -164,13 +173,6 @@ function telaObras() {
       <select id="membroObra">
         <option value="">Selecione o membro</option>
         ${opcoesMembros}
-      </select>
-
-      <select id="statusObra">
-        <option value="Ativa">Ativa</option>
-        <option value="Sem obra">Sem obra</option>
-        <option value="Pausada">Pausada</option>
-        <option value="Finalizada">Finalizada</option>
       </select>
 
       <button onclick="adicionarObra()">Adicionar Obra</button>
@@ -192,7 +194,6 @@ function adicionarObra() {
 
   const titulo = document.getElementById("tituloObra").value;
   const membroIndex = document.getElementById("membroObra").value;
-  const status = document.getElementById("statusObra").value;
 
   if (!titulo || membroIndex === "") {
     alert("Preencha o título e selecione o membro.");
@@ -203,8 +204,7 @@ function adicionarObra() {
 
   obras.push({
     titulo,
-    membroIndex: Number(membroIndex),
-    status
+    membroIndex: Number(membroIndex)
   });
 
   localStorage.setItem("obras_" + sub, JSON.stringify(obras));
@@ -214,6 +214,7 @@ function adicionarObra() {
 
 function removerObra(index) {
   const sub = localStorage.getItem("sub");
+
   let obras = JSON.parse(localStorage.getItem("obras_" + sub)) || [];
 
   obras.splice(index, 1);
@@ -223,6 +224,7 @@ function removerObra(index) {
   telaObras();
 }
 
+// LOGIN / CONTROLE
 function login() {
   const email = document.getElementById("email").value;
   const senha = document.getElementById("senha").value;
@@ -251,6 +253,7 @@ function selecionarSub(sub) {
   location.reload();
 }
 
+// TEMA
 function aplicarTema() {
   const sub = localStorage.getItem("sub");
   const titulo = document.getElementById("titulo-sub");
