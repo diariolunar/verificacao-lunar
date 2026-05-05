@@ -93,7 +93,7 @@ function telaDashboard() {
   const sub = localStorage.getItem("sub");
 
   app.innerHTML = `
-    <div class="login-box">
+    <div class="login-box dashboard-box">
       <h2>${subs[sub].nome}</h2>
       <p>Escolha uma área para gerenciar.</p>
 
@@ -642,14 +642,24 @@ function telaVerificacoes(diaSelecionado = "Segunda") {
 
     return `
       <div class="verificacao-card">
-        <div class="verificacao-membro">
-          <strong>${membro.nome}</strong>
-          <span>${membro.user}</span>
+        <div class="verificacao-topo">
+          <div>
+            <strong>${membro.nome}</strong>
+            <span>${membro.user}</span>
+          </div>
+
+          <div class="pontos-box">
+            <small>Pontos</small>
+            <strong id="pontos_membro_${index}">${dadosMembro.pontos || 0}</strong>
+          </div>
         </div>
 
         <div class="verificacao-grid">
-          <div>
-            <label>Obra 1: ${obra1 ? obra1.titulo : "Obra não encontrada"}</label>
+          <div class="obra-verificacao">
+            <h3>Obra 1</h3>
+            <p>${obra1 ? obra1.titulo : "Obra não encontrada"}</p>
+
+            <label>Status da leitura</label>
             <select id="membro_${index}_obra1Status" onchange="atualizarPontosTela(${index})">
               ${gerarOpcoesStatus(dadosMembro.obra1Status)}
             </select>
@@ -663,10 +673,15 @@ function telaVerificacoes(diaSelecionado = "Segunda") {
               >
               Feedback entregue (+20)
             </label>
+
+            <small id="aviso_${index}_obra1" class="feedback-aviso"></small>
           </div>
 
-          <div>
-            <label>Obra 2: ${obra2 ? obra2.titulo : "Obra não encontrada"}</label>
+          <div class="obra-verificacao">
+            <h3>Obra 2</h3>
+            <p>${obra2 ? obra2.titulo : "Obra não encontrada"}</p>
+
+            <label>Status da leitura</label>
             <select id="membro_${index}_obra2Status" onchange="atualizarPontosTela(${index})">
               ${gerarOpcoesStatus(dadosMembro.obra2Status)}
             </select>
@@ -680,11 +695,8 @@ function telaVerificacoes(diaSelecionado = "Segunda") {
               >
               Feedback entregue (+20)
             </label>
-          </div>
 
-          <div class="pontos-box">
-            <strong>Pontos</strong>
-            <span id="pontos_membro_${index}">${dadosMembro.pontos || 0}</span>
+            <small id="aviso_${index}_obra2" class="feedback-aviso"></small>
           </div>
         </div>
       </div>
@@ -700,16 +712,25 @@ function telaVerificacoes(diaSelecionado = "Segunda") {
         </div>
       </div>
 
-      <label>Dia da semana</label>
-      <select id="diaVerificacao" onchange="telaVerificacoes(this.value)">
-        ${diasSemana.map(dia => `
-          <option value="${dia}" ${dia === diaSelecionado ? "selected" : ""}>${dia}</option>
-        `).join("")}
-      </select>
+      <div class="controle-verificacao">
+        <label>Dia da semana</label>
+        <select id="diaVerificacao" onchange="telaVerificacoes(this.value)">
+          ${diasSemana.map(dia => `
+            <option value="${dia}" ${dia === diaSelecionado ? "selected" : ""}>${dia}</option>
+          `).join("")}
+        </select>
+      </div>
 
       <div class="resumo-obras">
-        <p><strong>Obra 1:</strong> ${obra1 ? obra1.titulo : "Obra não encontrada"}</p>
-        <p><strong>Obra 2:</strong> ${obra2 ? obra2.titulo : "Obra não encontrada"}</p>
+        <div>
+          <strong>Obra 1</strong>
+          <span>${obra1 ? obra1.titulo : "Obra não encontrada"}</span>
+        </div>
+
+        <div>
+          <strong>Obra 2</strong>
+          <span>${obra2 ? obra2.titulo : "Obra não encontrada"}</span>
+        </div>
       </div>
 
       <div class="list-area">
@@ -744,11 +765,11 @@ function calcularPontos(obra1Status, obra1Feedback, obra2Status, obra2Feedback) 
     pontos += 10;
   }
 
-  if (obra1Feedback) {
+  if (obra1Pontua && obra1Feedback) {
     pontos += 20;
   }
 
-  if (obra2Feedback) {
+  if (obra2Pontua && obra2Feedback) {
     pontos += 20;
   }
 
@@ -759,8 +780,51 @@ function atualizarPontosTela(index) {
   const obra1Status = document.getElementById(`membro_${index}_obra1Status`)?.value || "";
   const obra2Status = document.getElementById(`membro_${index}_obra2Status`)?.value || "";
 
-  const obra1Feedback = document.getElementById(`membro_${index}_obra1Feedback`)?.checked || false;
-  const obra2Feedback = document.getElementById(`membro_${index}_obra2Feedback`)?.checked || false;
+  const obra1FeedbackCampo = document.getElementById(`membro_${index}_obra1Feedback`);
+  const obra2FeedbackCampo = document.getElementById(`membro_${index}_obra2Feedback`);
+
+  const avisoObra1 = document.getElementById(`aviso_${index}_obra1`);
+  const avisoObra2 = document.getElementById(`aviso_${index}_obra2`);
+
+  const obra1Pontua = statusQuePontuamLeitura.includes(obra1Status);
+  const obra2Pontua = statusQuePontuamLeitura.includes(obra2Status);
+
+  if (obra1FeedbackCampo) {
+    if (!obra1Pontua) {
+      obra1FeedbackCampo.checked = false;
+      obra1FeedbackCampo.disabled = true;
+
+      if (avisoObra1) {
+        avisoObra1.textContent = "Feedback só pontua se a obra tiver sido lida.";
+      }
+    } else {
+      obra1FeedbackCampo.disabled = false;
+
+      if (avisoObra1) {
+        avisoObra1.textContent = "";
+      }
+    }
+  }
+
+  if (obra2FeedbackCampo) {
+    if (!obra2Pontua) {
+      obra2FeedbackCampo.checked = false;
+      obra2FeedbackCampo.disabled = true;
+
+      if (avisoObra2) {
+        avisoObra2.textContent = "Feedback só pontua se a obra tiver sido lida.";
+      }
+    } else {
+      obra2FeedbackCampo.disabled = false;
+
+      if (avisoObra2) {
+        avisoObra2.textContent = "";
+      }
+    }
+  }
+
+  const obra1Feedback = obra1FeedbackCampo?.checked || false;
+  const obra2Feedback = obra2FeedbackCampo?.checked || false;
 
   const pontos = calcularPontos(obra1Status, obra1Feedback, obra2Status, obra2Feedback);
 
@@ -783,8 +847,16 @@ function salvarVerificacao(diaSelecionado) {
     const obra1Status = document.getElementById(`membro_${index}_obra1Status`).value;
     const obra2Status = document.getElementById(`membro_${index}_obra2Status`).value;
 
-    const obra1Feedback = document.getElementById(`membro_${index}_obra1Feedback`).checked;
-    const obra2Feedback = document.getElementById(`membro_${index}_obra2Feedback`).checked;
+    const obra1Pontua = statusQuePontuamLeitura.includes(obra1Status);
+    const obra2Pontua = statusQuePontuamLeitura.includes(obra2Status);
+
+    const obra1Feedback = obra1Pontua
+      ? document.getElementById(`membro_${index}_obra1Feedback`).checked
+      : false;
+
+    const obra2Feedback = obra2Pontua
+      ? document.getElementById(`membro_${index}_obra2Feedback`).checked
+      : false;
 
     const pontos = calcularPontos(obra1Status, obra1Feedback, obra2Status, obra2Feedback);
 
