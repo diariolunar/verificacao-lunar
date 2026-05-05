@@ -24,7 +24,7 @@ const statusLeitura = [
   { emoji: "⏰", texto: "Leitura feita em tempo estimado" }
 ];
 
-const statusQuePontuamLeitura = ["🌙", "✨", "🌼", "⏰"];
+const statusQueCompletamLeitura = ["🌙", "✨"];
 
 const app = document.getElementById("app");
 
@@ -496,9 +496,6 @@ function telaGrade() {
   `).join("");
 
   const linhas = diasSemana.map(dia => {
-    const obra1 = grade[dia]?.obra1 ?? "";
-    const obra2 = grade[dia]?.obra2 ?? "";
-
     return `
       <div class="linha-grade">
         <label class="dia-grade">${dia}</label>
@@ -758,18 +755,20 @@ function gerarOpcoesStatus(valorAtual) {
 function calcularPontos(obra1Status, obra1Feedback, obra2Status, obra2Feedback) {
   let pontos = 0;
 
-  const obra1Pontua = statusQuePontuamLeitura.includes(obra1Status);
-  const obra2Pontua = statusQuePontuamLeitura.includes(obra2Status);
+  const obra1Completa = statusQueCompletamLeitura.includes(obra1Status);
+  const obra2Completa = statusQueCompletamLeitura.includes(obra2Status);
 
-  if (obra1Pontua && obra2Pontua) {
-    pontos += 10;
+  if (!obra1Completa || !obra2Completa) {
+    return 0;
   }
 
-  if (obra1Pontua && obra1Feedback) {
+  pontos += 10;
+
+  if (obra1Status === "🌙" && obra1Feedback) {
     pontos += 20;
   }
 
-  if (obra2Pontua && obra2Feedback) {
+  if (obra2Status === "🌙" && obra2Feedback) {
     pontos += 20;
   }
 
@@ -786,45 +785,67 @@ function atualizarPontosTela(index) {
   const avisoObra1 = document.getElementById(`aviso_${index}_obra1`);
   const avisoObra2 = document.getElementById(`aviso_${index}_obra2`);
 
-  const obra1Pontua = statusQuePontuamLeitura.includes(obra1Status);
-  const obra2Pontua = statusQuePontuamLeitura.includes(obra2Status);
+  const obra1Completa = statusQueCompletamLeitura.includes(obra1Status);
+  const obra2Completa = statusQueCompletamLeitura.includes(obra2Status);
 
-  if (obra1FeedbackCampo) {
-    if (!obra1Pontua) {
+  const leituraCompleta = obra1Completa && obra2Completa;
+
+  if (!leituraCompleta) {
+    if (obra1FeedbackCampo) {
       obra1FeedbackCampo.checked = false;
       obra1FeedbackCampo.disabled = true;
-
-      if (avisoObra1) {
-        avisoObra1.textContent = "Feedback só pontua se a obra tiver sido lida.";
-      }
-    } else {
-      obra1FeedbackCampo.disabled = false;
-
-      if (avisoObra1) {
-        avisoObra1.textContent = "";
-      }
     }
-  }
 
-  if (obra2FeedbackCampo) {
-    if (!obra2Pontua) {
+    if (obra2FeedbackCampo) {
       obra2FeedbackCampo.checked = false;
       obra2FeedbackCampo.disabled = true;
+    }
 
-      if (avisoObra2) {
-        avisoObra2.textContent = "Feedback só pontua se a obra tiver sido lida.";
+    if (avisoObra1) {
+      avisoObra1.textContent = "Feedback só conta se as duas leituras do dia estiverem completas.";
+    }
+
+    if (avisoObra2) {
+      avisoObra2.textContent = "Feedback só conta se as duas leituras do dia estiverem completas.";
+    }
+  } else {
+    if (obra1FeedbackCampo) {
+      if (obra1Status === "🌙") {
+        obra1FeedbackCampo.disabled = false;
+
+        if (avisoObra1) {
+          avisoObra1.textContent = "";
+        }
+      } else {
+        obra1FeedbackCampo.checked = false;
+        obra1FeedbackCampo.disabled = true;
+
+        if (avisoObra1) {
+          avisoObra1.textContent = "Não pode entregar feedback da própria obra.";
+        }
       }
-    } else {
-      obra2FeedbackCampo.disabled = false;
+    }
 
-      if (avisoObra2) {
-        avisoObra2.textContent = "";
+    if (obra2FeedbackCampo) {
+      if (obra2Status === "🌙") {
+        obra2FeedbackCampo.disabled = false;
+
+        if (avisoObra2) {
+          avisoObra2.textContent = "";
+        }
+      } else {
+        obra2FeedbackCampo.checked = false;
+        obra2FeedbackCampo.disabled = true;
+
+        if (avisoObra2) {
+          avisoObra2.textContent = "Não pode entregar feedback da própria obra.";
+        }
       }
     }
   }
 
-  const obra1Feedback = obra1FeedbackCampo?.checked || false;
-  const obra2Feedback = obra2FeedbackCampo?.checked || false;
+  const obra1Feedback = obra1Status === "🌙" ? obra1FeedbackCampo?.checked || false : false;
+  const obra2Feedback = obra2Status === "🌙" ? obra2FeedbackCampo?.checked || false : false;
 
   const pontos = calcularPontos(obra1Status, obra1Feedback, obra2Status, obra2Feedback);
 
@@ -847,14 +868,16 @@ function salvarVerificacao(diaSelecionado) {
     const obra1Status = document.getElementById(`membro_${index}_obra1Status`).value;
     const obra2Status = document.getElementById(`membro_${index}_obra2Status`).value;
 
-    const obra1Pontua = statusQuePontuamLeitura.includes(obra1Status);
-    const obra2Pontua = statusQuePontuamLeitura.includes(obra2Status);
+    const obra1Completa = statusQueCompletamLeitura.includes(obra1Status);
+    const obra2Completa = statusQueCompletamLeitura.includes(obra2Status);
 
-    const obra1Feedback = obra1Pontua
+    const leituraCompleta = obra1Completa && obra2Completa;
+
+    const obra1Feedback = leituraCompleta && obra1Status === "🌙"
       ? document.getElementById(`membro_${index}_obra1Feedback`).checked
       : false;
 
-    const obra2Feedback = obra2Pontua
+    const obra2Feedback = leituraCompleta && obra2Status === "🌙"
       ? document.getElementById(`membro_${index}_obra2Feedback`).checked
       : false;
 
