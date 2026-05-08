@@ -19,22 +19,28 @@ import {
 
 const subs = {
   A6: {
-    nome: "A-6 👑 Trono de Papel",
+    nome: "👑 Trono de Papel",
     cor: "#16A34A",
     tituloFicha: "👑 𝐓𝐑𝐎𝐍𝐎 𝐃𝐄 𝐏𝐀𝐏𝐄𝐋 👑 𝐀-𝟔",
     modeloFicha: "trono"
   },
   A1: {
-    nome: "A-1 🔥 Chama Eterna",
+    nome: "🔥 Chama Eterna",
     cor: "#b91c1c",
     tituloFicha: "🌜 𝐎𝐧𝐝𝐞 𝐚 𝐋𝐮𝐚 𝐢𝐥𝐮𝐦𝐢𝐧𝐚 𝐨𝐬 𝐥𝐢𝐯𝐫𝐨𝐬: 𝐋𝐮𝐧𝐚 𝐀-𝟏 🌛",
     modeloFicha: "chama"
   },
   A2: {
-    nome: "A-2 📖 Página Livre",
+    nome: "📖 Página Livre",
     cor: "#0ea5e9",
     tituloFicha: "🧚‍♂PAGINA LIVRE 𝑨-𝟐 🧝‍♀🧌🦹‍♂🧞‍♂ VERIFICAÇÕES 🧛‍♂🧜‍♂",
     modeloFicha: "pagina"
+  },
+  A10: {
+    nome: "💥☄️ Quasar A-10 ☄️💫",
+    cor: "#C084FC",
+    tituloFicha: "🌑👑 𝐕𝐄𝐑𝐈𝐅𝐈𝐂𝐀ÇÕ𝐄𝐒 𝐐𝐔𝐀𝐒𝐀𝐑 𝐀-𝟏𝟎 👑🌑",
+    modeloFicha: "quasar"
   }
 };
 
@@ -73,6 +79,11 @@ async function carregarComponentes() {
 
 function getSubAtual() {
   return localStorage.getItem("sub");
+}
+
+function ehSubQuasar() {
+  const sub = getSubAtual();
+  return subs[sub]?.modeloFicha === "quasar";
 }
 
 function caminhoSub(sub) {
@@ -211,6 +222,7 @@ function telaSubs() {
       <button onclick="selecionarSub('A6')">👑 Trono de Papel</button>
       <button onclick="selecionarSub('A1')">🔥 Chama Eterna</button>
       <button onclick="selecionarSub('A2')">📖 Página Livre</button>
+      <button onclick="selecionarSub('A10')">💥☄️ Quasar A-10 ☄️💫</button>
 
       <button onclick="logout()">Sair</button>
     </div>
@@ -453,7 +465,6 @@ async function telaObras() {
 
 async function formObra(id = null) {
   const sub = getSubAtual();
-
   const membros = await buscarMembros();
 
   if (membros.length === 0) {
@@ -581,6 +592,7 @@ async function removerObra(id) {
 async function telaGrade() {
   const obras = await buscarObras();
   const grade = await buscarGrade();
+  const quasar = ehSubQuasar();
 
   if (obras.length === 0) {
     app.innerHTML = `
@@ -600,28 +612,43 @@ async function telaGrade() {
     <option value="${obra.id}">${escapeHTML(obra.titulo)}</option>
   `).join("");
 
-  const linhas = diasSemana.map(dia => `
-    <div class="linha-grade">
-      <label class="dia-grade">${dia}</label>
+  const linhas = diasSemana.map(dia => {
+    if (quasar) {
+      return `
+        <div class="linha-grade">
+          <label class="dia-grade">${dia}</label>
 
-      <select id="${dia}_obra1">
-        <option value="">Obra 1</option>
-        ${opcoesObras}
-      </select>
+          <select id="${dia}_obra1">
+            <option value="">Obra do dia</option>
+            ${opcoesObras}
+          </select>
+        </div>
+      `;
+    }
 
-      <select id="${dia}_obra2">
-        <option value="">Obra 2</option>
-        ${opcoesObras}
-      </select>
-    </div>
-  `).join("");
+    return `
+      <div class="linha-grade">
+        <label class="dia-grade">${dia}</label>
+
+        <select id="${dia}_obra1">
+          <option value="">Obra 1</option>
+          ${opcoesObras}
+        </select>
+
+        <select id="${dia}_obra2">
+          <option value="">Obra 2</option>
+          ${opcoesObras}
+        </select>
+      </div>
+    `;
+  }).join("");
 
   app.innerHTML = `
     <div class="page-box grade-box">
       <div class="page-header">
         <div>
           <h2>Grade Semanal</h2>
-          <p>Selecione a Obra 1 e a Obra 2 de segunda a sexta.</p>
+          <p>${quasar ? "Selecione a obra de cada dia." : "Selecione a Obra 1 e a Obra 2 de segunda a sexta."}</p>
         </div>
       </div>
 
@@ -635,7 +662,10 @@ async function telaGrade() {
   diasSemana.forEach(dia => {
     if (grade[dia]) {
       document.getElementById(`${dia}_obra1`).value = grade[dia].obra1 || "";
-      document.getElementById(`${dia}_obra2`).value = grade[dia].obra2 || "";
+
+      if (!quasar && document.getElementById(`${dia}_obra2`)) {
+        document.getElementById(`${dia}_obra2`).value = grade[dia].obra2 || "";
+      }
     }
   });
 
@@ -643,12 +673,13 @@ async function telaGrade() {
 }
 
 async function salvarGrade() {
+  const quasar = ehSubQuasar();
   const novaGrade = {};
 
   diasSemana.forEach(dia => {
     novaGrade[dia] = {
       obra1: document.getElementById(`${dia}_obra1`).value,
-      obra2: document.getElementById(`${dia}_obra2`).value
+      obra2: quasar ? "" : document.getElementById(`${dia}_obra2`).value
     };
   });
 
@@ -664,6 +695,15 @@ async function salvarGrade() {
 ========================= */
 
 async function telaVerificacoes(diaSelecionado = "Segunda") {
+  if (ehSubQuasar()) {
+    await telaVerificacoesQuasar(diaSelecionado);
+    return;
+  }
+
+  await telaVerificacoesDuasObras(diaSelecionado);
+}
+
+async function telaVerificacoesDuasObras(diaSelecionado = "Segunda") {
   const membros = await buscarMembros();
   const obras = await buscarObras();
   const grade = await buscarGrade();
@@ -761,93 +801,8 @@ async function telaVerificacoes(diaSelecionado = "Segunda") {
         </div>
 
         <div class="verificacao-grid">
-          <div class="obra-verificacao">
-            <h3>Obra 1</h3>
-            <p>${obra1 ? escapeHTML(obra1.titulo) : "Obra não encontrada"}</p>
-
-            <label>Status da leitura</label>
-            <select id="membro_${membro.id}_obra1Status" onchange="atualizarPontosTela('${membro.id}')">
-              ${gerarOpcoesStatus(dadosMembro.obra1Status)}
-            </select>
-
-            <label class="checkbox-label">
-              <input 
-                type="checkbox" 
-                id="membro_${membro.id}_obra1Feedback"
-                onchange="atualizarPontosTela('${membro.id}')"
-                ${dadosMembro.obra1Feedback ? "checked" : ""}
-              >
-              Feedback entregue (+20)
-            </label>
-
-            <label class="checkbox-label">
-              <input 
-                type="checkbox" 
-                id="membro_${membro.id}_obra1Extra"
-                onchange="atualizarPontosTela('${membro.id}')"
-                ${dadosMembro.obra1Extra ? "checked" : ""}
-              >
-              Teve capítulo extra? (+5 cada)
-            </label>
-
-            <div id="extraBox_${membro.id}_obra1" style="display:none;">
-              <label>Quantidade de capítulos extras</label>
-              <input 
-                type="number"
-                min="1"
-                id="membro_${membro.id}_obra1ExtraQtd"
-                value="${dadosMembro.obra1ExtraQtd || 1}"
-                onchange="atualizarPontosTela('${membro.id}')"
-                oninput="atualizarPontosTela('${membro.id}')"
-              >
-            </div>
-
-            <small id="aviso_${membro.id}_obra1" class="feedback-aviso"></small>
-          </div>
-
-          <div class="obra-verificacao">
-            <h3>Obra 2</h3>
-            <p>${obra2 ? escapeHTML(obra2.titulo) : "Obra não encontrada"}</p>
-
-            <label>Status da leitura</label>
-            <select id="membro_${membro.id}_obra2Status" onchange="atualizarPontosTela('${membro.id}')">
-              ${gerarOpcoesStatus(dadosMembro.obra2Status)}
-            </select>
-
-            <label class="checkbox-label">
-              <input 
-                type="checkbox" 
-                id="membro_${membro.id}_obra2Feedback"
-                onchange="atualizarPontosTela('${membro.id}')"
-                ${dadosMembro.obra2Feedback ? "checked" : ""}
-              >
-              Feedback entregue (+20)
-            </label>
-
-            <label class="checkbox-label">
-              <input 
-                type="checkbox" 
-                id="membro_${membro.id}_obra2Extra"
-                onchange="atualizarPontosTela('${membro.id}')"
-                ${dadosMembro.obra2Extra ? "checked" : ""}
-              >
-              Teve capítulo extra? (+5 cada)
-            </label>
-
-            <div id="extraBox_${membro.id}_obra2" style="display:none;">
-              <label>Quantidade de capítulos extras</label>
-              <input 
-                type="number"
-                min="1"
-                id="membro_${membro.id}_obra2ExtraQtd"
-                value="${dadosMembro.obra2ExtraQtd || 1}"
-                onchange="atualizarPontosTela('${membro.id}')"
-                oninput="atualizarPontosTela('${membro.id}')"
-              >
-            </div>
-
-            <small id="aviso_${membro.id}_obra2" class="feedback-aviso"></small>
-          </div>
+          ${gerarBlocoObraVerificacao(membro.id, 1, obra1, dadosMembro)}
+          ${gerarBlocoObraVerificacao(membro.id, 2, obra2, dadosMembro)}
         </div>
       </div>
     `;
@@ -901,6 +856,201 @@ async function telaVerificacoes(diaSelecionado = "Segunda") {
   aplicarTema();
 }
 
+async function telaVerificacoesQuasar(diaSelecionado = "Segunda") {
+  const membros = await buscarMembros();
+  const obras = await buscarObras();
+  const grade = await buscarGrade();
+  const verificacaoDia = await buscarVerificacaoDia(diaSelecionado);
+
+  if (membros.length === 0) {
+    app.innerHTML = `
+      <div class="page-box">
+        <h2>Verificações</h2>
+        <p class="empty-message">Você precisa cadastrar membros antes de fazer verificações.</p>
+        <button onclick="telaMembros()">Cadastrar Membro</button>
+        <button onclick="telaDashboard()">⬅ Voltar</button>
+      </div>
+    `;
+
+    aplicarTema();
+    return;
+  }
+
+  if (obras.length === 0) {
+    app.innerHTML = `
+      <div class="page-box">
+        <h2>Verificações</h2>
+        <p class="empty-message">Você precisa cadastrar obras antes de fazer verificações.</p>
+        <button onclick="telaObras()">Cadastrar Obra</button>
+        <button onclick="telaDashboard()">⬅ Voltar</button>
+      </div>
+    `;
+
+    aplicarTema();
+    return;
+  }
+
+  const dadosDia = grade[diaSelecionado];
+
+  if (!dadosDia || !dadosDia.obra1) {
+    app.innerHTML = `
+      <div class="page-box">
+        <h2>Verificações</h2>
+
+        <label>Dia da semana</label>
+        <select id="diaVerificacao" onchange="telaVerificacoes(this.value)">
+          ${diasSemana.map(dia => `
+            <option value="${dia}" ${dia === diaSelecionado ? "selected" : ""}>${dia}</option>
+          `).join("")}
+        </select>
+
+        <p class="empty-message">A grade deste dia ainda não está completa. Selecione a obra do dia na grade semanal.</p>
+
+        <button onclick="telaGrade()">Montar Grade</button>
+        <button onclick="telaDashboard()">⬅ Voltar</button>
+      </div>
+    `;
+
+    aplicarTema();
+    return;
+  }
+
+  const obra1 = obras.find(obra => obra.id === dadosDia.obra1);
+
+  const linhasMembros = membros.map(membro => {
+    const dadosMembro = verificacaoDia?.membros?.[membro.id] || {
+      obra1Status: "",
+      obra1Feedback: false,
+      obra1Extra: false,
+      obra1ExtraQtd: 1,
+      pontos: 0
+    };
+
+    return `
+      <div class="verificacao-card">
+        <div class="verificacao-topo">
+          <div>
+            <strong>${escapeHTML(membro.nome)}</strong>
+            <span>${escapeHTML(membro.user)}</span>
+            <span>Semana: ${membro.semana ?? 0}</span>
+          </div>
+
+          <div class="pontos-duplo">
+            <div class="pontos-box">
+              <small>Hoje</small>
+              <strong id="pontos_membro_${membro.id}">${dadosMembro.pontos || 0}</strong>
+            </div>
+
+            <div class="pontos-box">
+              <small>Semana</small>
+              <strong id="semana_membro_${membro.id}">...</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="verificacao-grid">
+          ${gerarBlocoObraVerificacao(membro.id, 1, obra1, dadosMembro)}
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  app.innerHTML = `
+    <div class="page-box verificacao-box">
+      <div class="page-header">
+        <div>
+          <h2>Verificações Quasar A-10</h2>
+          <p>Marque o resultado da obra do dia, feedback e capítulos extras.</p>
+        </div>
+      </div>
+
+      <div class="controle-verificacao">
+        <label>Dia da semana</label>
+        <select id="diaVerificacao" onchange="telaVerificacoes(this.value)">
+          ${diasSemana.map(dia => `
+            <option value="${dia}" ${dia === diaSelecionado ? "selected" : ""}>${dia}</option>
+          `).join("")}
+        </select>
+      </div>
+
+      <div class="resumo-obras">
+        <div>
+          <strong>Obra do dia</strong>
+          <span>${obra1 ? escapeHTML(obra1.titulo) : "Obra não encontrada"}</span>
+        </div>
+      </div>
+
+      <div class="list-area">
+        ${linhasMembros}
+      </div>
+
+      <button onclick="salvarVerificacao('${diaSelecionado}')">Salvar Verificação</button>
+      <button onclick="telaVisualizarFicha()">👁 Visualizar Ficha</button>
+      <button onclick="telaDashboard()">⬅ Voltar</button>
+    </div>
+  `;
+
+  for (const membro of membros) {
+    atualizarPontosTela(membro.id);
+    document.getElementById(`semana_membro_${membro.id}`).textContent = await calcularPontosAcumulados(membro.id);
+  }
+
+  aplicarTema();
+}
+
+function gerarBlocoObraVerificacao(membroId, numeroObra, obra, dadosMembro) {
+  const status = dadosMembro[`obra${numeroObra}Status`] || "";
+  const feedback = dadosMembro[`obra${numeroObra}Feedback`] || false;
+  const extra = dadosMembro[`obra${numeroObra}Extra`] || false;
+  const extraQtd = dadosMembro[`obra${numeroObra}ExtraQtd`] || 1;
+
+  return `
+    <div class="obra-verificacao">
+      <h3>${ehSubQuasar() ? "Obra do dia" : `Obra ${numeroObra}`}</h3>
+      <p>${obra ? escapeHTML(obra.titulo) : "Obra não encontrada"}</p>
+
+      <label>Status da leitura</label>
+      <select id="membro_${membroId}_obra${numeroObra}Status" onchange="atualizarPontosTela('${membroId}')">
+        ${gerarOpcoesStatus(status)}
+      </select>
+
+      <label class="checkbox-label">
+        <input 
+          type="checkbox" 
+          id="membro_${membroId}_obra${numeroObra}Feedback"
+          onchange="atualizarPontosTela('${membroId}')"
+          ${feedback ? "checked" : ""}
+        >
+        Feedback entregue (+20)
+      </label>
+
+      <label class="checkbox-label">
+        <input 
+          type="checkbox" 
+          id="membro_${membroId}_obra${numeroObra}Extra"
+          onchange="atualizarPontosTela('${membroId}')"
+          ${extra ? "checked" : ""}
+        >
+        Teve capítulo extra? (+5 cada)
+      </label>
+
+      <div id="extraBox_${membroId}_obra${numeroObra}" style="display:none;">
+        <label>Quantidade de capítulos extras</label>
+        <input 
+          type="number"
+          min="1"
+          id="membro_${membroId}_obra${numeroObra}ExtraQtd"
+          value="${extraQtd}"
+          onchange="atualizarPontosTela('${membroId}')"
+          oninput="atualizarPontosTela('${membroId}')"
+        >
+      </div>
+
+      <small id="aviso_${membroId}_obra${numeroObra}" class="feedback-aviso"></small>
+    </div>
+  `;
+}
+
 function gerarOpcoesStatus(valorAtual) {
   return statusLeitura.map(status => `
     <option value="${status.emoji}" ${status.emoji === valorAtual ? "selected" : ""}>
@@ -909,7 +1059,7 @@ function gerarOpcoesStatus(valorAtual) {
   `).join("");
 }
 
-function calcularPontos(
+function calcularPontosDuasObras(
   obra1Status,
   obra1Feedback,
   obra1Extra,
@@ -937,6 +1087,29 @@ function calcularPontos(
 
   if (obra2Status === "🌙" && obra2Extra) {
     pontos += Math.max(1, Number(obra2ExtraQtd || 1)) * 5;
+  }
+
+  return pontos;
+}
+
+function calcularPontosQuasar(
+  obra1Status,
+  obra1Feedback,
+  obra1Extra,
+  obra1ExtraQtd
+) {
+  let pontos = 0;
+
+  if (!statusQueCompletamLeitura.includes(obra1Status)) return 0;
+
+  pontos += 5;
+
+  if (obra1Status === "🌙" && obra1Feedback) {
+    pontos += 20;
+  }
+
+  if (obra1Status === "🌙" && obra1Extra) {
+    pontos += Math.max(1, Number(obra1ExtraQtd || 1)) * 5;
   }
 
   return pontos;
@@ -974,6 +1147,15 @@ function controlarExtras(membroId, obraNumero, statusObra, leituraCompleta) {
 }
 
 function atualizarPontosTela(membroId) {
+  if (ehSubQuasar()) {
+    atualizarPontosTelaQuasar(membroId);
+    return;
+  }
+
+  atualizarPontosTelaDuasObras(membroId);
+}
+
+function atualizarPontosTelaDuasObras(membroId) {
   const obra1Status = document.getElementById(`membro_${membroId}_obra1Status`)?.value || "";
   const obra2Status = document.getElementById(`membro_${membroId}_obra2Status`)?.value || "";
 
@@ -985,7 +1167,6 @@ function atualizarPontosTela(membroId) {
 
   const obra1Completa = statusQueCompletamLeitura.includes(obra1Status);
   const obra2Completa = statusQueCompletamLeitura.includes(obra2Status);
-
   const leituraCompleta = obra1Completa && obra2Completa;
 
   if (!leituraCompleta) {
@@ -1002,27 +1183,8 @@ function atualizarPontosTela(membroId) {
     if (avisoObra1) avisoObra1.textContent = "Feedback e capítulos extras só contam se as duas leituras do dia estiverem completas.";
     if (avisoObra2) avisoObra2.textContent = "Feedback e capítulos extras só contam se as duas leituras do dia estiverem completas.";
   } else {
-    if (obra1FeedbackCampo) {
-      if (obra1Status === "🌙") {
-        obra1FeedbackCampo.disabled = false;
-        if (avisoObra1) avisoObra1.textContent = "";
-      } else {
-        obra1FeedbackCampo.checked = false;
-        obra1FeedbackCampo.disabled = true;
-        if (avisoObra1) avisoObra1.textContent = "Não pode entregar feedback nem capítulo extra da própria obra.";
-      }
-    }
-
-    if (obra2FeedbackCampo) {
-      if (obra2Status === "🌙") {
-        obra2FeedbackCampo.disabled = false;
-        if (avisoObra2) avisoObra2.textContent = "";
-      } else {
-        obra2FeedbackCampo.checked = false;
-        obra2FeedbackCampo.disabled = true;
-        if (avisoObra2) avisoObra2.textContent = "Não pode entregar feedback nem capítulo extra da própria obra.";
-      }
-    }
+    configurarFeedbackPorObra(membroId, 1, obra1Status);
+    configurarFeedbackPorObra(membroId, 2, obra2Status);
   }
 
   controlarExtras(membroId, 1, obra1Status, leituraCompleta);
@@ -1033,7 +1195,6 @@ function atualizarPontosTela(membroId) {
 
   const obra1ExtraCampo = document.getElementById(`membro_${membroId}_obra1Extra`);
   const obra2ExtraCampo = document.getElementById(`membro_${membroId}_obra2Extra`);
-
   const obra1ExtraQtdCampo = document.getElementById(`membro_${membroId}_obra1ExtraQtd`);
   const obra2ExtraQtdCampo = document.getElementById(`membro_${membroId}_obra2ExtraQtd`);
 
@@ -1043,7 +1204,7 @@ function atualizarPontosTela(membroId) {
   const obra1ExtraQtd = obra1Extra ? Math.max(1, Number(obra1ExtraQtdCampo?.value || 1)) : 0;
   const obra2ExtraQtd = obra2Extra ? Math.max(1, Number(obra2ExtraQtdCampo?.value || 1)) : 0;
 
-  const pontos = calcularPontos(
+  const pontos = calcularPontosDuasObras(
     obra1Status,
     obra1Feedback,
     obra1Extra,
@@ -1061,7 +1222,76 @@ function atualizarPontosTela(membroId) {
   }
 }
 
+function atualizarPontosTelaQuasar(membroId) {
+  const obra1Status = document.getElementById(`membro_${membroId}_obra1Status`)?.value || "";
+  const obra1FeedbackCampo = document.getElementById(`membro_${membroId}_obra1Feedback`);
+  const avisoObra1 = document.getElementById(`aviso_${membroId}_obra1`);
+
+  const leituraCompleta = statusQueCompletamLeitura.includes(obra1Status);
+
+  if (!leituraCompleta) {
+    if (obra1FeedbackCampo) {
+      obra1FeedbackCampo.checked = false;
+      obra1FeedbackCampo.disabled = true;
+    }
+
+    if (avisoObra1) {
+      avisoObra1.textContent = "Feedback e capítulos extras só contam se a leitura do dia estiver completa.";
+    }
+  } else {
+    configurarFeedbackPorObra(membroId, 1, obra1Status);
+  }
+
+  controlarExtras(membroId, 1, obra1Status, leituraCompleta);
+
+  const obra1Feedback = obra1Status === "🌙" ? obra1FeedbackCampo?.checked || false : false;
+
+  const obra1ExtraCampo = document.getElementById(`membro_${membroId}_obra1Extra`);
+  const obra1ExtraQtdCampo = document.getElementById(`membro_${membroId}_obra1ExtraQtd`);
+
+  const obra1Extra = obra1Status === "🌙" ? obra1ExtraCampo?.checked || false : false;
+  const obra1ExtraQtd = obra1Extra ? Math.max(1, Number(obra1ExtraQtdCampo?.value || 1)) : 0;
+
+  const pontos = calcularPontosQuasar(
+    obra1Status,
+    obra1Feedback,
+    obra1Extra,
+    obra1ExtraQtd
+  );
+
+  const campoPontos = document.getElementById(`pontos_membro_${membroId}`);
+
+  if (campoPontos) {
+    campoPontos.textContent = pontos;
+  }
+}
+
+function configurarFeedbackPorObra(membroId, obraNumero, statusObra) {
+  const feedbackCampo = document.getElementById(`membro_${membroId}_obra${obraNumero}Feedback`);
+  const aviso = document.getElementById(`aviso_${membroId}_obra${obraNumero}`);
+
+  if (!feedbackCampo) return;
+
+  if (statusObra === "🌙") {
+    feedbackCampo.disabled = false;
+    if (aviso) aviso.textContent = "";
+  } else {
+    feedbackCampo.checked = false;
+    feedbackCampo.disabled = true;
+    if (aviso) aviso.textContent = "Não pode entregar feedback nem capítulo extra da própria obra.";
+  }
+}
+
 async function salvarVerificacao(diaSelecionado) {
+  if (ehSubQuasar()) {
+    await salvarVerificacaoQuasar(diaSelecionado);
+    return;
+  }
+
+  await salvarVerificacaoDuasObras(diaSelecionado);
+}
+
+async function salvarVerificacaoDuasObras(diaSelecionado) {
   const membros = await buscarMembros();
 
   const dados = {
@@ -1102,7 +1332,7 @@ async function salvarVerificacao(diaSelecionado) {
       ? Math.max(1, Number(document.getElementById(`membro_${membro.id}_obra2ExtraQtd`).value || 1))
       : 0;
 
-    const pontos = calcularPontos(
+    const pontos = calcularPontosDuasObras(
       obra1Status,
       obra1Feedback,
       obra1Extra,
@@ -1125,6 +1355,62 @@ async function salvarVerificacao(diaSelecionado) {
       obra2Feedback,
       obra2Extra,
       obra2ExtraQtd,
+      pontos
+    };
+  });
+
+  await salvarVerificacaoBanco(diaSelecionado, dados);
+
+  alert("Verificação salva no banco de dados!");
+
+  await telaDashboard();
+}
+
+async function salvarVerificacaoQuasar(diaSelecionado) {
+  const membros = await buscarMembros();
+
+  const dados = {
+    dia: diaSelecionado,
+    atualizadoEm: new Date().toISOString(),
+    membros: {}
+  };
+
+  membros.forEach(membro => {
+    const obra1Status = document.getElementById(`membro_${membro.id}_obra1Status`).value;
+
+    const leituraCompleta = statusQueCompletamLeitura.includes(obra1Status);
+
+    const obra1Feedback = leituraCompleta && obra1Status === "🌙"
+      ? document.getElementById(`membro_${membro.id}_obra1Feedback`).checked
+      : false;
+
+    const obra1Extra = leituraCompleta && obra1Status === "🌙"
+      ? document.getElementById(`membro_${membro.id}_obra1Extra`).checked
+      : false;
+
+    const obra1ExtraQtd = obra1Extra
+      ? Math.max(1, Number(document.getElementById(`membro_${membro.id}_obra1ExtraQtd`).value || 1))
+      : 0;
+
+    const pontos = calcularPontosQuasar(
+      obra1Status,
+      obra1Feedback,
+      obra1Extra,
+      obra1ExtraQtd
+    );
+
+    dados.membros[membro.id] = {
+      nome: membro.nome,
+      user: membro.user,
+      semana: membro.semana ?? 0,
+      obra1Status,
+      obra1Feedback,
+      obra1Extra,
+      obra1ExtraQtd,
+      obra2Status: "",
+      obra2Feedback: false,
+      obra2Extra: false,
+      obra2ExtraQtd: 0,
       pontos
     };
   });
@@ -1192,20 +1478,24 @@ async function gerarEmojisAcumulados(membroId, campoStatus) {
   return emojis;
 }
 
-async function verificarFeedbackAcumulado(membroId) {
+async function contarFeedbacksAcumulados(membroId) {
   const verificacoes = await buscarVerificacoes();
 
-  let teveFeedback = false;
+  let total = 0;
 
   diasSemana.forEach(dia => {
     const dados = verificacoes[dia]?.membros?.[membroId];
 
-    if (dados?.obra1Feedback || dados?.obra2Feedback) {
-      teveFeedback = true;
-    }
+    if (dados?.obra1Feedback) total++;
+    if (!ehSubQuasar() && dados?.obra2Feedback) total++;
   });
 
-  return teveFeedback;
+  return total;
+}
+
+async function verificarFeedbackAcumulado(membroId) {
+  const total = await contarFeedbacksAcumulados(membroId);
+  return total > 0;
 }
 
 /* =========================
@@ -1280,6 +1570,10 @@ async function gerarFichaWhatsapp() {
 
   if (subs[sub].modeloFicha === "pagina") {
     return await montarFichaPagina();
+  }
+
+  if (subs[sub].modeloFicha === "quasar") {
+    return await montarFichaQuasar();
   }
 
   return await montarFichaTrono();
@@ -1409,6 +1703,53 @@ async function montarFichaPagina() {
   return texto;
 }
 
+async function montarFichaQuasar() {
+  const membros = await buscarMembros();
+  const diasAcumulados = await contarDiasComVerificacao();
+
+  let texto = "";
+
+  texto += `🌑👑 𝐕𝐄𝐑𝐈𝐅𝐈𝐂𝐀ÇÕ𝐄𝐒 𝐐𝐔𝐀𝐒𝐀𝐑 𝐀-𝟏𝟎 👑🌑\n`;
+  texto += `━━━━━━━━━━━━━━━\n\n`;
+
+  texto += `🌜 𝐎𝐧𝐝𝐞 𝐚 𝐋𝐮𝐚 𝐢𝐥𝐮𝐦𝐢𝐧𝐚 𝐨𝐬 𝐥𝐢𝐯𝐫𝐨𝐬:\n\n`;
+
+  texto += gerarLegendaQuasar();
+
+  for (const membro of membros) {
+    const pontosAcumulados = await calcularPontosAcumulados(membro.id);
+    const emojisObra1 = await gerarEmojisAcumulados(membro.id, "obra1Status");
+    const feedbacks = await contarFeedbacksAcumulados(membro.id);
+
+    let feedbackTexto = "";
+    if (feedbacks === 1) feedbackTexto = "Feito";
+    if (feedbacks > 1) feedbackTexto = `${feedbacks} feito`;
+
+    texto += `━━━━━━━━━━━━━━━\n\n`;
+
+    texto += `🕷 𝐍𝐨𝐦𝐞: ${membro.nome}\n`;
+    texto += `🕷 𝐔𝐬𝐞𝐫: ${membro.user}\n\n`;
+
+    texto += `🏆 Semana: ${membro.semana ?? ""}\n`;
+    texto += `💌 Dia: ${diasAcumulados}\n`;
+    texto += `👑 Pontos: ${pontosAcumulados}\n`;
+    texto += `📚 Leitura Lunar:\n\n`;
+
+    texto += `🌋 Obra 01: ${emojisObra1}\n`;
+    texto += `✅ Feedback: ${feedbackTexto}\n\n`;
+  }
+
+  texto += `━━━━━━━━━━━━━━━\n\n`;
+
+  texto += `🚨 𝐀𝐓𝐄𝐍ÇÃ𝐎 🚨\n\n`;
+  texto += `Para manter o Quasar A-10 organizado, quem ainda ficou devendo feedback, voto ou comentário deve enviar os prints no privado da ADM responsável.\n\n`;
+  texto += `Caso encontre algum erro na verificação, chame no PV para correção.\n\n`;
+  texto += `🔥 𝐀𝐃𝐌: Dira\n`;
+  texto += `━─────── • 𝐏𝐫𝐨𝐣. 𝐋𝐮𝐧𝐚𝐫 • ───────━`;
+
+  return texto;
+}
+
 function gerarLegendaTrono() {
   let texto = "";
 
@@ -1469,6 +1810,27 @@ function gerarLegendaPagina() {
   texto += `⛔ 𝐑𝐞𝐦𝐨𝐯𝐢𝐝𝐨 𝐩𝐨𝐫 𝐢𝐧𝐟𝐫𝐚𝐜̧𝐚̃𝐨 𝐝𝐚𝐬 𝐫𝐞𝐠𝐫𝐚𝐬\n`;
   texto += `⏰ *Leitura não feita em tempo estimado*\n\n`;
   texto += `_______________\n\n`;
+
+  return texto;
+}
+
+function gerarLegendaQuasar() {
+  let texto = "";
+
+  texto += `🌙 Leu\n`;
+  texto += `☠ Não leu\n`;
+  texto += `💅 Justificado\n`;
+  texto += `🌼 Já havia lido antes\n`;
+  texto += `🙍 Falta algo\n`;
+  texto += `✨ Obra do dia\n`;
+  texto += `⏳ Sem obra\n`;
+  texto += `⚰ Saiu do grupo\n`;
+  texto += `🧕🏻 Leitura em andamento\n`;
+  texto += `⚠ Infração das regras\n`;
+  texto += `🚫 Tempo inferior\n`;
+  texto += `📲 Prints no PV\n`;
+  texto += `⏰ Fora do tempo estimado\n\n`;
+  texto += `━━━━━━━━━━━━━━━\n\n`;
 
   return texto;
 }
