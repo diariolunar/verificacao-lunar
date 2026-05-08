@@ -99,6 +99,14 @@ function escapeHTML(texto) {
     .replaceAll("'", "&#039;");
 }
 
+function repetirCheck(qtd) {
+  const total = Number(qtd || 0);
+
+  if (total <= 0) return "";
+
+  return "✅".repeat(total);
+}
+
 async function buscarMembros() {
   const sub = getSubAtual();
   const ref = collection(db, "subs", sub, "membros");
@@ -222,7 +230,7 @@ function telaSubs() {
       <button onclick="selecionarSub('A6')">👑 Trono de Papel</button>
       <button onclick="selecionarSub('A1')">🔥 Chama Eterna</button>
       <button onclick="selecionarSub('A2')">📖 Página Livre</button>
-      <button onclick="selecionarSub('A10')">💥☄️ Quasar A-10 ☄️💫</button>
+      <button onclick="selecionarSub('A10')">☄️ Quasar</button>
 
       <button onclick="logout()">Sair</button>
     </div>
@@ -244,6 +252,7 @@ async function telaDashboard() {
       <button onclick="telaGrade()">📅 Grade Semanal</button>
       <button onclick="telaVerificacoes()">📜 Verificações</button>
       <button onclick="telaVisualizarFicha()">👁 Visualizar Ficha</button>
+      <button onclick="limparFichaSemana()">🧹 Limpar Ficha da Semana</button>
 
       <br><br>
 
@@ -1493,9 +1502,56 @@ async function contarFeedbacksAcumulados(membroId) {
   return total;
 }
 
+async function contarExtrasAcumulados(membroId) {
+  const verificacoes = await buscarVerificacoes();
+
+  let total = 0;
+
+  diasSemana.forEach(dia => {
+    const dados = verificacoes[dia]?.membros?.[membroId];
+
+    if (!dados) return;
+
+    if (dados.obra1Extra) {
+      total += Math.max(1, Number(dados.obra1ExtraQtd || 1));
+    }
+
+    if (!ehSubQuasar() && dados.obra2Extra) {
+      total += Math.max(1, Number(dados.obra2ExtraQtd || 1));
+    }
+  });
+
+  return total;
+}
+
 async function verificarFeedbackAcumulado(membroId) {
   const total = await contarFeedbacksAcumulados(membroId);
   return total > 0;
+}
+
+/* =========================
+   LIMPAR SEMANA
+========================= */
+
+async function limparFichaSemana() {
+  const confirmar = confirm(
+    "Tem certeza que deseja limpar a ficha desta semana?\n\nIsso vai apagar apenas as verificações de segunda a sexta.\nNão vai apagar membros, obras, grade ou semanas cadastradas."
+  );
+
+  if (!confirmar) return;
+
+  const sub = getSubAtual();
+
+  try {
+    for (const dia of diasSemana) {
+      await deleteDoc(doc(db, "subs", sub, "verificacoes", dia));
+    }
+
+    alert("Ficha da semana limpa com sucesso!");
+    await telaDashboard();
+  } catch (error) {
+    alert("Não foi possível limpar a ficha da semana.");
+  }
 }
 
 /* =========================
@@ -1601,8 +1657,11 @@ async function montarFichaTrono() {
     const pontosAcumulados = await calcularPontosAcumulados(membro.id);
     const emojisObra1 = await gerarEmojisAcumulados(membro.id, "obra1Status");
     const emojisObra2 = await gerarEmojisAcumulados(membro.id, "obra2Status");
-    const teveFeedback = await verificarFeedbackAcumulado(membro.id);
-    const feedbackTexto = teveFeedback ? "✅" : "";
+    const feedbacks = await contarFeedbacksAcumulados(membro.id);
+    const extras = await contarExtrasAcumulados(membro.id);
+
+    const feedbackTexto = repetirCheck(feedbacks);
+    const extrasTexto = repetirCheck(extras);
 
     texto += `━━━━━━━━━━━ ✦ ━━━━━━━━━━━\n\n`;
     texto += `👑 𝐍𝐨𝐦𝐞: ${membro.nome}\n`;
@@ -1617,7 +1676,7 @@ async function montarFichaTrono() {
     texto += `📖 𝐎𝐛𝐫𝐚 𝟎𝟏: ${emojisObra1}\n`;
     texto += `📖 𝐎𝐛𝐫𝐚 𝟎𝟐: ${emojisObra2}\n\n`;
 
-    texto += `🔮 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 Extra: \n\n`;
+    texto += `🔮 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 Extra: ${extrasTexto}\n\n`;
   }
 
   texto += `━━━━━━━━━━━ ✦ ━━━━━━━━━━━\n\n`;
@@ -1641,8 +1700,11 @@ async function montarFichaChama() {
     const pontosAcumulados = await calcularPontosAcumulados(membro.id);
     const emojisObra1 = await gerarEmojisAcumulados(membro.id, "obra1Status");
     const emojisObra2 = await gerarEmojisAcumulados(membro.id, "obra2Status");
-    const teveFeedback = await verificarFeedbackAcumulado(membro.id);
-    const feedbackTexto = teveFeedback ? "✅" : "";
+    const feedbacks = await contarFeedbacksAcumulados(membro.id);
+    const extras = await contarExtrasAcumulados(membro.id);
+
+    const feedbackTexto = repetirCheck(feedbacks);
+    const extrasTexto = repetirCheck(extras);
 
     texto += `_____________\n\n`;
     texto += `📙𝐍𝐨𝐦𝐞: ${membro.nome}\n`;
@@ -1652,6 +1714,7 @@ async function montarFichaChama() {
     texto += `💌  Dias: ${diasAcumulados}\n`;
     texto += `👑 Pontos: ${pontosAcumulados}\n`;
     texto += `📈 Feedback: ${feedbackTexto}\n`;
+    texto += `📚 Capítulos Extras: ${extrasTexto}\n`;
     texto += `LEITURA LUNAR:\n\n`;
 
     texto += `Obra 01.: ${emojisObra1}\n`;
@@ -1678,8 +1741,11 @@ async function montarFichaPagina() {
     const pontosAcumulados = await calcularPontosAcumulados(membro.id);
     const emojisObra1 = await gerarEmojisAcumulados(membro.id, "obra1Status");
     const emojisObra2 = await gerarEmojisAcumulados(membro.id, "obra2Status");
-    const teveFeedback = await verificarFeedbackAcumulado(membro.id);
-    const feedbackTexto = teveFeedback ? "✅️" : "";
+    const feedbacks = await contarFeedbacksAcumulados(membro.id);
+    const extras = await contarExtrasAcumulados(membro.id);
+
+    const feedbackTexto = repetirCheck(feedbacks);
+    const extrasTexto = repetirCheck(extras);
 
     texto += `_______________\n\n`;
     texto += `🧙‍♂🧚‍♂ PAGINA LIVRE 𝑨-𝟐 🧛‍♂🧜‍♂\n\n`;
@@ -1691,6 +1757,7 @@ async function montarFichaPagina() {
     texto += `🗺 Dias: ${diasAcumulados}\n`;
     texto += `🧭 Pontos: ${pontosAcumulados}\n`;
     texto += `🏗 Feedback: ${feedbackTexto}\n`;
+    texto += `📚 Capítulos Extras: ${extrasTexto}\n`;
     texto += `🌌 Leitura Lunar: \n\n`;
 
     texto += `🏘 Obra 01: ${emojisObra1}\n`;
@@ -1720,10 +1787,10 @@ async function montarFichaQuasar() {
     const pontosAcumulados = await calcularPontosAcumulados(membro.id);
     const emojisObra1 = await gerarEmojisAcumulados(membro.id, "obra1Status");
     const feedbacks = await contarFeedbacksAcumulados(membro.id);
+    const extras = await contarExtrasAcumulados(membro.id);
 
-    let feedbackTexto = "";
-    if (feedbacks === 1) feedbackTexto = "Feito";
-    if (feedbacks > 1) feedbackTexto = `${feedbacks} feito`;
+    const feedbackTexto = repetirCheck(feedbacks);
+    const extrasTexto = repetirCheck(extras);
 
     texto += `━━━━━━━━━━━━━━━\n\n`;
 
@@ -1736,7 +1803,8 @@ async function montarFichaQuasar() {
     texto += `📚 Leitura Lunar:\n\n`;
 
     texto += `🌋 Obra 01: ${emojisObra1}\n`;
-    texto += `✅ Feedback: ${feedbackTexto}\n\n`;
+    texto += `✅ Feedback: ${feedbackTexto}\n`;
+    texto += `📚 Capítulos Extras: ${extrasTexto}\n\n`;
   }
 
   texto += `━━━━━━━━━━━━━━━\n\n`;
@@ -1952,3 +2020,5 @@ window.salvarVerificacao = salvarVerificacao;
 
 window.telaVisualizarFicha = telaVisualizarFicha;
 window.copiarFicha = copiarFicha;
+
+window.limparFichaSemana = limparFichaSemana;
