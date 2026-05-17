@@ -81,11 +81,6 @@ function getSubAtual() {
   return localStorage.getItem("sub");
 }
 
-function ehSubUmaObra() {
-  const sub = getSubAtual();
-  return subs[sub]?.modeloFicha === "margens";
-}
-
 function caminhoSub(sub) {
   return doc(db, "subs", sub);
 }
@@ -642,7 +637,6 @@ async function removerObra(id) {
 async function telaGrade() {
   const obras = await buscarObras();
   const grade = await buscarGrade();
-  const umaObra = ehSubUmaObra();
 
   if (obras.length === 0) {
     app.innerHTML = `
@@ -662,43 +656,28 @@ async function telaGrade() {
     <option value="${obra.id}">${escapeHTML(obra.titulo)}</option>
   `).join("");
 
-  const linhas = diasSemana.map(dia => {
-    if (umaObra) {
-      return `
-        <div class="linha-grade">
-          <label class="dia-grade">${dia}</label>
+  const linhas = diasSemana.map(dia => `
+    <div class="linha-grade">
+      <label class="dia-grade">${dia}</label>
 
-          <select id="${dia}_obra1">
-            <option value="">Obra do dia</option>
-            ${opcoesObras}
-          </select>
-        </div>
-      `;
-    }
+      <select id="${dia}_obra1">
+        <option value="">Obra 1</option>
+        ${opcoesObras}
+      </select>
 
-    return `
-      <div class="linha-grade">
-        <label class="dia-grade">${dia}</label>
-
-        <select id="${dia}_obra1">
-          <option value="">Obra 1</option>
-          ${opcoesObras}
-        </select>
-
-        <select id="${dia}_obra2">
-          <option value="">Obra 2</option>
-          ${opcoesObras}
-        </select>
-      </div>
-    `;
-  }).join("");
+      <select id="${dia}_obra2">
+        <option value="">Obra 2</option>
+        ${opcoesObras}
+      </select>
+    </div>
+  `).join("");
 
   app.innerHTML = `
     <div class="page-box grade-box">
       <div class="page-header">
         <div>
           <h2>Grade Semanal</h2>
-          <p>${umaObra ? "Selecione a obra de cada dia." : "Selecione a Obra 1 e a Obra 2 de segunda a sexta."}</p>
+          <p>Selecione a Obra 1 e a Obra 2 de segunda a sexta.</p>
         </div>
       </div>
 
@@ -712,10 +691,7 @@ async function telaGrade() {
   diasSemana.forEach(dia => {
     if (grade[dia]) {
       document.getElementById(`${dia}_obra1`).value = grade[dia].obra1 || "";
-
-      if (!umaObra && document.getElementById(`${dia}_obra2`)) {
-        document.getElementById(`${dia}_obra2`).value = grade[dia].obra2 || "";
-      }
+      document.getElementById(`${dia}_obra2`).value = grade[dia].obra2 || "";
     }
   });
 
@@ -723,13 +699,12 @@ async function telaGrade() {
 }
 
 async function salvarGrade() {
-  const umaObra = ehSubUmaObra();
   const novaGrade = {};
 
   diasSemana.forEach(dia => {
     novaGrade[dia] = {
       obra1: document.getElementById(`${dia}_obra1`).value,
-      obra2: umaObra ? "" : document.getElementById(`${dia}_obra2`).value
+      obra2: document.getElementById(`${dia}_obra2`).value
     };
   });
 
@@ -741,11 +716,6 @@ async function salvarGrade() {
 }
 
 async function telaVerificacoes(diaSelecionado = "Segunda") {
-  if (ehSubUmaObra()) {
-    await telaVerificacoesUmaObra(diaSelecionado);
-    return;
-  }
-
   await telaVerificacoesDuasObras(diaSelecionado);
 }
 
@@ -912,158 +882,6 @@ async function telaVerificacoesDuasObras(diaSelecionado = "Segunda") {
   aplicarTema();
 }
 
-async function telaVerificacoesUmaObra(diaSelecionado = "Segunda") {
-  const membros = await buscarMembros();
-  const obras = await buscarObras();
-  const grade = await buscarGrade();
-  const verificacaoDia = await buscarVerificacaoDia(diaSelecionado);
-
-  if (membros.length === 0) {
-    app.innerHTML = `
-      <div class="page-box">
-        <h2>Verificações</h2>
-        <p class="empty-message">Você precisa cadastrar membros antes de fazer verificações.</p>
-        <button onclick="telaMembros()">Cadastrar Membro</button>
-        <button onclick="telaDashboard()">⬅ Voltar</button>
-      </div>
-    `;
-
-    aplicarTema();
-    return;
-  }
-
-  if (obras.length === 0) {
-    app.innerHTML = `
-      <div class="page-box">
-        <h2>Verificações</h2>
-        <p class="empty-message">Você precisa cadastrar obras antes de fazer verificações.</p>
-        <button onclick="telaObras()">Cadastrar Obra</button>
-        <button onclick="telaDashboard()">⬅ Voltar</button>
-      </div>
-    `;
-
-    aplicarTema();
-    return;
-  }
-
-  const dadosDia = grade[diaSelecionado];
-
-  if (!dadosDia || !dadosDia.obra1) {
-    app.innerHTML = `
-      <div class="page-box">
-        <h2>Verificações</h2>
-
-        <label>Dia da semana</label>
-        <select id="diaVerificacao" onchange="telaVerificacoes(this.value)">
-          ${diasSemana.map(dia => `
-            <option value="${dia}" ${dia === diaSelecionado ? "selected" : ""}>${dia}</option>
-          `).join("")}
-        </select>
-
-        <p class="empty-message">A grade deste dia ainda não está completa. Selecione a obra do dia na grade semanal.</p>
-
-        <button onclick="telaGrade()">Montar Grade</button>
-        <button onclick="telaDashboard()">⬅ Voltar</button>
-      </div>
-    `;
-
-    aplicarTema();
-    return;
-  }
-
-  const obra1 = obras.find(obra => obra.id === dadosDia.obra1);
-
-  const linhasMembros = membros.map(membro => {
-    const dadosMembro = verificacaoDia?.membros?.[membro.id] || {
-      obra1Status: "",
-      obra1Feedback: false,
-      obra1Extra: false,
-      obra1ExtraQtd: 1,
-      pontos: 0
-    };
-
-    return `
-      <div class="verificacao-card membro-verificacao-card" data-search="${escapeHTML(textoBuscaMembro(membro))}">
-        <div class="verificacao-topo">
-          <div>
-            <strong>${escapeHTML(membro.nome)}</strong>
-            <span>${escapeHTML(membro.user)}</span>
-            <span>Semana: ${membro.semana ?? 0}</span>
-          </div>
-
-          <div class="pontos-duplo">
-            <div class="pontos-box">
-              <small>Hoje</small>
-              <strong id="pontos_membro_${membro.id}">${dadosMembro.pontos || 0}</strong>
-            </div>
-
-            <div class="pontos-box">
-              <small>Semana</small>
-              <strong id="semana_membro_${membro.id}">...</strong>
-            </div>
-          </div>
-        </div>
-
-        <div class="verificacao-grid">
-          ${gerarBlocoObraVerificacao(membro.id, 1, obra1, dadosMembro)}
-        </div>
-      </div>
-    `;
-  }).join("");
-
-  app.innerHTML = `
-    <div class="page-box verificacao-box">
-      <div class="page-header">
-        <div>
-          <h2>Verificações Margens de Mundos</h2>
-          <p>Marque o resultado da obra do dia, feedback e capítulos extras.</p>
-        </div>
-      </div>
-
-      <div class="controle-verificacao">
-        <label>Dia da semana</label>
-        <select id="diaVerificacao" onchange="telaVerificacoes(this.value)">
-          ${diasSemana.map(dia => `
-            <option value="${dia}" ${dia === diaSelecionado ? "selected" : ""}>${dia}</option>
-          `).join("")}
-        </select>
-      </div>
-
-      <div class="controle-verificacao">
-        <label>Buscar membro</label>
-        <input 
-          id="buscaMembroVerificacao" 
-          type="text" 
-          placeholder="Digite o nome ou user do membro..."
-          oninput="filtrarMembrosVerificacao()"
-        >
-      </div>
-
-      <div class="resumo-obras">
-        <div>
-          <strong>Obra do dia</strong>
-          <span>${obra1 ? escapeHTML(obra1.titulo) : "Obra não encontrada"}</span>
-        </div>
-      </div>
-
-      <div class="list-area">
-        ${linhasMembros}
-      </div>
-
-      <button onclick="salvarVerificacao('${diaSelecionado}')">Salvar Verificação</button>
-      <button onclick="telaVisualizarFicha()">👁 Visualizar Ficha</button>
-      <button onclick="telaDashboard()">⬅ Voltar</button>
-    </div>
-  `;
-
-  for (const membro of membros) {
-    atualizarPontosTela(membro.id);
-    document.getElementById(`semana_membro_${membro.id}`).textContent = await calcularPontosAcumulados(membro.id);
-  }
-
-  aplicarTema();
-}
-
 function gerarBlocoObraVerificacao(membroId, numeroObra, obra, dadosMembro) {
   const status = dadosMembro[`obra${numeroObra}Status`] || "";
   const feedback = dadosMembro[`obra${numeroObra}Feedback`] || false;
@@ -1072,7 +890,7 @@ function gerarBlocoObraVerificacao(membroId, numeroObra, obra, dadosMembro) {
 
   return `
     <div class="obra-verificacao">
-      <h3>${ehSubUmaObra() ? "Obra do dia" : `Obra ${numeroObra}`}</h3>
+      <h3>Obra ${numeroObra}</h3>
       <p>${obra ? escapeHTML(obra.titulo) : "Obra não encontrada"}</p>
 
       <label>Status da leitura</label>
@@ -1168,29 +986,6 @@ function calcularPontosDuasObras(
   return pontos;
 }
 
-function calcularPontosUmaObra(
-  obra1Status,
-  obra1Feedback,
-  obra1Extra,
-  obra1ExtraQtd
-) {
-  let pontos = 0;
-
-  if (!statusQueCompletamLeitura.includes(obra1Status)) return 0;
-
-  pontos += 5;
-
-  if (obra1Status === "🌙" && obra1Feedback) {
-    pontos += 20;
-  }
-
-  if (obra1Status === "🌙" && obra1Extra) {
-    pontos += Math.max(1, Number(obra1ExtraQtd || 1)) * 5;
-  }
-
-  return pontos;
-}
-
 function controlarExtras(membroId, obraNumero, statusObra, leituraCompleta) {
   const extraCampo = document.getElementById(`membro_${membroId}_obra${obraNumero}Extra`);
   const extraQtdCampo = document.getElementById(`membro_${membroId}_obra${obraNumero}ExtraQtd`);
@@ -1223,11 +1018,6 @@ function controlarExtras(membroId, obraNumero, statusObra, leituraCompleta) {
 }
 
 function atualizarPontosTela(membroId) {
-  if (ehSubUmaObra()) {
-    atualizarPontosTelaUmaObra(membroId);
-    return;
-  }
-
   atualizarPontosTelaDuasObras(membroId);
 }
 
@@ -1296,50 +1086,6 @@ function atualizarPontosTelaDuasObras(membroId) {
   }
 }
 
-function atualizarPontosTelaUmaObra(membroId) {
-  const obra1Status = document.getElementById(`membro_${membroId}_obra1Status`)?.value || "";
-  const obra1FeedbackCampo = document.getElementById(`membro_${membroId}_obra1Feedback`);
-  const avisoObra1 = document.getElementById(`aviso_${membroId}_obra1`);
-
-  const leituraCompleta = statusQueCompletamLeitura.includes(obra1Status);
-
-  if (!leituraCompleta) {
-    if (obra1FeedbackCampo) {
-      obra1FeedbackCampo.checked = false;
-      obra1FeedbackCampo.disabled = true;
-    }
-
-    if (avisoObra1) {
-      avisoObra1.textContent = "Feedback e capítulos extras só contam se a leitura do dia estiver completa.";
-    }
-  } else {
-    configurarFeedbackPorObra(membroId, 1, obra1Status);
-  }
-
-  controlarExtras(membroId, 1, obra1Status, leituraCompleta);
-
-  const obra1Feedback = obra1Status === "🌙" ? obra1FeedbackCampo?.checked || false : false;
-
-  const obra1ExtraCampo = document.getElementById(`membro_${membroId}_obra1Extra`);
-  const obra1ExtraQtdCampo = document.getElementById(`membro_${membroId}_obra1ExtraQtd`);
-
-  const obra1Extra = obra1Status === "🌙" ? obra1ExtraCampo?.checked || false : false;
-  const obra1ExtraQtd = obra1Extra ? Math.max(1, Number(obra1ExtraQtdCampo?.value || 1)) : 0;
-
-  const pontos = calcularPontosUmaObra(
-    obra1Status,
-    obra1Feedback,
-    obra1Extra,
-    obra1ExtraQtd
-  );
-
-  const campoPontos = document.getElementById(`pontos_membro_${membroId}`);
-
-  if (campoPontos) {
-    campoPontos.textContent = pontos;
-  }
-}
-
 function configurarFeedbackPorObra(membroId, obraNumero, statusObra) {
   const feedbackCampo = document.getElementById(`membro_${membroId}_obra${obraNumero}Feedback`);
   const aviso = document.getElementById(`aviso_${membroId}_obra${obraNumero}`);
@@ -1363,11 +1109,6 @@ function configurarFeedbackPorObra(membroId, obraNumero, statusObra) {
 }
 
 async function salvarVerificacao(diaSelecionado) {
-  if (ehSubUmaObra()) {
-    await salvarVerificacaoUmaObra(diaSelecionado);
-    return;
-  }
-
   await salvarVerificacaoDuasObras(diaSelecionado);
 }
 
@@ -1444,62 +1185,6 @@ async function salvarVerificacaoDuasObras(diaSelecionado) {
   await telaDashboard();
 }
 
-async function salvarVerificacaoUmaObra(diaSelecionado) {
-  const membros = await buscarMembros();
-
-  const dados = {
-    dia: diaSelecionado,
-    atualizadoEm: new Date().toISOString(),
-    membros: {}
-  };
-
-  membros.forEach(membro => {
-    const obra1Status = document.getElementById(`membro_${membro.id}_obra1Status`).value;
-
-    const leituraCompleta = statusQueCompletamLeitura.includes(obra1Status);
-
-    const obra1Feedback = leituraCompleta && obra1Status === "🌙"
-      ? document.getElementById(`membro_${membro.id}_obra1Feedback`).checked
-      : false;
-
-    const obra1Extra = leituraCompleta && obra1Status === "🌙"
-      ? document.getElementById(`membro_${membro.id}_obra1Extra`).checked
-      : false;
-
-    const obra1ExtraQtd = obra1Extra
-      ? Math.max(1, Number(document.getElementById(`membro_${membro.id}_obra1ExtraQtd`).value || 1))
-      : 0;
-
-    const pontos = calcularPontosUmaObra(
-      obra1Status,
-      obra1Feedback,
-      obra1Extra,
-      obra1ExtraQtd
-    );
-
-    dados.membros[membro.id] = {
-      nome: membro.nome,
-      user: membro.user,
-      semana: membro.semana ?? 0,
-      obra1Status,
-      obra1Feedback,
-      obra1Extra,
-      obra1ExtraQtd,
-      obra2Status: "",
-      obra2Feedback: false,
-      obra2Extra: false,
-      obra2ExtraQtd: 0,
-      pontos
-    };
-  });
-
-  await salvarVerificacaoBanco(diaSelecionado, dados);
-
-  alert("Verificação salva no banco de dados!");
-
-  await telaDashboard();
-}
-
 async function calcularPontosAcumulados(membroId) {
   const verificacoes = await buscarVerificacoes();
 
@@ -1561,7 +1246,7 @@ async function contarFeedbacksAcumulados(membroId) {
     const dados = verificacoes[dia]?.membros?.[membroId];
 
     if (dados?.obra1Feedback) total++;
-    if (!ehSubUmaObra() && dados?.obra2Feedback) total++;
+    if (dados?.obra2Feedback) total++;
   });
 
   return total;
@@ -1581,7 +1266,7 @@ async function contarExtrasAcumulados(membroId) {
       total += Math.max(1, Number(dados.obra1ExtraQtd || 1));
     }
 
-    if (!ehSubUmaObra() && dados.obra2Extra) {
+    if (dados.obra2Extra) {
       total += Math.max(1, Number(dados.obra2ExtraQtd || 1));
     }
   });
@@ -1846,8 +1531,12 @@ async function montarFichaMargens() {
 
   for (const membro of membros) {
     const pontosAcumulados = await calcularPontosAcumulados(membro.id);
+
     const emojisObra1Bruto = await gerarEmojisAcumulados(membro.id, "obra1Status");
+    const emojisObra2Bruto = await gerarEmojisAcumulados(membro.id, "obra2Status");
+
     const emojisObra1 = traduzirEmojisMargens(emojisObra1Bruto);
+    const emojisObra2 = traduzirEmojisMargens(emojisObra2Bruto);
 
     const feedbacks = await contarFeedbacksAcumulados(membro.id);
     const extras = await contarExtrasAcumulados(membro.id);
@@ -1866,7 +1555,8 @@ async function montarFichaMargens() {
     texto += `💬 𝐅𝐞𝐞𝐝𝐛𝐚𝐜𝐤: ${feedbackTexto}\n`;
     texto += `🌌 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐋𝐮𝐧𝐚𝐫:\n\n`;
 
-    texto += `📖 𝐌𝐮𝐧𝐝𝐨 𝟎𝟏: ${emojisObra1}\n\n`;
+    texto += `📖 𝐌𝐮𝐧𝐝𝐨 𝟎𝟏: ${emojisObra1}\n`;
+    texto += `📖 𝐌𝐮𝐧𝐝𝐨 𝟎𝟐: ${emojisObra2}\n\n`;
 
     texto += `🗺️ 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐄𝐱𝐭𝐫𝐚: ${extrasTexto}\n\n`;
   }
