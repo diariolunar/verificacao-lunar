@@ -22,29 +22,25 @@ const subs = {
     nome: "𖤐⛓️🔥 Trono Profano",
     cor: "#7F1D1D",
     tituloFicha: "𖤐⛓️🔥 𝐀-𝟔 — 𝐓𝐑𝐎𝐍𝐎 𝐏𝐑𝐎𝐅𝐀𝐍𝐎 🔥⛓️𖤐",
-    modeloFicha: "trono",
-    tipoGrade: "duasObras"
+    modeloFicha: "trono"
   },
   A1: {
     nome: "🔥 Chama Eterna",
     cor: "#F97316",
     tituloFicha: "🌜 𝐎𝐧𝐝𝐞 𝐚 𝐋𝐮𝐚 𝐢𝐥𝐮𝐦𝐢𝐧𝐚 𝐨𝐬 𝐥𝐢𝐯𝐫𝐨𝐬: 𝐋𝐮𝐧𝐚 𝐀-𝟏 🌛",
-    modeloFicha: "chama",
-    tipoGrade: "duasObras"
+    modeloFicha: "chama"
   },
   A2: {
     nome: "📖 Página Livre",
     cor: "#0ea5e9",
     tituloFicha: "🧚‍♂PAGINA LIVRE 𝑨-𝟐 🧝‍♀🧌🦹‍♂🧞‍♂ VERIFICAÇÕES 🧛‍♂🧜‍♂",
-    modeloFicha: "pagina",
-    tipoGrade: "duasObras"
+    modeloFicha: "pagina"
   },
   A7: {
     nome: "✦🗺️📖 Margens de Mundos",
     cor: "#10B981",
     tituloFicha: "✦🗺️📖 𝐀-𝟕 — 𝐌𝐀𝐑𝐆𝐄𝐍𝐒 𝐃𝐄 𝐌𝐔𝐍𝐃𝐎𝐒 📖🗺️✦",
-    modeloFicha: "margens",
-    tipoGrade: "umaObra"
+    modeloFicha: "margens"
   }
 };
 
@@ -87,7 +83,7 @@ function getSubAtual() {
 
 function ehSubUmaObra() {
   const sub = getSubAtual();
-  return subs[sub]?.tipoGrade === "umaObra";
+  return subs[sub]?.modeloFicha === "margens";
 }
 
 function caminhoSub(sub) {
@@ -109,7 +105,9 @@ function limparUser(user) {
 
 function repetirCheck(qtd) {
   const total = Number(qtd || 0);
+
   if (total <= 0) return "";
+
   return "✅".repeat(total);
 }
 
@@ -154,6 +152,20 @@ function traduzirEmojisMargens(texto) {
     .replaceAll("⚰", "🚪")
     .replaceAll("🧕🏻", "🧭")
     .replaceAll("⚠", "⚠️");
+}
+
+function textoBuscaMembro(membro) {
+  return `${membro.nome || ""} ${membro.user || ""}`.toLowerCase();
+}
+
+function filtrarMembrosVerificacao() {
+  const campo = document.getElementById("buscaMembroVerificacao");
+  const busca = String(campo?.value || "").toLowerCase().trim();
+
+  document.querySelectorAll(".membro-verificacao-card").forEach(card => {
+    const texto = String(card.dataset.search || "").toLowerCase();
+    card.style.display = texto.includes(busca) ? "" : "none";
+  });
 }
 
 async function buscarMembros() {
@@ -737,30 +749,6 @@ async function telaVerificacoes(diaSelecionado = "Segunda") {
   await telaVerificacoesDuasObras(diaSelecionado);
 }
 
-function campoBuscaMembroHTML() {
-  return `
-    <div class="controle-verificacao">
-      <label>Buscar membro</label>
-      <input 
-        id="buscaMembroVerificacao" 
-        placeholder="Digite nome ou user..."
-        oninput="filtrarMembrosVerificacao()"
-      >
-    </div>
-  `;
-}
-
-function filtrarMembrosVerificacao() {
-  const busca = String(document.getElementById("buscaMembroVerificacao")?.value || "")
-    .toLowerCase()
-    .trim();
-
-  document.querySelectorAll(".verificacao-card").forEach(card => {
-    const texto = String(card.dataset.search || "").toLowerCase();
-    card.style.display = texto.includes(busca) ? "" : "none";
-  });
-}
-
 async function telaVerificacoesDuasObras(diaSelecionado = "Segunda") {
   const membros = await buscarMembros();
   const obras = await buscarObras();
@@ -837,7 +825,7 @@ async function telaVerificacoesDuasObras(diaSelecionado = "Segunda") {
     };
 
     return `
-      <div class="verificacao-card" data-search="${escapeHTML(`${membro.nome} ${membro.user}`)}">
+      <div class="verificacao-card membro-verificacao-card" data-search="${escapeHTML(textoBuscaMembro(membro))}">
         <div class="verificacao-topo">
           <div>
             <strong>${escapeHTML(membro.nome)}</strong>
@@ -884,7 +872,15 @@ async function telaVerificacoesDuasObras(diaSelecionado = "Segunda") {
         </select>
       </div>
 
-      ${campoBuscaMembroHTML()}
+      <div class="controle-verificacao">
+        <label>Buscar membro</label>
+        <input 
+          id="buscaMembroVerificacao" 
+          type="text" 
+          placeholder="Digite o nome ou user do membro..."
+          oninput="filtrarMembrosVerificacao()"
+        >
+      </div>
 
       <div class="resumo-obras">
         <div>
@@ -987,7 +983,7 @@ async function telaVerificacoesUmaObra(diaSelecionado = "Segunda") {
     };
 
     return `
-      <div class="verificacao-card" data-search="${escapeHTML(`${membro.nome} ${membro.user}`)}">
+      <div class="verificacao-card membro-verificacao-card" data-search="${escapeHTML(textoBuscaMembro(membro))}">
         <div class="verificacao-topo">
           <div>
             <strong>${escapeHTML(membro.nome)}</strong>
@@ -1033,7 +1029,15 @@ async function telaVerificacoesUmaObra(diaSelecionado = "Segunda") {
         </select>
       </div>
 
-      ${campoBuscaMembroHTML()}
+      <div class="controle-verificacao">
+        <label>Buscar membro</label>
+        <input 
+          id="buscaMembroVerificacao" 
+          type="text" 
+          placeholder="Digite o nome ou user do membro..."
+          oninput="filtrarMembrosVerificacao()"
+        >
+      </div>
 
       <div class="resumo-obras">
         <div>
@@ -1172,7 +1176,7 @@ function calcularPontosUmaObra(
 ) {
   let pontos = 0;
 
-  if (!statusContaComoLeitura(obra1Status)) return 0;
+  if (!statusQueCompletamLeitura.includes(obra1Status)) return 0;
 
   pontos += 5;
 
@@ -1297,7 +1301,7 @@ function atualizarPontosTelaUmaObra(membroId) {
   const obra1FeedbackCampo = document.getElementById(`membro_${membroId}_obra1Feedback`);
   const avisoObra1 = document.getElementById(`aviso_${membroId}_obra1`);
 
-  const leituraCompleta = statusContaComoLeitura(obra1Status);
+  const leituraCompleta = statusQueCompletamLeitura.includes(obra1Status);
 
   if (!leituraCompleta) {
     if (obra1FeedbackCampo) {
@@ -1451,7 +1455,8 @@ async function salvarVerificacaoUmaObra(diaSelecionado) {
 
   membros.forEach(membro => {
     const obra1Status = document.getElementById(`membro_${membro.id}_obra1Status`).value;
-    const leituraCompleta = statusContaComoLeitura(obra1Status);
+
+    const leituraCompleta = statusQueCompletamLeitura.includes(obra1Status);
 
     const obra1Feedback = leituraCompleta && obra1Status === "🌙"
       ? document.getElementById(`membro_${membro.id}_obra1Feedback`).checked
@@ -1964,4 +1969,127 @@ function gerarMensagemAtencaoTronoProfano() {
   texto += `𝐏𝐚𝐫𝐚 𝐠𝐚𝐫𝐚𝐧𝐭𝐢𝐫 𝐚 𝐨 𝐛𝐨𝐦 𝐚𝐧𝐝𝐚𝐦𝐞𝐧𝐭𝐨 𝐝𝐨 𝐓𝐫𝐨𝐧𝐨 𝐏𝐫𝐨𝐟𝐚𝐧𝐨, 𝐞́ 𝐢𝐦𝐩𝐨𝐫𝐭𝐚𝐧𝐭𝐞 𝐪𝐮𝐞 𝐭𝐨𝐝𝐨𝐬 𝐞𝐬𝐭𝐞𝐣𝐚𝐦 𝐞𝐦 𝐝𝐢𝐚 𝐜𝐨𝐦 𝐬𝐮𝐚𝐬 𝐥𝐞𝐢𝐭𝐮𝐫𝐚𝐬.\n\n`;
   texto += `𝐒𝐞 𝐯𝐨𝐜𝐞̂ 𝐟𝐢𝐜𝐨𝐮 𝐝𝐞𝐯𝐞𝐧𝐝𝐨 𝐥𝐞𝐢𝐭𝐮𝐫𝐚, 𝐩𝐨𝐫 𝐟𝐚𝐯𝐨𝐫, 𝐞𝐧𝐯𝐢𝐞 𝐨𝐬 𝐩𝐫𝐢𝐧𝐭𝐬 𝐧𝐨 𝐩𝐫𝐢𝐯𝐚𝐝𝐨 𝐩𝐚𝐫𝐚 𝐪𝐮𝐞 𝐞𝐮 𝐩𝐨𝐬𝐬𝐚 𝐚𝐭𝐮𝐚𝐥𝐢𝐳𝐚𝐫 𝐬𝐞𝐮𝐬 𝐫𝐞𝐠𝐢𝐬𝐭𝐫𝐨𝐬.\n\n`;
   texto += `𝐈𝐬𝐬𝐨 𝐞𝐯𝐢𝐭𝐚 𝐪𝐮𝐞 𝐞𝐮 𝐩𝐞𝐫𝐜𝐚 𝐭𝐞𝐦𝐩𝐨 𝐜𝐨𝐧𝐟𝐞𝐫𝐢𝐧𝐝𝐨 𝐚 𝐦𝐞𝐬𝐦𝐚 𝐜𝐨𝐢𝐬𝐚 𝐝𝐮𝐚𝐬 𝐯𝐞𝐳𝐞𝐬. 𝐀𝐥𝐞́𝐦 𝐝𝐢𝐬𝐬𝐨, 𝐬𝐞 𝐯𝐨𝐜𝐞̂ 𝐞𝐧𝐜𝐨𝐧𝐭𝐫𝐚𝐫 𝐚𝐥𝐠𝐮𝐦 𝐞𝐫𝐫𝐨 𝐧𝐚𝐬 𝐯𝐞𝐫𝐢𝐟𝐢𝐜𝐚𝐜̧𝐨̃𝐞𝐬, 𝐦𝐞 𝐜𝐡𝐚𝐦𝐞 𝐧𝐨 𝐩𝐫𝐢𝐯𝐚𝐝𝐨 𝐩𝐚𝐫𝐚 𝐪𝐮𝐞 𝐞𝐮 𝐩𝐨𝐬𝐬𝐚 𝐜𝐨𝐫𝐫𝐢𝐠𝐢𝐫.\n\n`;
-  texto += `🔥 𝐕𝐚𝐦𝐨𝐬 𝐦𝐚𝐧𝐭𝐞𝐫 𝐨 𝐠𝐫𝐮𝐩𝐨 𝐨𝐫𝐠𝐚𝐧𝐢𝐳𝐚𝐝𝐨, 𝐚𝐬 𝐥𝐞𝐢𝐭𝐮𝐫𝐚𝐬 𝐞𝐦 𝐝𝐢𝐚 𝐞 𝐚𝐬 𝐨𝐛𝐫𝐚𝐬 𝐝𝐢𝐠𝐧𝐚
+  texto += `🔥 𝐕𝐚𝐦𝐨𝐬 𝐦𝐚𝐧𝐭𝐞𝐫 𝐨 𝐠𝐫𝐮𝐩𝐨 𝐨𝐫𝐠𝐚𝐧𝐢𝐳𝐚𝐝𝐨, 𝐚𝐬 𝐥𝐞𝐢𝐭𝐮𝐫𝐚𝐬 𝐞𝐦 𝐝𝐢𝐚 𝐞 𝐚𝐬 𝐨𝐛𝐫𝐚𝐬 𝐝𝐢𝐠𝐧𝐚𝐬 𝐬𝐞𝐧𝐝𝐨 𝐞𝐧𝐭𝐫𝐨𝐧𝐢𝐳𝐚𝐝𝐚𝐬 𝐧𝐨 𝐓𝐫𝐨𝐧𝐨 𝐏𝐫𝐨𝐟𝐚𝐧𝐨.`;
+
+  return texto;
+}
+
+function gerarMensagemAtencaoMargens() {
+  let texto = "";
+
+  texto += `🚨 𝐀𝐓𝐄𝐍𝐂̧𝐀̃𝐎 🚨\n\n`;
+  texto += `𝐏𝐚𝐫𝐚 𝐠𝐚𝐫𝐚𝐧𝐭𝐢𝐫 𝐚 𝐨 𝐛𝐨𝐦 𝐚𝐧𝐝𝐚𝐦𝐞𝐧𝐭𝐨 𝐝𝐨 𝐌𝐚𝐫𝐠𝐞𝐧𝐬 𝐝𝐞 𝐌𝐮𝐧𝐝𝐨𝐬, 𝐞́ 𝐢𝐦𝐩𝐨𝐫𝐭𝐚𝐧𝐭𝐞 𝐪𝐮𝐞 𝐭𝐨𝐝𝐨𝐬 𝐞𝐬𝐭𝐞𝐣𝐚𝐦 𝐞𝐦 𝐝𝐢𝐚 𝐜𝐨𝐦 𝐬𝐮𝐚𝐬 𝐥𝐞𝐢𝐭𝐮𝐫𝐚𝐬.\n\n`;
+  texto += `𝐒𝐞 𝐯𝐨𝐜𝐞̂ 𝐟𝐢𝐜𝐨𝐮 𝐝𝐞𝐯𝐞𝐧𝐝𝐨 𝐥𝐞𝐢𝐭𝐮𝐫𝐚, 𝐩𝐨𝐫 𝐟𝐚𝐯𝐨𝐫, 𝐞𝐧𝐯𝐢𝐞 𝐨𝐬 𝐩𝐫𝐢𝐧𝐭𝐬 𝐧𝐨 𝐩𝐫𝐢𝐯𝐚𝐝𝐨 𝐩𝐚𝐫𝐚 𝐪𝐮𝐞 𝐞𝐮 𝐩𝐨𝐬𝐬𝐚 𝐚𝐭𝐮𝐚𝐥𝐢𝐳𝐚𝐫 𝐬𝐞𝐮𝐬 𝐫𝐞𝐠𝐢𝐬𝐭𝐫𝐨𝐬.\n\n`;
+  texto += `𝐈𝐬𝐬𝐨 𝐞𝐯𝐢𝐭𝐚 𝐪𝐮𝐞 𝐞𝐮 𝐩𝐞𝐫𝐜𝐚 𝐭𝐞𝐦𝐩𝐨 𝐜𝐨𝐧𝐟𝐞𝐫𝐢𝐧𝐝𝐨 𝐚 𝐦𝐞𝐬𝐦𝐚 𝐜𝐨𝐢𝐬𝐚 𝐝𝐮𝐚𝐬 𝐯𝐞𝐳𝐞𝐬. 𝐀𝐥𝐞́𝐦 𝐝𝐢𝐬𝐬𝐨, 𝐬𝐞 𝐯𝐨𝐜𝐞̂ 𝐞𝐧𝐜𝐨𝐧𝐭𝐫𝐚𝐫 𝐚𝐥𝐠𝐮𝐦 𝐞𝐫𝐫𝐨 𝐧𝐚𝐬 𝐯𝐞𝐫𝐢𝐟𝐢𝐜𝐚𝐜̧𝐨̃𝐞𝐬, 𝐦𝐞 𝐜𝐡𝐚𝐦𝐞 𝐧𝐨 𝐩𝐫𝐢𝐯𝐚𝐝𝐨 𝐩𝐚𝐫𝐚 𝐪𝐮𝐞 𝐞𝐮 𝐩𝐨𝐬𝐬𝐚 𝐜𝐨𝐫𝐫𝐢𝐠𝐢𝐫.\n\n`;
+  texto += `🌌 𝐕𝐚𝐦𝐨𝐬 𝐦𝐚𝐧𝐭𝐞𝐫 𝐨 𝐠𝐫𝐮𝐩𝐨 𝐨𝐫𝐠𝐚𝐧𝐢𝐳𝐚𝐝𝐨, 𝐚𝐬 𝐥𝐞𝐢𝐭𝐮𝐫𝐚𝐬 𝐞𝐦 𝐝𝐢𝐚 𝐞 𝐚𝐬 𝐡𝐢𝐬𝐭𝐨́𝐫𝐢𝐚𝐬 𝐬𝐞𝐠𝐮𝐢𝐧𝐝𝐨 𝐬𝐞𝐮𝐬 𝐜𝐚𝐦𝐢𝐧𝐡𝐨𝐬 𝐩𝐞𝐥𝐚𝐬 𝐌𝐚𝐫𝐠𝐞𝐧𝐬 𝐝𝐞 𝐌𝐮𝐧𝐝𝐨𝐬.`;
+
+  return texto;
+}
+
+function gerarMensagemAtencao() {
+  let texto = "";
+
+  texto += `🚨𝐀𝐓𝐄𝐍𝐂̧𝐀̃𝐎🚨\n\n`;
+  texto += `𝐏𝐚𝐫𝐚 𝐠𝐚𝐫𝐚𝐧𝐭𝐢𝐫 𝐚 𝐨𝐫𝐠𝐚𝐧𝐢𝐳𝐚𝐜̧𝐚̃𝐨 𝐞 𝐞𝐟𝐢𝐜𝐢𝐞̂𝐧𝐜𝐢𝐚 𝐝𝐨 𝐠𝐫𝐮𝐩𝐨, 𝐞́ 𝐢𝐦𝐩𝐨𝐫𝐭𝐚𝐧𝐭𝐞 𝐪𝐮𝐞 𝐭𝐨𝐝𝐨𝐬 𝐞𝐬𝐭𝐞𝐣𝐚𝐦 𝐞𝐦 𝐝𝐢𝐚 𝐜𝐨𝐦 𝐬𝐮𝐚𝐬 𝐥𝐞𝐢𝐭𝐮𝐫𝐚𝐬. 𝐒𝐞 𝐯𝐨𝐜𝐞̂ 𝐟𝐢𝐜𝐨𝐮 𝐝𝐞𝐯𝐞𝐧𝐝𝐨 𝐥𝐞𝐢𝐭𝐮𝐫𝐚, 𝐩𝐨𝐫 𝐟𝐚𝐯𝐨𝐫, 𝐞𝐧𝐯𝐢𝐞 𝐨𝐬 𝐩𝐫𝐢𝐧𝐭𝐬 𝐧𝐨 𝐩𝐫𝐢𝐯𝐚𝐝𝐨 𝐩𝐚𝐫𝐚 𝐪𝐮𝐞 𝐞𝐮 𝐩𝐨𝐬𝐬𝐚 𝐚𝐭𝐮𝐚𝐥𝐢𝐳𝐚𝐫 𝐬𝐞𝐮𝐬 𝐫𝐞𝐠𝐢𝐬𝐭𝐫𝐨𝐬.\n\n`;
+  texto += `𝐈𝐬𝐬𝐨 𝐞𝐯𝐢𝐭𝐚𝐫𝐚́ 𝐪𝐮𝐞 𝐞𝐮 𝐩𝐞𝐫𝐜𝐚 𝐭𝐞𝐦𝐩𝐨 𝐜𝐨𝐧𝐟𝐞𝐫𝐢𝐧𝐝𝐨 𝐚 𝐦𝐞𝐬𝐦𝐚 𝐜𝐨𝐢𝐬𝐚 𝐝𝐮𝐚𝐬 𝐯𝐞𝐳𝐞𝐬. 𝐀𝐥𝐞́𝐦 𝐝𝐢𝐬𝐬𝐨, 𝐬𝐞 𝐯𝐨𝐜𝐞̂ 𝐞𝐧𝐜𝐨𝐧𝐭𝐫𝐚𝐫 𝐚𝐥𝐠𝐮𝐦 𝐞𝐫𝐫𝐨 𝐧𝐚𝐬 𝐯𝐞𝐫𝐢𝐟𝐢𝐜𝐚𝐜̧𝐨̃𝐞𝐬, 𝐧𝐚̃𝐨 𝐡𝐞𝐬𝐢𝐭𝐞 𝐞𝐦 𝐦𝐞 𝐜𝐡𝐚𝐦𝐚𝐫 𝐧𝐨 𝐩𝐫𝐢𝐯𝐚𝐝𝐨. 𝐄𝐬𝐭𝐨𝐮 𝐚𝐪𝐮𝐢 𝐩𝐚𝐫𝐚 𝐚𝐣𝐮𝐝𝐚𝐫 𝐞 𝐫𝐞𝐬𝐨𝐥𝐯𝐞𝐫 𝐪𝐮𝐚𝐥𝐪𝐮𝐞𝐫 𝐩𝐫𝐨𝐛𝐥𝐞𝐦𝐚!\n\n`;
+  texto += `😉 𝐕𝐚𝐦𝐨𝐬 𝐦𝐚𝐧𝐭𝐞𝐫 𝐨 𝐠𝐫𝐮𝐩𝐨 𝐨𝐫𝐠𝐚𝐧𝐢𝐳𝐚𝐝𝐨 𝐞 𝐟𝐨𝐜𝐚𝐝𝐨 𝐧𝐚𝐬 𝐡𝐢𝐬𝐭𝐨́𝐫𝐢𝐚𝐬 𝐢𝐧𝐜𝐫𝐢́𝐯𝐞𝐢𝐬 𝐪𝐮𝐞 𝐜𝐨𝐦𝐩𝐚𝐫𝐭𝐢𝐥𝐡𝐚𝐦𝐨𝐬! 𝐎𝐛𝐫𝐢𝐠𝐚𝐝𝐚 𝐩𝐞𝐥𝐚 𝐜𝐨𝐨𝐩𝐞𝐫𝐚𝐜̧𝐚̃𝐨! 📚`;
+
+  return texto;
+}
+
+function copiarFicha() {
+  const texto = document.getElementById("fichaTexto").value;
+
+  navigator.clipboard.writeText(texto)
+    .then(() => alert("Ficha copiada!"))
+    .catch(() => alert("Não foi possível copiar automaticamente. Selecione o texto e copie manualmente."));
+}
+
+async function login() {
+  const email = document.getElementById("email").value.trim();
+  const senha = document.getElementById("senha").value.trim();
+
+  if (!email || !senha) {
+    alert("Preencha e-mail e senha.");
+    return;
+  }
+
+  try {
+    await signInWithEmailAndPassword(auth, email, senha);
+  } catch (error) {
+    alert("Erro ao entrar. Verifique o e-mail e a senha.");
+  }
+}
+
+async function logout() {
+  localStorage.removeItem("sub");
+  await signOut(auth);
+}
+
+async function trocarSub() {
+  localStorage.removeItem("sub");
+  telaSubs();
+}
+
+async function selecionarSub(sub) {
+  localStorage.setItem("sub", sub);
+
+  await setDoc(caminhoSub(sub), {
+    nome: subs[sub].nome,
+    codigo: sub,
+    atualizadoEm: new Date().toISOString()
+  }, { merge: true });
+
+  await telaDashboard();
+}
+
+function aplicarTema() {
+  const sub = getSubAtual();
+  const titulo = document.getElementById("titulo-sub");
+
+  if (!sub || !subs[sub] || !titulo) {
+    if (titulo) titulo.textContent = "🌙 Verificação Lunar";
+    return;
+  }
+
+  titulo.textContent = subs[sub].nome;
+
+  const cor = subs[sub].cor;
+
+  document.querySelector("header").style.borderBottomColor = cor;
+  document.querySelector("footer").style.borderTopColor = cor;
+
+  document.querySelectorAll("button").forEach(btn => {
+    btn.style.background = cor;
+  });
+}
+
+window.login = login;
+window.logout = logout;
+window.trocarSub = trocarSub;
+window.selecionarSub = selecionarSub;
+
+window.telaDashboard = telaDashboard;
+window.telaMembros = telaMembros;
+window.formMembro = formMembro;
+window.adicionarMembro = adicionarMembro;
+window.salvarEdicaoMembro = salvarEdicaoMembro;
+window.removerMembro = removerMembro;
+
+window.telaObras = telaObras;
+window.formObra = formObra;
+window.adicionarObra = adicionarObra;
+window.salvarEdicaoObra = salvarEdicaoObra;
+window.removerObra = removerObra;
+
+window.telaGrade = telaGrade;
+window.salvarGrade = salvarGrade;
+
+window.telaVerificacoes = telaVerificacoes;
+window.atualizarPontosTela = atualizarPontosTela;
+window.salvarVerificacao = salvarVerificacao;
+
+window.telaVisualizarFicha = telaVisualizarFicha;
+window.copiarFicha = copiarFicha;
+window.limparFichaSemana = limparFichaSemana;
+window.filtrarMembrosVerificacao = filtrarMembrosVerificacao;
