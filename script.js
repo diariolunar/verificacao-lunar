@@ -17,6 +17,8 @@ import {
   deleteDoc
 } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
+const SEM_OBRA_ID = "__SEM_OBRA__";
+
 const subs = {
   A6: {
     nome: "𖤐⛓️🔥 Trono Profano",
@@ -161,6 +163,31 @@ function filtrarMembrosVerificacao() {
     const texto = String(card.dataset.search || "").toLowerCase();
     card.style.display = texto.includes(busca) ? "" : "none";
   });
+}
+
+function resolverObraDaGrade(id, obras) {
+  if (id === SEM_OBRA_ID) {
+    return {
+      id: SEM_OBRA_ID,
+      titulo: "⏳ Sem Obra",
+      semObra: true
+    };
+  }
+
+  const obra = obras.find(item => item.id === id);
+
+  if (!obra) {
+    return {
+      id: "",
+      titulo: "Obra não encontrada",
+      semObra: false
+    };
+  }
+
+  return {
+    ...obra,
+    semObra: false
+  };
 }
 
 async function buscarMembros() {
@@ -662,11 +689,13 @@ async function telaGrade() {
 
       <select id="${dia}_obra1">
         <option value="">Obra 1</option>
+        <option value="${SEM_OBRA_ID}">⏳ Sem Obra</option>
         ${opcoesObras}
       </select>
 
       <select id="${dia}_obra2">
         <option value="">Obra 2</option>
+        <option value="${SEM_OBRA_ID}">⏳ Sem Obra</option>
         ${opcoesObras}
       </select>
     </div>
@@ -677,7 +706,7 @@ async function telaGrade() {
       <div class="page-header">
         <div>
           <h2>Grade Semanal</h2>
-          <p>Selecione a Obra 1 e a Obra 2 de segunda a sexta.</p>
+          <p>Selecione a Obra 1 e a Obra 2 de segunda a sexta. Use “Sem Obra” quando o dia tiver apenas uma obra.</p>
         </div>
       </div>
 
@@ -767,7 +796,7 @@ async function telaVerificacoesDuasObras(diaSelecionado = "Segunda") {
           `).join("")}
         </select>
 
-        <p class="empty-message">A grade deste dia ainda não está completa. Selecione Obra 1 e Obra 2 na grade semanal.</p>
+        <p class="empty-message">A grade deste dia ainda não está completa. Selecione Obra 1 e Obra 2 ou marque Sem Obra na grade semanal.</p>
 
         <button onclick="telaGrade()">Montar Grade</button>
         <button onclick="telaDashboard()">⬅ Voltar</button>
@@ -778,21 +807,35 @@ async function telaVerificacoesDuasObras(diaSelecionado = "Segunda") {
     return;
   }
 
-  const obra1 = obras.find(obra => obra.id === dadosDia.obra1);
-  const obra2 = obras.find(obra => obra.id === dadosDia.obra2);
+  const obra1 = resolverObraDaGrade(dadosDia.obra1, obras);
+  const obra2 = resolverObraDaGrade(dadosDia.obra2, obras);
 
   const linhasMembros = membros.map(membro => {
     const dadosMembro = verificacaoDia?.membros?.[membro.id] || {
-      obra1Status: "",
+      obra1Status: obra1.semObra ? "⏳" : "",
       obra1Feedback: false,
       obra1Extra: false,
       obra1ExtraQtd: 1,
-      obra2Status: "",
+      obra2Status: obra2.semObra ? "⏳" : "",
       obra2Feedback: false,
       obra2Extra: false,
       obra2ExtraQtd: 1,
       pontos: 0
     };
+
+    if (obra1.semObra) {
+      dadosMembro.obra1Status = "⏳";
+      dadosMembro.obra1Feedback = false;
+      dadosMembro.obra1Extra = false;
+      dadosMembro.obra1ExtraQtd = 0;
+    }
+
+    if (obra2.semObra) {
+      dadosMembro.obra2Status = "⏳";
+      dadosMembro.obra2Feedback = false;
+      dadosMembro.obra2Extra = false;
+      dadosMembro.obra2ExtraQtd = 0;
+    }
 
     return `
       <div class="verificacao-card membro-verificacao-card" data-search="${escapeHTML(textoBuscaMembro(membro))}">
@@ -855,12 +898,12 @@ async function telaVerificacoesDuasObras(diaSelecionado = "Segunda") {
       <div class="resumo-obras">
         <div>
           <strong>Obra 1</strong>
-          <span>${obra1 ? escapeHTML(obra1.titulo) : "Obra não encontrada"}</span>
+          <span>${escapeHTML(obra1.titulo)}</span>
         </div>
 
         <div>
           <strong>Obra 2</strong>
-          <span>${obra2 ? escapeHTML(obra2.titulo) : "Obra não encontrada"}</span>
+          <span>${escapeHTML(obra2.titulo)}</span>
         </div>
       </div>
 
@@ -883,10 +926,10 @@ async function telaVerificacoesDuasObras(diaSelecionado = "Segunda") {
 }
 
 function gerarBlocoObraVerificacao(membroId, numeroObra, obra, dadosMembro) {
-  const status = dadosMembro[`obra${numeroObra}Status`] || "";
-  const feedback = dadosMembro[`obra${numeroObra}Feedback`] || false;
-  const extra = dadosMembro[`obra${numeroObra}Extra`] || false;
-  const extraQtd = dadosMembro[`obra${numeroObra}ExtraQtd`] || 1;
+  const status = obra.semObra ? "⏳" : dadosMembro[`obra${numeroObra}Status`] || "";
+  const feedback = obra.semObra ? false : dadosMembro[`obra${numeroObra}Feedback`] || false;
+  const extra = obra.semObra ? false : dadosMembro[`obra${numeroObra}Extra`] || false;
+  const extraQtd = obra.semObra ? 0 : dadosMembro[`obra${numeroObra}ExtraQtd`] || 1;
 
   return `
     <div class="obra-verificacao">
@@ -894,7 +937,11 @@ function gerarBlocoObraVerificacao(membroId, numeroObra, obra, dadosMembro) {
       <p>${obra ? escapeHTML(obra.titulo) : "Obra não encontrada"}</p>
 
       <label>Status da leitura</label>
-      <select id="membro_${membroId}_obra${numeroObra}Status" onchange="atualizarPontosTela('${membroId}')">
+      <select 
+        id="membro_${membroId}_obra${numeroObra}Status" 
+        onchange="atualizarPontosTela('${membroId}')"
+        ${obra.semObra ? "disabled" : ""}
+      >
         ${gerarOpcoesStatus(status)}
       </select>
 
@@ -904,6 +951,7 @@ function gerarBlocoObraVerificacao(membroId, numeroObra, obra, dadosMembro) {
           id="membro_${membroId}_obra${numeroObra}Feedback"
           onchange="atualizarPontosTela('${membroId}')"
           ${feedback ? "checked" : ""}
+          ${obra.semObra ? "disabled" : ""}
         >
         Feedback entregue (+20)
       </label>
@@ -914,6 +962,7 @@ function gerarBlocoObraVerificacao(membroId, numeroObra, obra, dadosMembro) {
           id="membro_${membroId}_obra${numeroObra}Extra"
           onchange="atualizarPontosTela('${membroId}')"
           ${extra ? "checked" : ""}
+          ${obra.semObra ? "disabled" : ""}
         >
         Teve capítulo extra? (+5 cada)
       </label>
@@ -924,13 +973,16 @@ function gerarBlocoObraVerificacao(membroId, numeroObra, obra, dadosMembro) {
           type="number"
           min="1"
           id="membro_${membroId}_obra${numeroObra}ExtraQtd"
-          value="${extraQtd}"
+          value="${extraQtd || 1}"
           onchange="atualizarPontosTela('${membroId}')"
           oninput="atualizarPontosTela('${membroId}')"
+          ${obra.semObra ? "disabled" : ""}
         >
       </div>
 
-      <small id="aviso_${membroId}_obra${numeroObra}" class="feedback-aviso"></small>
+      <small id="aviso_${membroId}_obra${numeroObra}" class="feedback-aviso">
+        ${obra.semObra ? "Sem obra neste campo." : ""}
+      </small>
     </div>
   `;
 }
@@ -1022,8 +1074,8 @@ function atualizarPontosTela(membroId) {
 }
 
 function atualizarPontosTelaDuasObras(membroId) {
-  const obra1Status = document.getElementById(`membro_${membroId}_obra1Status`)?.value || "";
-  const obra2Status = document.getElementById(`membro_${membroId}_obra2Status`)?.value || "";
+  const obra1Status = document.getElementById(`membro_${membroId}_obra1Status`)?.value || "⏳";
+  const obra2Status = document.getElementById(`membro_${membroId}_obra2Status`)?.value || "⏳";
 
   const obra1FeedbackCampo = document.getElementById(`membro_${membroId}_obra1Feedback`);
   const obra2FeedbackCampo = document.getElementById(`membro_${membroId}_obra2Feedback`);
@@ -1122,8 +1174,8 @@ async function salvarVerificacaoDuasObras(diaSelecionado) {
   };
 
   membros.forEach(membro => {
-    const obra1Status = document.getElementById(`membro_${membro.id}_obra1Status`).value;
-    const obra2Status = document.getElementById(`membro_${membro.id}_obra2Status`).value;
+    const obra1Status = document.getElementById(`membro_${membro.id}_obra1Status`)?.value || "⏳";
+    const obra2Status = document.getElementById(`membro_${membro.id}_obra2Status`)?.value || "⏳";
 
     const diaValido = leiturasDoDiaValidas(obra1Status, obra2Status);
 
