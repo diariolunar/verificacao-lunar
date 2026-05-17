@@ -22,25 +22,29 @@ const subs = {
     nome: "𖤐⛓️🔥 Trono Profano",
     cor: "#7F1D1D",
     tituloFicha: "𖤐⛓️🔥 𝐀-𝟔 — 𝐓𝐑𝐎𝐍𝐎 𝐏𝐑𝐎𝐅𝐀𝐍𝐎 🔥⛓️𖤐",
-    modeloFicha: "trono"
+    modeloFicha: "trono",
+    tipoGrade: "duasObras"
   },
   A1: {
     nome: "🔥 Chama Eterna",
     cor: "#F97316",
     tituloFicha: "🌜 𝐎𝐧𝐝𝐞 𝐚 𝐋𝐮𝐚 𝐢𝐥𝐮𝐦𝐢𝐧𝐚 𝐨𝐬 𝐥𝐢𝐯𝐫𝐨𝐬: 𝐋𝐮𝐧𝐚 𝐀-𝟏 🌛",
-    modeloFicha: "chama"
+    modeloFicha: "chama",
+    tipoGrade: "duasObras"
   },
   A2: {
     nome: "📖 Página Livre",
     cor: "#0ea5e9",
     tituloFicha: "🧚‍♂PAGINA LIVRE 𝑨-𝟐 🧝‍♀🧌🦹‍♂🧞‍♂ VERIFICAÇÕES 🧛‍♂🧜‍♂",
-    modeloFicha: "pagina"
+    modeloFicha: "pagina",
+    tipoGrade: "duasObras"
   },
-  A10: {
-    nome: "💥☄️ Quasar A-10 ☄️💫",
-    cor: "#C084FC",
-    tituloFicha: "🌑👑 𝐕𝐄𝐑𝐈𝐅𝐈𝐂𝐀ÇÕ𝐄𝐒 𝐐𝐔𝐀𝐒𝐀𝐑 𝐀-𝟏𝟎 👑🌑",
-    modeloFicha: "quasar"
+  A7: {
+    nome: "✦🗺️📖 Margens de Mundos",
+    cor: "#10B981",
+    tituloFicha: "✦🗺️📖 𝐀-𝟕 — 𝐌𝐀𝐑𝐆𝐄𝐍𝐒 𝐃𝐄 𝐌𝐔𝐍𝐃𝐎𝐒 📖🗺️✦",
+    modeloFicha: "margens",
+    tipoGrade: "umaObra"
   }
 };
 
@@ -81,9 +85,9 @@ function getSubAtual() {
   return localStorage.getItem("sub");
 }
 
-function ehSubQuasar() {
+function ehSubUmaObra() {
   const sub = getSubAtual();
-  return subs[sub]?.modeloFicha === "quasar";
+  return subs[sub]?.tipoGrade === "umaObra";
 }
 
 function caminhoSub(sub) {
@@ -105,9 +109,7 @@ function limparUser(user) {
 
 function repetirCheck(qtd) {
   const total = Number(qtd || 0);
-
   if (total <= 0) return "";
-
   return "✅".repeat(total);
 }
 
@@ -142,6 +144,15 @@ function traduzirEmojisTronoProfano(texto) {
     .replaceAll("🌼", "📜")
     .replaceAll("⚰", "⚰️")
     .replaceAll("🧕🏻", "🕯️")
+    .replaceAll("⚠", "⚠️");
+}
+
+function traduzirEmojisMargens(texto) {
+  return String(texto || "")
+    .replaceAll("☠", "🌑")
+    .replaceAll("🌼", "📜")
+    .replaceAll("⚰", "🚪")
+    .replaceAll("🧕🏻", "🧭")
     .replaceAll("⚠", "⚠️");
 }
 
@@ -260,7 +271,7 @@ function telaSubs() {
       <button onclick="selecionarSub('A6')">𖤐 Trono Profano</button>
       <button onclick="selecionarSub('A1')">🔥 Chama Eterna</button>
       <button onclick="selecionarSub('A2')">📖 Página Livre</button>
-      <button onclick="selecionarSub('A10')">☄️ Quasar</button>
+      <button onclick="selecionarSub('A7')">🗺️ Margens de Mundos</button>
 
       <button onclick="logout()">Sair</button>
     </div>
@@ -619,7 +630,7 @@ async function removerObra(id) {
 async function telaGrade() {
   const obras = await buscarObras();
   const grade = await buscarGrade();
-  const quasar = ehSubQuasar();
+  const umaObra = ehSubUmaObra();
 
   if (obras.length === 0) {
     app.innerHTML = `
@@ -640,7 +651,7 @@ async function telaGrade() {
   `).join("");
 
   const linhas = diasSemana.map(dia => {
-    if (quasar) {
+    if (umaObra) {
       return `
         <div class="linha-grade">
           <label class="dia-grade">${dia}</label>
@@ -675,7 +686,7 @@ async function telaGrade() {
       <div class="page-header">
         <div>
           <h2>Grade Semanal</h2>
-          <p>${quasar ? "Selecione a obra de cada dia." : "Selecione a Obra 1 e a Obra 2 de segunda a sexta."}</p>
+          <p>${umaObra ? "Selecione a obra de cada dia." : "Selecione a Obra 1 e a Obra 2 de segunda a sexta."}</p>
         </div>
       </div>
 
@@ -690,7 +701,7 @@ async function telaGrade() {
     if (grade[dia]) {
       document.getElementById(`${dia}_obra1`).value = grade[dia].obra1 || "";
 
-      if (!quasar && document.getElementById(`${dia}_obra2`)) {
+      if (!umaObra && document.getElementById(`${dia}_obra2`)) {
         document.getElementById(`${dia}_obra2`).value = grade[dia].obra2 || "";
       }
     }
@@ -700,13 +711,13 @@ async function telaGrade() {
 }
 
 async function salvarGrade() {
-  const quasar = ehSubQuasar();
+  const umaObra = ehSubUmaObra();
   const novaGrade = {};
 
   diasSemana.forEach(dia => {
     novaGrade[dia] = {
       obra1: document.getElementById(`${dia}_obra1`).value,
-      obra2: quasar ? "" : document.getElementById(`${dia}_obra2`).value
+      obra2: umaObra ? "" : document.getElementById(`${dia}_obra2`).value
     };
   });
 
@@ -718,12 +729,36 @@ async function salvarGrade() {
 }
 
 async function telaVerificacoes(diaSelecionado = "Segunda") {
-  if (ehSubQuasar()) {
-    await telaVerificacoesQuasar(diaSelecionado);
+  if (ehSubUmaObra()) {
+    await telaVerificacoesUmaObra(diaSelecionado);
     return;
   }
 
   await telaVerificacoesDuasObras(diaSelecionado);
+}
+
+function campoBuscaMembroHTML() {
+  return `
+    <div class="controle-verificacao">
+      <label>Buscar membro</label>
+      <input 
+        id="buscaMembroVerificacao" 
+        placeholder="Digite nome ou user..."
+        oninput="filtrarMembrosVerificacao()"
+      >
+    </div>
+  `;
+}
+
+function filtrarMembrosVerificacao() {
+  const busca = String(document.getElementById("buscaMembroVerificacao")?.value || "")
+    .toLowerCase()
+    .trim();
+
+  document.querySelectorAll(".verificacao-card").forEach(card => {
+    const texto = String(card.dataset.search || "").toLowerCase();
+    card.style.display = texto.includes(busca) ? "" : "none";
+  });
 }
 
 async function telaVerificacoesDuasObras(diaSelecionado = "Segunda") {
@@ -802,7 +837,7 @@ async function telaVerificacoesDuasObras(diaSelecionado = "Segunda") {
     };
 
     return `
-      <div class="verificacao-card">
+      <div class="verificacao-card" data-search="${escapeHTML(`${membro.nome} ${membro.user}`)}">
         <div class="verificacao-topo">
           <div>
             <strong>${escapeHTML(membro.nome)}</strong>
@@ -849,6 +884,8 @@ async function telaVerificacoesDuasObras(diaSelecionado = "Segunda") {
         </select>
       </div>
 
+      ${campoBuscaMembroHTML()}
+
       <div class="resumo-obras">
         <div>
           <strong>Obra 1</strong>
@@ -879,7 +916,7 @@ async function telaVerificacoesDuasObras(diaSelecionado = "Segunda") {
   aplicarTema();
 }
 
-async function telaVerificacoesQuasar(diaSelecionado = "Segunda") {
+async function telaVerificacoesUmaObra(diaSelecionado = "Segunda") {
   const membros = await buscarMembros();
   const obras = await buscarObras();
   const grade = await buscarGrade();
@@ -950,7 +987,7 @@ async function telaVerificacoesQuasar(diaSelecionado = "Segunda") {
     };
 
     return `
-      <div class="verificacao-card">
+      <div class="verificacao-card" data-search="${escapeHTML(`${membro.nome} ${membro.user}`)}">
         <div class="verificacao-topo">
           <div>
             <strong>${escapeHTML(membro.nome)}</strong>
@@ -982,7 +1019,7 @@ async function telaVerificacoesQuasar(diaSelecionado = "Segunda") {
     <div class="page-box verificacao-box">
       <div class="page-header">
         <div>
-          <h2>Verificações Quasar A-10</h2>
+          <h2>Verificações Margens de Mundos</h2>
           <p>Marque o resultado da obra do dia, feedback e capítulos extras.</p>
         </div>
       </div>
@@ -995,6 +1032,8 @@ async function telaVerificacoesQuasar(diaSelecionado = "Segunda") {
           `).join("")}
         </select>
       </div>
+
+      ${campoBuscaMembroHTML()}
 
       <div class="resumo-obras">
         <div>
@@ -1029,7 +1068,7 @@ function gerarBlocoObraVerificacao(membroId, numeroObra, obra, dadosMembro) {
 
   return `
     <div class="obra-verificacao">
-      <h3>${ehSubQuasar() ? "Obra do dia" : `Obra ${numeroObra}`}</h3>
+      <h3>${ehSubUmaObra() ? "Obra do dia" : `Obra ${numeroObra}`}</h3>
       <p>${obra ? escapeHTML(obra.titulo) : "Obra não encontrada"}</p>
 
       <label>Status da leitura</label>
@@ -1125,7 +1164,7 @@ function calcularPontosDuasObras(
   return pontos;
 }
 
-function calcularPontosQuasar(
+function calcularPontosUmaObra(
   obra1Status,
   obra1Feedback,
   obra1Extra,
@@ -1133,7 +1172,7 @@ function calcularPontosQuasar(
 ) {
   let pontos = 0;
 
-  if (!statusQueCompletamLeitura.includes(obra1Status)) return 0;
+  if (!statusContaComoLeitura(obra1Status)) return 0;
 
   pontos += 5;
 
@@ -1180,8 +1219,8 @@ function controlarExtras(membroId, obraNumero, statusObra, leituraCompleta) {
 }
 
 function atualizarPontosTela(membroId) {
-  if (ehSubQuasar()) {
-    atualizarPontosTelaQuasar(membroId);
+  if (ehSubUmaObra()) {
+    atualizarPontosTelaUmaObra(membroId);
     return;
   }
 
@@ -1253,12 +1292,12 @@ function atualizarPontosTelaDuasObras(membroId) {
   }
 }
 
-function atualizarPontosTelaQuasar(membroId) {
+function atualizarPontosTelaUmaObra(membroId) {
   const obra1Status = document.getElementById(`membro_${membroId}_obra1Status`)?.value || "";
   const obra1FeedbackCampo = document.getElementById(`membro_${membroId}_obra1Feedback`);
   const avisoObra1 = document.getElementById(`aviso_${membroId}_obra1`);
 
-  const leituraCompleta = statusQueCompletamLeitura.includes(obra1Status);
+  const leituraCompleta = statusContaComoLeitura(obra1Status);
 
   if (!leituraCompleta) {
     if (obra1FeedbackCampo) {
@@ -1283,7 +1322,7 @@ function atualizarPontosTelaQuasar(membroId) {
   const obra1Extra = obra1Status === "🌙" ? obra1ExtraCampo?.checked || false : false;
   const obra1ExtraQtd = obra1Extra ? Math.max(1, Number(obra1ExtraQtdCampo?.value || 1)) : 0;
 
-  const pontos = calcularPontosQuasar(
+  const pontos = calcularPontosUmaObra(
     obra1Status,
     obra1Feedback,
     obra1Extra,
@@ -1320,8 +1359,8 @@ function configurarFeedbackPorObra(membroId, obraNumero, statusObra) {
 }
 
 async function salvarVerificacao(diaSelecionado) {
-  if (ehSubQuasar()) {
-    await salvarVerificacaoQuasar(diaSelecionado);
+  if (ehSubUmaObra()) {
+    await salvarVerificacaoUmaObra(diaSelecionado);
     return;
   }
 
@@ -1401,7 +1440,7 @@ async function salvarVerificacaoDuasObras(diaSelecionado) {
   await telaDashboard();
 }
 
-async function salvarVerificacaoQuasar(diaSelecionado) {
+async function salvarVerificacaoUmaObra(diaSelecionado) {
   const membros = await buscarMembros();
 
   const dados = {
@@ -1412,8 +1451,7 @@ async function salvarVerificacaoQuasar(diaSelecionado) {
 
   membros.forEach(membro => {
     const obra1Status = document.getElementById(`membro_${membro.id}_obra1Status`).value;
-
-    const leituraCompleta = statusQueCompletamLeitura.includes(obra1Status);
+    const leituraCompleta = statusContaComoLeitura(obra1Status);
 
     const obra1Feedback = leituraCompleta && obra1Status === "🌙"
       ? document.getElementById(`membro_${membro.id}_obra1Feedback`).checked
@@ -1427,7 +1465,7 @@ async function salvarVerificacaoQuasar(diaSelecionado) {
       ? Math.max(1, Number(document.getElementById(`membro_${membro.id}_obra1ExtraQtd`).value || 1))
       : 0;
 
-    const pontos = calcularPontosQuasar(
+    const pontos = calcularPontosUmaObra(
       obra1Status,
       obra1Feedback,
       obra1Extra,
@@ -1518,7 +1556,7 @@ async function contarFeedbacksAcumulados(membroId) {
     const dados = verificacoes[dia]?.membros?.[membroId];
 
     if (dados?.obra1Feedback) total++;
-    if (!ehSubQuasar() && dados?.obra2Feedback) total++;
+    if (!ehSubUmaObra() && dados?.obra2Feedback) total++;
   });
 
   return total;
@@ -1538,7 +1576,7 @@ async function contarExtrasAcumulados(membroId) {
       total += Math.max(1, Number(dados.obra1ExtraQtd || 1));
     }
 
-    if (!ehSubQuasar() && dados.obra2Extra) {
+    if (!ehSubUmaObra() && dados.obra2Extra) {
       total += Math.max(1, Number(dados.obra2ExtraQtd || 1));
     }
   });
@@ -1637,8 +1675,8 @@ async function gerarFichaWhatsapp() {
     return await montarFichaPagina();
   }
 
-  if (subs[sub].modeloFicha === "quasar") {
-    return await montarFichaQuasar();
+  if (subs[sub].modeloFicha === "margens") {
+    return await montarFichaMargens();
   }
 
   return await montarFichaTrono();
@@ -1784,50 +1822,52 @@ async function montarFichaPagina() {
   return texto;
 }
 
-async function montarFichaQuasar() {
+async function montarFichaMargens() {
   const membros = await buscarMembros();
   const diasAcumulados = await contarDiasComVerificacao();
 
   let texto = "";
 
-  texto += `🌑👑 𝐕𝐄𝐑𝐈𝐅𝐈𝐂𝐀ÇÕ𝐄𝐒 𝐐𝐔𝐀𝐒𝐀𝐑 𝐀-𝟏𝟎 👑🌑\n`;
-  texto += `━━━━━━━━━━━━━━━\n\n`;
+  texto += `✦🗺️📖 𝐀-𝟕 — 𝐌𝐀𝐑𝐆𝐄𝐍𝐒 𝐃𝐄 𝐌𝐔𝐍𝐃𝐎𝐒 📖🗺️✦\n`;
+  texto += `━━━━━━━━━━━ ✦ ━━━━━━━━━━━\n`;
+  texto += `📜 𝐕𝐄𝐑𝐈𝐅𝐈𝐂𝐀𝐂̧𝐀̃𝐎\n`;
+  texto += `━━━━━━━━━━━ ✦ ━━━━━━━━━━━\n\n`;
 
-  texto += `🌜 𝐎𝐧𝐝𝐞 𝐚 𝐋𝐮𝐚 𝐢𝐥𝐮𝐦𝐢𝐧𝐚 𝐨𝐬 𝐥𝐢𝐯𝐫𝐨𝐬:\n\n`;
+  texto += gerarLegendaMargens();
 
-  texto += gerarLegendaQuasar();
+  texto += `━━━━━━━━━━━ ✦ ━━━━━━━━━━━\n`;
+  texto += `📖 𝐅𝐈𝐂𝐇𝐀 𝐃𝐎 𝐋𝐄𝐈𝐓𝐎𝐑\n`;
+  texto += `━━━━━━━━━━━ ✦ ━━━━━━━━━━━\n\n`;
 
   for (const membro of membros) {
     const pontosAcumulados = await calcularPontosAcumulados(membro.id);
-    const emojisObra1 = await gerarEmojisAcumulados(membro.id, "obra1Status");
+    const emojisObra1Bruto = await gerarEmojisAcumulados(membro.id, "obra1Status");
+    const emojisObra1 = traduzirEmojisMargens(emojisObra1Bruto);
+
     const feedbacks = await contarFeedbacksAcumulados(membro.id);
     const extras = await contarExtrasAcumulados(membro.id);
 
     const feedbackTexto = repetirCheck(feedbacks);
     const extrasTexto = repetirCheck(extras);
 
-    texto += `━━━━━━━━━━━━━━━\n\n`;
+    texto += `━━━━━━━━━━━ ✦ ━━━━━━━━━━━\n\n`;
 
-    texto += `🕷 𝐍𝐨𝐦𝐞: ${membro.nome}\n`;
-    texto += `🕷 𝐔𝐬𝐞𝐫: ${membro.user}\n\n`;
+    texto += `🗝️ 𝐍𝐨𝐦𝐞: ${membro.nome}\n`;
+    texto += `🧭 𝐔𝐬𝐞𝐫: ${limparUser(membro.user)}\n\n`;
 
-    texto += `🏆 Semana: ${membro.semana ?? ""}\n`;
-    texto += `💌 Dia: ${diasAcumulados}\n`;
-    texto += `👑 Pontos: ${pontosAcumulados}\n`;
-    texto += `📚 Leitura Lunar:\n\n`;
+    texto += `🌙 𝐒𝐞𝐦𝐚𝐧𝐚𝐬: ${membro.semana ?? 0}\n`;
+    texto += `📅 𝐃𝐢𝐚𝐬: ${diasAcumulados}\n`;
+    texto += `⭐ 𝐏𝐨𝐧𝐭𝐨𝐬: ${pontosAcumulados}\n`;
+    texto += `💬 𝐅𝐞𝐞𝐝𝐛𝐚𝐜𝐤: ${feedbackTexto}\n`;
+    texto += `🌌 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐋𝐮𝐧𝐚𝐫:\n\n`;
 
-    texto += `🌋 Obra 01: ${emojisObra1}\n`;
-    texto += `✅ Feedback: ${feedbackTexto}\n`;
-    texto += `📚 Capítulos Extras: ${extrasTexto}\n\n`;
+    texto += `📖 𝐌𝐮𝐧𝐝𝐨 𝟎𝟏: ${emojisObra1}\n\n`;
+
+    texto += `🗺️ 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐄𝐱𝐭𝐫𝐚: ${extrasTexto}\n\n`;
   }
 
-  texto += `━━━━━━━━━━━━━━━\n\n`;
-
-  texto += `🚨 𝐀𝐓𝐄𝐍ÇÃ𝐎 🚨\n\n`;
-  texto += `Para manter o Quasar A-10 organizado, quem ainda ficou devendo feedback, voto ou comentário deve enviar os prints no privado da ADM responsável.\n\n`;
-  texto += `Caso encontre algum erro na verificação, chame no PV para correção.\n\n`;
-  texto += `🔥 𝐀𝐃𝐌: Dira\n`;
-  texto += `━─────── • 𝐏𝐫𝐨𝐣. 𝐋𝐮𝐧𝐚𝐫 • ───────━`;
+  texto += `━━━━━━━━━━━ ✦ ━━━━━━━━━━━\n\n`;
+  texto += gerarMensagemAtencaoMargens();
 
   return texto;
 }
@@ -1896,23 +1936,23 @@ function gerarLegendaPagina() {
   return texto;
 }
 
-function gerarLegendaQuasar() {
+function gerarLegendaMargens() {
   let texto = "";
 
-  texto += `🌙 Leu\n`;
-  texto += `☠ Não leu\n`;
-  texto += `💅 Justificado\n`;
-  texto += `🌼 Já havia lido antes\n`;
-  texto += `🙍 Falta algo\n`;
-  texto += `✨ Obra do dia\n`;
-  texto += `⏳ Sem obra\n`;
-  texto += `⚰ Saiu do grupo\n`;
-  texto += `🧕🏻 Leitura em andamento\n`;
-  texto += `⚠ Infração das regras\n`;
-  texto += `🚫 Tempo inferior\n`;
-  texto += `📲 Prints no PV\n`;
-  texto += `⏰ Fora do tempo estimado\n\n`;
-  texto += `━━━━━━━━━━━━━━━\n\n`;
+  texto += `🌙 𝐋𝐞𝐮\n`;
+  texto += `🌑 𝐍𝐚̃𝐨 𝐥𝐞𝐮\n`;
+  texto += `💅 𝐉𝐮𝐬𝐭𝐢𝐟𝐢𝐜𝐚𝐝𝐨\n`;
+  texto += `📜 𝐉𝐚́ 𝐡𝐚𝐯𝐢𝐚 𝐥𝐢𝐝𝐨 𝐚𝐧𝐭𝐞𝐬\n`;
+  texto += `🙍 𝐅𝐚𝐥𝐭𝐚 𝐚𝐥𝐠𝐨 (𝐜𝐨𝐦𝐞𝐧𝐭𝐚́𝐫𝐢𝐨 𝐨𝐮 𝐯𝐨𝐭𝐨)\n`;
+  texto += `✨ 𝐎𝐛𝐫𝐚 𝐝𝐨 𝐝𝐢𝐚\n`;
+  texto += `⏳ 𝐒𝐞𝐦 𝐨𝐛𝐫𝐚\n`;
+  texto += `🚪 𝐒𝐚𝐢𝐮 𝐝𝐨 𝐠𝐫𝐮𝐩𝐨\n`;
+  texto += `🧭 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐞𝐦 𝐚𝐧𝐝𝐚𝐦𝐞𝐧𝐭𝐨 𝐧𝐨 𝐦𝐨𝐦𝐞𝐧𝐭𝐨 𝐝𝐚 𝐯𝐞𝐫𝐢𝐟𝐢𝐜𝐚𝐜̧𝐚̃𝐨\n`;
+  texto += `⚠️ 𝐈𝐧𝐟𝐫𝐚𝐜̧𝐚̃𝐨 𝐝𝐚𝐬 𝐫𝐞𝐠𝐫𝐚𝐬\n`;
+  texto += `🚫 𝐈𝐧𝐟𝐫𝐚𝐜̧𝐚̃𝐨 𝐧𝐨 𝐭𝐞𝐦𝐩𝐨 𝐝𝐞 𝐥𝐞𝐢𝐭𝐮𝐫𝐚\n`;
+  texto += `📲 𝐏𝐫𝐢𝐧𝐭𝐬 𝐧𝐨 𝐩𝐯\n`;
+  texto += `⛔ 𝐑𝐞𝐦𝐨𝐯𝐢𝐝𝐨 𝐩𝐨𝐫 𝐢𝐧𝐟𝐫𝐚𝐜̧𝐚̃𝐨 𝐝𝐚𝐬 𝐫𝐞𝐠𝐫𝐚𝐬\n`;
+  texto += `⏰ 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐟𝐞𝐢𝐭𝐚 𝐞𝐦 𝐭𝐞𝐦𝐩𝐨 𝐞𝐬𝐭𝐢𝐦𝐚𝐝𝐨\n\n`;
 
   return texto;
 }
@@ -1924,114 +1964,4 @@ function gerarMensagemAtencaoTronoProfano() {
   texto += `𝐏𝐚𝐫𝐚 𝐠𝐚𝐫𝐚𝐧𝐭𝐢𝐫 𝐚 𝐨 𝐛𝐨𝐦 𝐚𝐧𝐝𝐚𝐦𝐞𝐧𝐭𝐨 𝐝𝐨 𝐓𝐫𝐨𝐧𝐨 𝐏𝐫𝐨𝐟𝐚𝐧𝐨, 𝐞́ 𝐢𝐦𝐩𝐨𝐫𝐭𝐚𝐧𝐭𝐞 𝐪𝐮𝐞 𝐭𝐨𝐝𝐨𝐬 𝐞𝐬𝐭𝐞𝐣𝐚𝐦 𝐞𝐦 𝐝𝐢𝐚 𝐜𝐨𝐦 𝐬𝐮𝐚𝐬 𝐥𝐞𝐢𝐭𝐮𝐫𝐚𝐬.\n\n`;
   texto += `𝐒𝐞 𝐯𝐨𝐜𝐞̂ 𝐟𝐢𝐜𝐨𝐮 𝐝𝐞𝐯𝐞𝐧𝐝𝐨 𝐥𝐞𝐢𝐭𝐮𝐫𝐚, 𝐩𝐨𝐫 𝐟𝐚𝐯𝐨𝐫, 𝐞𝐧𝐯𝐢𝐞 𝐨𝐬 𝐩𝐫𝐢𝐧𝐭𝐬 𝐧𝐨 𝐩𝐫𝐢𝐯𝐚𝐝𝐨 𝐩𝐚𝐫𝐚 𝐪𝐮𝐞 𝐞𝐮 𝐩𝐨𝐬𝐬𝐚 𝐚𝐭𝐮𝐚𝐥𝐢𝐳𝐚𝐫 𝐬𝐞𝐮𝐬 𝐫𝐞𝐠𝐢𝐬𝐭𝐫𝐨𝐬.\n\n`;
   texto += `𝐈𝐬𝐬𝐨 𝐞𝐯𝐢𝐭𝐚 𝐪𝐮𝐞 𝐞𝐮 𝐩𝐞𝐫𝐜𝐚 𝐭𝐞𝐦𝐩𝐨 𝐜𝐨𝐧𝐟𝐞𝐫𝐢𝐧𝐝𝐨 𝐚 𝐦𝐞𝐬𝐦𝐚 𝐜𝐨𝐢𝐬𝐚 𝐝𝐮𝐚𝐬 𝐯𝐞𝐳𝐞𝐬. 𝐀𝐥𝐞́𝐦 𝐝𝐢𝐬𝐬𝐨, 𝐬𝐞 𝐯𝐨𝐜𝐞̂ 𝐞𝐧𝐜𝐨𝐧𝐭𝐫𝐚𝐫 𝐚𝐥𝐠𝐮𝐦 𝐞𝐫𝐫𝐨 𝐧𝐚𝐬 𝐯𝐞𝐫𝐢𝐟𝐢𝐜𝐚𝐜̧𝐨̃𝐞𝐬, 𝐦𝐞 𝐜𝐡𝐚𝐦𝐞 𝐧𝐨 𝐩𝐫𝐢𝐯𝐚𝐝𝐨 𝐩𝐚𝐫𝐚 𝐪𝐮𝐞 𝐞𝐮 𝐩𝐨𝐬𝐬𝐚 𝐜𝐨𝐫𝐫𝐢𝐠𝐢𝐫.\n\n`;
-  texto += `🔥 𝐕𝐚𝐦𝐨𝐬 𝐦𝐚𝐧𝐭𝐞𝐫 𝐨 𝐠𝐫𝐮𝐩𝐨 𝐨𝐫𝐠𝐚𝐧𝐢𝐳𝐚𝐝𝐨, 𝐚𝐬 𝐥𝐞𝐢𝐭𝐮𝐫𝐚𝐬 𝐞𝐦 𝐝𝐢𝐚 𝐞 𝐚𝐬 𝐨𝐛𝐫𝐚𝐬 𝐝𝐢𝐠𝐧𝐚𝐬 𝐬𝐞𝐧𝐝𝐨 𝐞𝐧𝐭𝐫𝐨𝐧𝐢𝐳𝐚𝐝𝐚𝐬 𝐧𝐨 𝐓𝐫𝐨𝐧𝐨 𝐏𝐫𝐨𝐟𝐚𝐧𝐨.`;
-
-  return texto;
-}
-
-function gerarMensagemAtencao() {
-  let texto = "";
-
-  texto += `🚨𝐀𝐓𝐄𝐍𝐂̧𝐀̃𝐎🚨\n\n`;
-  texto += `𝐏𝐚𝐫𝐚 𝐠𝐚𝐫𝐚𝐧𝐭𝐢𝐫 𝐚 𝐨𝐫𝐠𝐚𝐧𝐢𝐳𝐚𝐜̧𝐚̃𝐨 𝐞 𝐞𝐟𝐢𝐜𝐢𝐞̂𝐧𝐜𝐢𝐚 𝐝𝐨 𝐠𝐫𝐮𝐩𝐨, 𝐞́ 𝐢𝐦𝐩𝐨𝐫𝐭𝐚𝐧𝐭𝐞 𝐪𝐮𝐞 𝐭𝐨𝐝𝐨𝐬 𝐞𝐬𝐭𝐞𝐣𝐚𝐦 𝐞𝐦 𝐝𝐢𝐚 𝐜𝐨𝐦 𝐬𝐮𝐚𝐬 𝐥𝐞𝐢𝐭𝐮𝐫𝐚𝐬. 𝐒𝐞 𝐯𝐨𝐜𝐞̂ 𝐟𝐢𝐜𝐨𝐮 𝐝𝐞𝐯𝐞𝐧𝐝𝐨 𝐥𝐞𝐢𝐭𝐮𝐫𝐚, 𝐩𝐨𝐫 𝐟𝐚𝐯𝐨𝐫, 𝐞𝐧𝐯𝐢𝐞 𝐨𝐬 𝐩𝐫𝐢𝐧𝐭𝐬 𝐧𝐨 𝐩𝐫𝐢𝐯𝐚𝐝𝐨 𝐩𝐚𝐫𝐚 𝐪𝐮𝐞 𝐞𝐮 𝐩𝐨𝐬𝐬𝐚 𝐚𝐭𝐮𝐚𝐥𝐢𝐳𝐚𝐫 𝐬𝐞𝐮𝐬 𝐫𝐞𝐠𝐢𝐬𝐭𝐫𝐨𝐬.\n\n`;
-  texto += `𝐈𝐬𝐬𝐨 𝐞𝐯𝐢𝐭𝐚𝐫𝐚́ 𝐪𝐮𝐞 𝐞𝐮 𝐩𝐞𝐫𝐜𝐚 𝐭𝐞𝐦𝐩𝐨 𝐜𝐨𝐧𝐟𝐞𝐫𝐢𝐧𝐝𝐨 𝐚 𝐦𝐞𝐬𝐦𝐚 𝐜𝐨𝐢𝐬𝐚 𝐝𝐮𝐚𝐬 𝐯𝐞𝐳𝐞𝐬. 𝐀𝐥𝐞́𝐦 𝐝𝐢𝐬𝐬𝐨, 𝐬𝐞 𝐯𝐨𝐜𝐞̂ 𝐞𝐧𝐜𝐨𝐧𝐭𝐫𝐚𝐫 𝐚𝐥𝐠𝐮𝐦 𝐞𝐫𝐫𝐨 𝐧𝐚𝐬 𝐯𝐞𝐫𝐢𝐟𝐢𝐜𝐚𝐜̧𝐨̃𝐞𝐬, 𝐧𝐚̃𝐨 𝐡𝐞𝐬𝐢𝐭𝐞 𝐞𝐦 𝐦𝐞 𝐜𝐡𝐚𝐦𝐚𝐫 𝐧𝐨 𝐩𝐫𝐢𝐯𝐚𝐝𝐨. 𝐄𝐬𝐭𝐨𝐮 𝐚𝐪𝐮𝐢 𝐩𝐚𝐫𝐚 𝐚𝐣𝐮𝐝𝐚𝐫 𝐞 𝐫𝐞𝐬𝐨𝐥𝐯𝐞𝐫 𝐪𝐮𝐚𝐥𝐪𝐮𝐞𝐫 𝐩𝐫𝐨𝐛𝐥𝐞𝐦𝐚!\n\n`;
-  texto += `😉 𝐕𝐚𝐦𝐨𝐬 𝐦𝐚𝐧𝐭𝐞𝐫 𝐨 𝐠𝐫𝐮𝐩𝐨 𝐨𝐫𝐠𝐚𝐧𝐢𝐳𝐚𝐝𝐨 𝐞 𝐟𝐨𝐜𝐚𝐝𝐨 𝐧𝐚𝐬 𝐡𝐢𝐬𝐭𝐨́𝐫𝐢𝐚𝐬 𝐢𝐧𝐜𝐫𝐢́𝐯𝐞𝐢𝐬 𝐪𝐮𝐞 𝐜𝐨𝐦𝐩𝐚𝐫𝐭𝐢𝐥𝐡𝐚𝐦𝐨𝐬! 𝐎𝐛𝐫𝐢𝐠𝐚𝐝𝐚 𝐩𝐞𝐥𝐚 𝐜𝐨𝐨𝐩𝐞𝐫𝐚𝐜̧𝐚̃𝐨! 📚`;
-
-  return texto;
-}
-
-function copiarFicha() {
-  const texto = document.getElementById("fichaTexto").value;
-
-  navigator.clipboard.writeText(texto)
-    .then(() => alert("Ficha copiada!"))
-    .catch(() => alert("Não foi possível copiar automaticamente. Selecione o texto e copie manualmente."));
-}
-
-async function login() {
-  const email = document.getElementById("email").value.trim();
-  const senha = document.getElementById("senha").value.trim();
-
-  if (!email || !senha) {
-    alert("Preencha e-mail e senha.");
-    return;
-  }
-
-  try {
-    await signInWithEmailAndPassword(auth, email, senha);
-  } catch (error) {
-    alert("Erro ao entrar. Verifique o e-mail e a senha.");
-  }
-}
-
-async function logout() {
-  localStorage.removeItem("sub");
-  await signOut(auth);
-}
-
-async function trocarSub() {
-  localStorage.removeItem("sub");
-  telaSubs();
-}
-
-async function selecionarSub(sub) {
-  localStorage.setItem("sub", sub);
-
-  await setDoc(caminhoSub(sub), {
-    nome: subs[sub].nome,
-    codigo: sub,
-    atualizadoEm: new Date().toISOString()
-  }, { merge: true });
-
-  await telaDashboard();
-}
-
-function aplicarTema() {
-  const sub = getSubAtual();
-  const titulo = document.getElementById("titulo-sub");
-
-  if (!sub || !subs[sub] || !titulo) {
-    if (titulo) titulo.textContent = "🌙 Verificação Lunar";
-    return;
-  }
-
-  titulo.textContent = subs[sub].nome;
-
-  const cor = subs[sub].cor;
-
-  document.querySelector("header").style.borderBottomColor = cor;
-  document.querySelector("footer").style.borderTopColor = cor;
-
-  document.querySelectorAll("button").forEach(btn => {
-    btn.style.background = cor;
-  });
-}
-
-window.login = login;
-window.logout = logout;
-window.trocarSub = trocarSub;
-window.selecionarSub = selecionarSub;
-
-window.telaDashboard = telaDashboard;
-window.telaMembros = telaMembros;
-window.formMembro = formMembro;
-window.adicionarMembro = adicionarMembro;
-window.salvarEdicaoMembro = salvarEdicaoMembro;
-window.removerMembro = removerMembro;
-
-window.telaObras = telaObras;
-window.formObra = formObra;
-window.adicionarObra = adicionarObra;
-window.salvarEdicaoObra = salvarEdicaoObra;
-window.removerObra = removerObra;
-
-window.telaGrade = telaGrade;
-window.salvarGrade = salvarGrade;
-
-window.telaVerificacoes = telaVerificacoes;
-window.atualizarPontosTela = atualizarPontosTela;
-window.salvarVerificacao = salvarVerificacao;
-
-window.telaVisualizarFicha = telaVisualizarFicha;
-window.copiarFicha = copiarFicha;
-window.limparFichaSemana = limparFichaSemana;
+  texto += `🔥 𝐕𝐚𝐦𝐨𝐬 𝐦𝐚𝐧𝐭𝐞𝐫 𝐨 𝐠𝐫𝐮𝐩𝐨 𝐨𝐫𝐠𝐚𝐧𝐢𝐳𝐚𝐝𝐨, 𝐚𝐬 𝐥𝐞𝐢𝐭𝐮𝐫𝐚𝐬 𝐞𝐦 𝐝𝐢𝐚 𝐞 𝐚𝐬 𝐨𝐛𝐫𝐚𝐬 𝐝𝐢𝐠𝐧𝐚
