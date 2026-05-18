@@ -23,25 +23,21 @@ const subs = {
   A6: {
     nome: "𖤐⛓️🔥 Trono Profano",
     cor: "#7F1D1D",
-    tituloFicha: "𖤐⛓️🔥 𝐀-𝟔 — 𝐓𝐑𝐎𝐍𝐎 𝐏𝐑𝐎𝐅𝐀𝐍𝐎 🔥⛓️𖤐",
     modeloFicha: "trono"
   },
   A1: {
     nome: "🔥 Chama Eterna",
     cor: "#F97316",
-    tituloFicha: "🌜 𝐎𝐧𝐝𝐞 𝐚 𝐋𝐮𝐚 𝐢𝐥𝐮𝐦𝐢𝐧𝐚 𝐨𝐬 𝐥𝐢𝐯𝐫𝐨𝐬: 𝐋𝐮𝐧𝐚 𝐀-𝟏 🌛",
     modeloFicha: "chama"
   },
   A2: {
     nome: "📖 Página Livre",
     cor: "#0ea5e9",
-    tituloFicha: "🧚‍♂PAGINA LIVRE 𝑨-𝟐 🧝‍♀🧌🦹‍♂🧞‍♂ VERIFICAÇÕES 🧛‍♂🧜‍♂",
     modeloFicha: "pagina"
   },
   A7: {
     nome: "✦🗺️📖 Margens de Mundos",
     cor: "#10B981",
-    tituloFicha: "✦🗺️📖 𝐀-𝟕 — 𝐌𝐀𝐑𝐆𝐄𝐍𝐒 𝐃𝐄 𝐌𝐔𝐍𝐃𝐎𝐒 📖🗺️✦",
     modeloFicha: "margens"
   }
 };
@@ -102,9 +98,7 @@ function limparUser(user) {
 
 function repetirCheck(qtd) {
   const total = Number(qtd || 0);
-
   if (total <= 0) return "";
-
   return "✅".repeat(total);
 }
 
@@ -170,6 +164,8 @@ function resolverObraDaGrade(id, obras) {
     return {
       id: SEM_OBRA_ID,
       titulo: "⏳ Sem Obra",
+      link: "",
+      membroId: "",
       semObra: true
     };
   }
@@ -180,6 +176,8 @@ function resolverObraDaGrade(id, obras) {
     return {
       id: "",
       titulo: "Obra não encontrada",
+      link: "",
+      membroId: "",
       semObra: false
     };
   }
@@ -188,6 +186,61 @@ function resolverObraDaGrade(id, obras) {
     ...obra,
     semObra: false
   };
+}
+
+function normalizarDia(dia) {
+  const mapa = {
+    Segunda: "SEGUNDA-FEIRA",
+    Terça: "TERÇA-FEIRA",
+    Quarta: "QUARTA-FEIRA",
+    Quinta: "QUINTA-FEIRA",
+    Sexta: "SEXTA-FEIRA"
+  };
+
+  return mapa[dia] || dia.toUpperCase();
+}
+
+function normalizarDiaChama(dia) {
+  const mapa = {
+    Segunda: "Segunda-Feira",
+    Terça: "Terça-Feira",
+    Quarta: "Quarta-Feira",
+    Quinta: "Quinta-Feira",
+    Sexta: "Sexta-Feira"
+  };
+
+  return mapa[dia] || dia;
+}
+
+function numeroObra(numero) {
+  return numero === 1 ? "01" : "02";
+}
+
+function getCampoGrade(dia, obraNumero, campo) {
+  const el = document.getElementById(`${dia}_obra${obraNumero}_${campo}`);
+  if (!el) return "";
+  if (el.type === "checkbox") return el.checked;
+  return el.value.trim();
+}
+
+function montarDadosGradeDaTela() {
+  const novaGrade = {};
+
+  diasSemana.forEach(dia => {
+    novaGrade[dia] = {
+      obra1: document.getElementById(`${dia}_obra1`).value,
+      obra1Mais4100: getCampoGrade(dia, 1, "mais4100"),
+      obra1Menos500: getCampoGrade(dia, 1, "menos500"),
+      obra1PrologoMais1000: getCampoGrade(dia, 1, "prologoMais1000"),
+
+      obra2: document.getElementById(`${dia}_obra2`).value,
+      obra2Mais4100: getCampoGrade(dia, 2, "mais4100"),
+      obra2Menos500: getCampoGrade(dia, 2, "menos500"),
+      obra2PrologoMais1000: getCampoGrade(dia, 2, "prologoMais1000")
+    };
+  });
+
+  return novaGrade;
 }
 
 async function buscarMembros() {
@@ -506,6 +559,7 @@ async function telaObras() {
           <div>
             <strong>${escapeHTML(obra.titulo)}</strong>
             <span>Responsável: ${membro ? `${escapeHTML(membro.nome)} (${escapeHTML(membro.user)})` : "Membro removido"}</span>
+            <span>Link: ${obra.link ? escapeHTML(obra.link) : "Não informado"}</span>
           </div>
 
           <div class="item-actions">
@@ -557,7 +611,7 @@ async function formObra(id = null) {
     return;
   }
 
-  let obra = { titulo: "", membroId: "" };
+  let obra = { titulo: "", link: "", membroId: "" };
   const editando = Boolean(id);
 
   if (editando) {
@@ -565,7 +619,10 @@ async function formObra(id = null) {
     const snap = await getDoc(ref);
 
     if (snap.exists()) {
-      obra = snap.data();
+      obra = {
+        link: "",
+        ...snap.data()
+      };
     }
   }
 
@@ -581,6 +638,9 @@ async function formObra(id = null) {
 
       <label>Título da obra</label>
       <input id="tituloObra" placeholder="Título da obra" value="${escapeHTML(obra.titulo)}">
+
+      <label>Link da obra</label>
+      <input id="linkObra" placeholder="https://www.wattpad.com/story/..." value="${escapeHTML(obra.link)}">
 
       <label>Membro responsável</label>
       <select id="membroObra">
@@ -603,6 +663,7 @@ async function adicionarObra() {
   const sub = getSubAtual();
 
   const titulo = document.getElementById("tituloObra").value.trim();
+  const link = document.getElementById("linkObra").value.trim();
   const membroId = document.getElementById("membroObra").value;
 
   if (!titulo || !membroId) {
@@ -612,6 +673,7 @@ async function adicionarObra() {
 
   await addDoc(collection(db, "subs", sub, "obras"), {
     titulo,
+    link,
     membroId,
     criadoEm: new Date().toISOString()
   });
@@ -623,6 +685,7 @@ async function salvarEdicaoObra(id) {
   const sub = getSubAtual();
 
   const titulo = document.getElementById("tituloObra").value.trim();
+  const link = document.getElementById("linkObra").value.trim();
   const membroId = document.getElementById("membroObra").value;
 
   if (!titulo || !membroId) {
@@ -632,6 +695,7 @@ async function salvarEdicaoObra(id) {
 
   await updateDoc(doc(db, "subs", sub, "obras", id), {
     titulo,
+    link,
     membroId
   });
 
@@ -661,6 +725,35 @@ async function removerObra(id) {
   await telaObras();
 }
 
+function blocoCamposExtrasGrade(dia, numero, dadosDia) {
+  return `
+    <div class="grade-extra-box">
+      <label>Capítulos com +4,1k palavras</label>
+      <input 
+        id="${dia}_obra${numero}_mais4100" 
+        placeholder="Ex: 3, 4 e 7"
+        value="${escapeHTML(dadosDia?.[`obra${numero}Mais4100`] || "")}"
+      >
+
+      <label>Capítulos com -500 palavras</label>
+      <input 
+        id="${dia}_obra${numero}_menos500" 
+        placeholder="Ex: Capítulo 5, Especial..."
+        value="${escapeHTML(dadosDia?.[`obra${numero}Menos500`] || "")}"
+      >
+
+      <label class="checkbox-label">
+        <input 
+          type="checkbox" 
+          id="${dia}_obra${numero}_prologoMais1000"
+          ${dadosDia?.[`obra${numero}PrologoMais1000`] ? "checked" : ""}
+        >
+        Prólogo tem +1k palavras
+      </label>
+    </div>
+  `;
+}
+
 async function telaGrade() {
   const obras = await buscarObras();
   const grade = await buscarGrade();
@@ -683,36 +776,63 @@ async function telaGrade() {
     <option value="${obra.id}">${escapeHTML(obra.titulo)}</option>
   `).join("");
 
-  const linhas = diasSemana.map(dia => `
-    <div class="linha-grade">
-      <label class="dia-grade">${dia}</label>
+  const linhas = diasSemana.map(dia => {
+    const dadosDia = grade[dia] || {};
 
-      <select id="${dia}_obra1">
-        <option value="">Obra 1</option>
-        <option value="${SEM_OBRA_ID}">⏳ Sem Obra</option>
-        ${opcoesObras}
-      </select>
+    return `
+      <div class="grade-dia-card">
+        <h3>${dia}</h3>
 
-      <select id="${dia}_obra2">
-        <option value="">Obra 2</option>
-        <option value="${SEM_OBRA_ID}">⏳ Sem Obra</option>
-        ${opcoesObras}
-      </select>
-    </div>
-  `).join("");
+        <div class="linha-grade">
+          <div class="grade-obra-col">
+            <label class="dia-grade">Obra 1</label>
+
+            <select id="${dia}_obra1">
+              <option value="">Obra 1</option>
+              <option value="${SEM_OBRA_ID}">⏳ Sem Obra</option>
+              ${opcoesObras}
+            </select>
+
+            ${blocoCamposExtrasGrade(dia, 1, dadosDia)}
+          </div>
+
+          <div class="grade-obra-col">
+            <label class="dia-grade">Obra 2</label>
+
+            <select id="${dia}_obra2">
+              <option value="">Obra 2</option>
+              <option value="${SEM_OBRA_ID}">⏳ Sem Obra</option>
+              ${opcoesObras}
+            </select>
+
+            ${blocoCamposExtrasGrade(dia, 2, dadosDia)}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
 
   app.innerHTML = `
     <div class="page-box grade-box">
       <div class="page-header">
         <div>
           <h2>Grade Semanal</h2>
-          <p>Selecione a Obra 1 e a Obra 2 de segunda a sexta. Use “Sem Obra” quando o dia tiver apenas uma obra.</p>
+          <p>Monte a grade, informe observações especiais e exporte a semana ou um dia específico.</p>
         </div>
       </div>
 
       ${linhas}
 
+      <div class="export-box">
+        <label>Dia para exportar individualmente</label>
+        <select id="diaExportarGrade">
+          ${diasSemana.map(dia => `<option value="${dia}">${dia}</option>`).join("")}
+        </select>
+      </div>
+
       <button onclick="salvarGrade()">Salvar Grade</button>
+      <button onclick="exportarGradeSemana()">📤 Exportar Grade da Semana</button>
+      <button onclick="exportarGradeDia()">📤 Exportar Grade do Dia</button>
       <button onclick="telaDashboard()">⬅ Voltar</button>
     </div>
   `;
@@ -727,21 +847,376 @@ async function telaGrade() {
   aplicarTema();
 }
 
-async function salvarGrade() {
-  const novaGrade = {};
-
-  diasSemana.forEach(dia => {
-    novaGrade[dia] = {
-      obra1: document.getElementById(`${dia}_obra1`).value,
-      obra2: document.getElementById(`${dia}_obra2`).value
-    };
-  });
+async function salvarGrade(voltar = true) {
+  const novaGrade = montarDadosGradeDaTela();
 
   await salvarGradeBanco(novaGrade);
 
-  alert("Grade salva com sucesso!");
+  if (voltar) {
+    alert("Grade salva com sucesso!");
+    await telaDashboard();
+  }
+}
 
-  await telaDashboard();
+async function salvarGradeSemSair() {
+  const novaGrade = montarDadosGradeDaTela();
+  await salvarGradeBanco(novaGrade);
+  return novaGrade;
+}
+
+function copiarTextoExportado() {
+  const texto = document.getElementById("textoExportado").value;
+
+  navigator.clipboard.writeText(texto)
+    .then(() => alert("Grade copiada!"))
+    .catch(() => alert("Não foi possível copiar automaticamente. Selecione o texto e copie manualmente."));
+}
+
+async function mostrarTextoExportado(titulo, texto) {
+  app.innerHTML = `
+    <div class="page-box ficha-box">
+      <div class="page-header">
+        <div>
+          <h2>${titulo}</h2>
+          <p>Confira o texto antes de enviar.</p>
+        </div>
+      </div>
+
+      <textarea id="textoExportado" readonly></textarea>
+
+      <button onclick="copiarTextoExportado()">Copiar Grade</button>
+      <button onclick="telaGrade()">⬅ Voltar para Grade</button>
+      <button onclick="telaDashboard()">Início</button>
+    </div>
+  `;
+
+  document.getElementById("textoExportado").value = texto;
+  aplicarTema();
+}
+
+async function exportarGradeSemana() {
+  const grade = await salvarGradeSemSair();
+  const texto = await gerarGradeExportadaSemana(grade);
+  await mostrarTextoExportado("Grade da Semana", texto);
+}
+
+async function exportarGradeDia() {
+  const grade = await salvarGradeSemSair();
+  const dia = document.getElementById("diaExportarGrade").value;
+  const texto = await gerarGradeExportadaDia(grade, dia);
+  await mostrarTextoExportado(`Grade de ${dia}`, texto);
+}
+
+async function gerarGradeExportadaSemana(grade) {
+  const sub = getSubAtual();
+
+  if (subs[sub].modeloFicha === "chama") return await gerarGradeChamaSemana(grade);
+  if (subs[sub].modeloFicha === "pagina") return await gerarGradePaginaSemana(grade);
+  if (subs[sub].modeloFicha === "margens") return await gerarGradeMargensSemana(grade);
+
+  return await gerarGradeTronoSemana(grade);
+}
+
+async function gerarGradeExportadaDia(grade, dia) {
+  const sub = getSubAtual();
+
+  if (subs[sub].modeloFicha === "chama") return await gerarGradeChamaDia(grade, dia);
+  if (subs[sub].modeloFicha === "pagina") return await gerarGradePaginaDia(grade, dia);
+  if (subs[sub].modeloFicha === "margens") return await gerarGradeMargensDia(grade, dia);
+
+  return await gerarGradeTronoDia(grade, dia);
+}
+
+async function obterDadosObraExportacao(obraId) {
+  const obras = await buscarObras();
+  const membros = await buscarMembros();
+  const obra = resolverObraDaGrade(obraId, obras);
+
+  if (obra.semObra || !obra.id || obra.id === SEM_OBRA_ID) {
+    return {
+      semObra: true,
+      nome: "",
+      user: "",
+      titulo: "⏳ Sem Obra",
+      link: ""
+    };
+  }
+
+  const membro = membros.find(m => m.id === obra.membroId);
+
+  return {
+    semObra: false,
+    nome: membro?.nome || "",
+    user: membro?.user || "",
+    titulo: obra.titulo || "",
+    link: obra.link || ""
+  };
+}
+
+function obsBase() {
+  return "Leiam os especiais votando e deixando pelo menos 1 comentário + 2 capítulos comentando no MÍNIMO 6 vezes em cada.";
+}
+
+function obsDistribuidos() {
+  return "Lembrem-se: os comentários devem estar bem distribuídos entre o início, o meio e o fim.";
+}
+
+function montarObsExtrasGenerica(dadosDia, numero, estilo) {
+  const mais4100 = dadosDia?.[`obra${numero}Mais4100`] || "";
+  const menos500 = dadosDia?.[`obra${numero}Menos500`] || "";
+  const prologo = dadosDia?.[`obra${numero}PrologoMais1000`] || false;
+
+  let texto = "";
+
+  if (estilo === "trono") {
+    if (prologo) texto += `\n⚠️ 𝐎𝐁𝐒.: O prólogo tem +1K de palavras, então ele é considerado um capítulo normal.\n`;
+    if (mais4100) texto += `\n⚠️ Os capítulos ${mais4100} têm mais de 4.1K de palavras. Ler apenas 1 capítulo por vez, deixando no 𝐌𝐈́𝐍𝐈𝐌𝐎 12 comentários em cada.\n`;
+    if (menos500) texto += `\n⚠️ Os capítulos ${menos500} têm menos de 500 palavras. Ler um capítulo a mais, comentando no 𝐌𝐈́𝐍𝐈𝐌𝐎 6 vezes em cada.\n`;
+    return texto;
+  }
+
+  if (estilo === "margens") {
+    if (prologo) texto += `\n⚠️ 𝐎𝐁𝐒.: o Prólogo tem +1k de palavras, então deve ser lido e comentado como um capítulo normal. No 𝐌𝐈́𝐍𝐈𝐌𝐎 6 vezes.\n`;
+    if (mais4100) texto += `\n⚠️ 𝐎𝐁𝐒.: Os capítulos ${mais4100} têm +4,1k de palavras. Por isso, quem for lê-los deverá ler apenas 1 capítulo e comentar no 𝐌𝐈́𝐍𝐈𝐌𝐎 12 vezes.\n`;
+    if (menos500) texto += `\n⚠️ 𝐎𝐁𝐒.: Os capítulos ${menos500} possuem menos de 500 palavras. Por isso, quem for lê-los deverá ler um capítulo a mais e comentar no mínimo 6 vezes em cada capítulo.\n`;
+    return texto;
+  }
+
+  if (estilo === "pagina") {
+    if (prologo) texto += `\n🕷 Prólogo conta como capítulo nesta obra.\n`;
+    if (mais4100) texto += `\n🚔 Capítulos ${mais4100} têm +4.1 k. Ler apenas 1 capítulo por vez e deixar 12 comentários.\n`;
+    if (menos500) texto += `\n🚔 Capítulos ${menos500} possuem menos de 500 palavras. Ler um capítulo a mais e comentar no mínimo 6 vezes.\n`;
+    return texto;
+  }
+
+  if (prologo) texto += `\n🍂♦️ Obs: O prólogo tem +1k de palavras, então conta como capítulo normal.♦️🍂\n`;
+  if (mais4100) texto += `\n♦🍂Obs: Os capítulos ${mais4100} possuem +4.1k de palavras, ler somente eles deixando 12 comentários em cada♦🍂\n`;
+  if (menos500) texto += `\n♦🍂Obs: Os capítulos ${menos500} possuem menos de 500 palavras, ler um capítulo a mais comentando no mínimo 6 vezes em cada♦🍂\n`;
+
+  return texto;
+}
+
+async function gerarBlocoChama(dia, numero, dadosDia) {
+  const dados = await obterDadosObraExportacao(dadosDia?.[`obra${numero}`]);
+
+  if (dados.semObra) return "";
+
+  let texto = "";
+
+  texto += `🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶\n\n`;
+  texto += `🍁🦊Obra ${numeroObra(numero)} de ${normalizarDiaChama(dia)} 🦊🍁\n\n`;
+  texto += `🐦‍🔥Nome.: ${dados.nome}\n`;
+  texto += `🔸User.: ${dados.user}\n`;
+  texto += `📙Obra.: ${dados.titulo}\n`;
+  texto += `🪸 Link.: 🔗 ${dados.link}\n\n`;
+  texto += `🍂♦️Obs: Ler 2 capítulos deixando 6 comentários bem distribuídos♦️🍂\n`;
+
+  texto += montarObsExtrasGenerica(dadosDia, numero, "chama");
+
+  texto += `\n`;
+
+  return texto;
+}
+
+async function gerarGradeChamaSemana(grade) {
+  let texto = "";
+
+  texto += `🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶\n\n`;
+
+  for (const dia of diasSemana) {
+    texto += await gerarBlocoChama(dia, 1, grade[dia]);
+    texto += await gerarBlocoChama(dia, 2, grade[dia]);
+  }
+
+  texto += `🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶`;
+
+  return texto.trim();
+}
+
+async function gerarGradeChamaDia(grade, dia) {
+  let texto = "";
+
+  texto += await gerarBlocoChama(dia, 1, grade[dia]);
+  texto += await gerarBlocoChama(dia, 2, grade[dia]);
+  texto += `🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶`;
+
+  return texto.trim();
+}
+
+async function gerarBlocoPagina(dia, numero, dadosDia) {
+  const dados = await obterDadosObraExportacao(dadosDia?.[`obra${numero}`]);
+
+  if (dados.semObra) return "";
+
+  let texto = "";
+
+  const emojiInicio = numero === 1 ? "🧚‍♂️" : "🦇";
+  const emojiFim = numero === 1 ? "🧜‍♂️" : "🧙‍♂️";
+
+  texto += `${emojiInicio} ${normalizarDia(dia)} ${numero} ${emojiFim}\n\n`;
+  texto += `🧝‍♀️ Autor: ${dados.nome}\n`;
+  texto += `🦇 User: ${dados.user}\n`;
+  texto += `🛕 Nome da Obra: ${dados.titulo}\n`;
+  texto += `🛸 Link: ${dados.link}\n\n`;
+  texto += `🛎️Obs.: Leia 02 capítulos comentando no mínimo 6 vezes em cada.\n`;
+
+  texto += montarObsExtrasGenerica(dadosDia, numero, "pagina");
+
+  texto += `\n`;
+
+  return texto;
+}
+
+async function gerarGradePaginaSemana(grade) {
+  let texto = "";
+
+  texto += `🧙‍♂️🧚‍♂️ PAGINA LIVRE 𝑨-𝟐 🧌🧝‍♀️ GRADE DE OBRAS 🧛‍♂️🧜‍♂️\n\n`;
+
+  for (const dia of diasSemana) {
+    texto += await gerarBlocoPagina(dia, 1, grade[dia]);
+    texto += await gerarBlocoPagina(dia, 2, grade[dia]);
+    texto += `---------■\n\n`;
+  }
+
+  return texto.trim();
+}
+
+async function gerarGradePaginaDia(grade, dia) {
+  let texto = "";
+
+  texto += `🧙‍♂️🧚‍♂️ PAGINA LIVRE 𝑨-𝟐 🧌🧝‍♀️ GRADE DE OBRAS 🧛‍♂️🧜‍♂️\n\n`;
+  texto += await gerarBlocoPagina(dia, 1, grade[dia]);
+  texto += await gerarBlocoPagina(dia, 2, grade[dia]);
+
+  return texto.trim();
+}
+
+async function gerarBlocoTrono(dia, numero, dadosDia) {
+  const dados = await obterDadosObraExportacao(dadosDia?.[`obra${numero}`]);
+
+  if (dados.semObra) return "";
+
+  let texto = "";
+
+  texto += `━━━━━━━━━━━ 𖤐 ━━━━━━━━━━━\n`;
+  texto += `🌙🔥 𝐒𝐄𝐆𝐔𝐍𝐃𝐀-𝐅𝐄𝐈𝐑𝐀 𝟎𝟏\n`;
+  texto = texto.replace("𝐒𝐄𝐆𝐔𝐍𝐃𝐀-𝐅𝐄𝐈𝐑𝐀", normalizarDia(dia));
+  texto = texto.replace("𝟎𝟏", numero === 1 ? "𝟎𝟏" : "𝟎𝟐");
+  texto += `━━━━━━━━━━━ 𖤐 ━━━━━━━━━━━\n\n`;
+
+  texto += `🔥 𝐍𝐎𝐌𝐄: ${dados.nome}\n`;
+  texto += `♜ 𝐔𝐒𝐄𝐑: ${dados.user}\n`;
+  texto += `📕 𝐆𝐑𝐈𝐌𝐎́𝐑𝐈𝐎/𝐎𝐁𝐑𝐀: ${dados.titulo}\n`;
+  texto += `🔗 𝐋𝐈𝐍𝐊: ${dados.link}\n`;
+
+  texto += montarObsExtrasGenerica(dadosDia, numero, "trono");
+
+  texto += `\n⚠️ 𝐎𝐁𝐒.: ${obsBase().replace("MÍNIMO", "𝐌𝐈́𝐍𝐈𝐌𝐎")}\n\n`;
+  texto += `${obsDistribuidos()}\n\n`;
+
+  return texto;
+}
+
+async function gerarGradeTronoSemana(grade) {
+  let texto = "";
+
+  texto += `𖤐⛓️🔥 𝐀-𝟔 — 𝐓𝐑𝐎𝐍𝐎 𝐏𝐑𝐎𝐅𝐀𝐍𝐎 🔥⛓️𖤐\n`;
+  texto += `𝐆𝐑𝐀𝐃𝐄 𝐃𝐄 𝐎𝐁𝐑𝐀𝐒 𝐃𝐀 𝐒𝐄𝐌𝐀𝐍𝐀\n\n`;
+
+  for (const dia of diasSemana) {
+    texto += await gerarBlocoTrono(dia, 1, grade[dia]);
+    texto += await gerarBlocoTrono(dia, 2, grade[dia]);
+  }
+
+  texto += gerarEncerramentoTrono();
+
+  return texto.trim();
+}
+
+async function gerarGradeTronoDia(grade, dia) {
+  let texto = "";
+
+  texto += `𖤐⛓️🔥 𝐀-𝟔 — 𝐓𝐑𝐎𝐍𝐎 𝐏𝐑𝐎𝐅𝐀𝐍𝐎 🔥⛓️𖤐\n\n`;
+  texto += await gerarBlocoTrono(dia, 1, grade[dia]);
+  texto += await gerarBlocoTrono(dia, 2, grade[dia]);
+  texto += gerarEncerramentoTrono();
+
+  return texto.trim();
+}
+
+function gerarEncerramentoTrono() {
+  let texto = "";
+
+  texto += `━━━━━━━━━━━ 𖤐 ━━━━━━━━━━━\n\n`;
+  texto += `🔥 Que os grimórios sejam abertos,\n`;
+  texto += `que as leituras sejam seladas no fogo,\n`;
+  texto += `e que as obras dignas encontrem seu lugar no 𝐓𝐫𝐨𝐧𝐨 𝐏𝐫𝐨𝐟𝐚𝐧𝐨.`;
+
+  return texto;
+}
+
+async function gerarBlocoMargens(dia, numero, dadosDia) {
+  const dados = await obterDadosObraExportacao(dadosDia?.[`obra${numero}`]);
+
+  if (dados.semObra) return "";
+
+  let texto = "";
+
+  texto += `━━━━━━━━━━━ ✦ ━━━━━━━━━━━\n`;
+  texto += `🌙🌌 ${normalizarDia(dia)} ${numero === 1 ? "01" : "02"}\n`;
+  texto += `━━━━━━━━━━━ ✦ ━━━━━━━━━━━\n\n`;
+
+  texto += `🌿 𝐍𝐎𝐌𝐄: ${dados.nome}\n`;
+  texto += `🧭 𝐔𝐒𝐄𝐑: ${dados.user}\n`;
+  texto += `📖 𝐌𝐔𝐍𝐃𝐎/𝐎𝐁𝐑𝐀: ${dados.titulo}\n`;
+  texto += `🔗 𝐋𝐈𝐍𝐊: ${dados.link}\n`;
+
+  texto += montarObsExtrasGenerica(dadosDia, numero, "margens");
+
+  texto += `\n⚠️ 𝐎𝐁𝐒.:\n\n`;
+  texto += `Leiam os especiais votando e deixando pelo menos 1 comentário + 2 capítulos comentando no 𝐌𝐈́𝐍𝐈𝐌𝐎 6 vezes em cada.\n\n`;
+  texto += `Lembrem-se: os comentários devem estar bem distribuídos entre o início, o meio e o fim.\n\n`;
+
+  return texto;
+}
+
+async function gerarGradeMargensSemana(grade) {
+  let texto = "";
+
+  texto += `✦🗺️📖 𝐀-𝟕 — 𝐌𝐀𝐑𝐆𝐄𝐍𝐒 𝐃𝐄 𝐌𝐔𝐍𝐃𝐎𝐒 📖🗺️✦\n`;
+  texto += `𝐆𝐑𝐀𝐃𝐄 𝐃𝐄 𝐎𝐁𝐑𝐀𝐒 𝐃𝐀 𝐒𝐄𝐌𝐀𝐍𝐀\n\n`;
+
+  for (const dia of diasSemana) {
+    texto += await gerarBlocoMargens(dia, 1, grade[dia]);
+    texto += await gerarBlocoMargens(dia, 2, grade[dia]);
+  }
+
+  texto += gerarEncerramentoMargens();
+
+  return texto.trim();
+}
+
+async function gerarGradeMargensDia(grade, dia) {
+  let texto = "";
+
+  texto += `✦🗺️📖 𝐀-𝟕 — 𝐌𝐀𝐑𝐆𝐄𝐍𝐒 𝐃𝐄 𝐌𝐔𝐍𝐃𝐎𝐒 📖🗺️✦\n\n`;
+  texto += await gerarBlocoMargens(dia, 1, grade[dia]);
+  texto += await gerarBlocoMargens(dia, 2, grade[dia]);
+  texto += gerarEncerramentoMargens();
+
+  return texto.trim();
+}
+
+function gerarEncerramentoMargens() {
+  let texto = "";
+
+  texto += `━━━━━━━━━━━ ✦ ━━━━━━━━━━━\n\n`;
+  texto += `🌌 Que os mundos sejam abertos,\n`;
+  texto += `que as leituras atravessem fronteiras,\n`;
+  texto += `e que cada obra encontre seu caminho\n`;
+  texto += `nas 𝐌𝐚𝐫𝐠𝐞𝐧𝐬 𝐝𝐞 𝐌𝐮𝐧𝐝𝐨𝐬.`;
+
+  return texto;
 }
 
 async function telaVerificacoes(diaSelecionado = "Segunda") {
@@ -1826,6 +2301,9 @@ window.removerObra = removerObra;
 
 window.telaGrade = telaGrade;
 window.salvarGrade = salvarGrade;
+window.exportarGradeSemana = exportarGradeSemana;
+window.exportarGradeDia = exportarGradeDia;
+window.copiarTextoExportado = copiarTextoExportado;
 
 window.telaVerificacoes = telaVerificacoes;
 window.atualizarPontosTela = atualizarPontosTela;
