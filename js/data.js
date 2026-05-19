@@ -11,7 +11,7 @@ import {
   deleteDoc
 } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
-import { COLLECTION_ROOT, DEFAULT_SUBS } from "./config.js";
+import { COLLECTION_ROOT, DEFAULT_SUBS, DEFAULT_MODELOS } from "./config.js";
 import { getTodayISO, ordenarPorCriacao } from "./utils.js";
 
 function subDoc(subId) {
@@ -36,6 +36,10 @@ function gradeDoc(subId) {
 
 function verificacaoDoc(subId, dia) {
   return doc(db, COLLECTION_ROOT, subId, "verificacoes", dia);
+}
+
+function modelosPadrao(modelo) {
+  return DEFAULT_MODELOS[modelo] || DEFAULT_MODELOS.trono;
 }
 
 /* SUBS */
@@ -78,6 +82,7 @@ export async function buscarSub(subId) {
 
 export async function salvarSub(sub) {
   const id = String(sub.id || "").trim().toUpperCase();
+  const modelo = sub.modelo || "chama";
 
   if (!id) {
     throw new Error("Código do sub obrigatório.");
@@ -89,23 +94,33 @@ export async function salvarSub(sub) {
     botao: sub.botao || sub.nome || id,
     subtitulo: sub.subtitulo || `Sub Lunar ${id}`,
     cor: sub.cor || "#10b981",
-    modelo: sub.modelo || "chama",
+    modelo,
     obrasPorDia: Number(sub.obrasPorDia || 2),
     ativo: Boolean(sub.ativo),
+    modelos: {
+      ...modelosPadrao(modelo),
+      ...(sub.modelos || {})
+    },
     atualizadoEm: getTodayISO(),
     criadoEm: sub.criadoEm || getTodayISO()
   }, { merge: true });
 }
 
 export async function atualizarSub(subId, dados) {
+  const modelo = dados.modelo || "chama";
+
   await updateDoc(subDoc(subId), {
     nome: dados.nome,
     botao: dados.botao,
     subtitulo: dados.subtitulo,
     cor: dados.cor,
-    modelo: dados.modelo,
+    modelo,
     obrasPorDia: Number(dados.obrasPorDia || 2),
     ativo: Boolean(dados.ativo),
+    modelos: {
+      ...modelosPadrao(modelo),
+      ...(dados.modelos || {})
+    },
     atualizadoEm: getTodayISO()
   });
 }
@@ -115,8 +130,14 @@ export async function excluirSub(subId) {
 }
 
 export async function garantirSub(sub) {
+  const modelo = sub?.modelo || "chama";
+
   await setDoc(subDoc(sub.id), {
     ...sub,
+    modelos: {
+      ...modelosPadrao(modelo),
+      ...(sub?.modelos || {})
+    },
     atualizadoEm: getTodayISO()
   }, { merge: true });
 }
