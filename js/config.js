@@ -67,6 +67,15 @@ export const SUBS = {
     subtitulo: "Sub Lunar A-7",
     cor: "#10b981",
     modelo: "margens"
+  },
+
+  A9: {
+    id: "A9",
+    nome: "Cicatrizes Literárias",
+    botao: "🫀 Cicatrizes Literárias",
+    subtitulo: "Sub Lunar A-9",
+    cor: "#d4af37",
+    modelo: "cicatrizes"
   }
 };
 
