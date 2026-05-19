@@ -1,4 +1,4 @@
-export const APP_VERSION = "2.0.0";
+export const APP_VERSION = "2.1.0";
 
 export const COLLECTION_ROOT = "v2_subs";
 
@@ -32,14 +32,24 @@ export const STATUS_LEITURA = [
 
 export const STATUS_QUE_CONTAM_LEITURA = ["🌙", "✨"];
 
-export const SUBS = {
+export const MODELOS_SUB = {
+  chama: "Chama Eterna",
+  pagina: "Página Livre",
+  trono: "Trono Profano",
+  margens: "Margens de Mundos",
+  cicatrizes: "Cicatrizes Literárias"
+};
+
+export const DEFAULT_SUBS = {
   A1: {
     id: "A1",
     nome: "Chama Eterna",
     botao: "🔥 Chama Eterna",
     subtitulo: "Sub Lunar A-1",
     cor: "#f97316",
-    modelo: "chama"
+    modelo: "chama",
+    obrasPorDia: 2,
+    ativo: true
   },
 
   A2: {
@@ -48,7 +58,9 @@ export const SUBS = {
     botao: "📖 Página Livre",
     subtitulo: "Sub Lunar A-2",
     cor: "#0ea5e9",
-    modelo: "pagina"
+    modelo: "pagina",
+    obrasPorDia: 2,
+    ativo: true
   },
 
   A6: {
@@ -57,7 +69,9 @@ export const SUBS = {
     botao: "𖤐 Trono Profano",
     subtitulo: "Sub Lunar A-6",
     cor: "#7f1d1d",
-    modelo: "trono"
+    modelo: "trono",
+    obrasPorDia: 2,
+    ativo: true
   },
 
   A7: {
@@ -66,7 +80,9 @@ export const SUBS = {
     botao: "✦ 🗺️ 📖 Margens de Mundos",
     subtitulo: "Sub Lunar A-7",
     cor: "#10b981",
-    modelo: "margens"
+    modelo: "margens",
+    obrasPorDia: 2,
+    ativo: true
   },
 
   A9: {
@@ -75,7 +91,9 @@ export const SUBS = {
     botao: "🫀 Cicatrizes Literárias",
     subtitulo: "Sub Lunar A-9",
     cor: "#d4af37",
-    modelo: "cicatrizes"
+    modelo: "cicatrizes",
+    obrasPorDia: 2,
+    ativo: true
   }
 };
 
@@ -86,5 +104,6 @@ export const ROTAS = {
   GRADE: "grade",
   VERIFICACOES: "verificacoes",
   FICHA: "ficha",
-  PONTUACAO: "pontuacao"
+  PONTUACAO: "pontuacao",
+  SUBS: "subs"
 };
