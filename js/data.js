@@ -11,7 +11,7 @@ import {
   deleteDoc
 } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
-import { COLLECTION_ROOT } from "./config.js";
+import { COLLECTION_ROOT, DEFAULT_SUBS } from "./config.js";
 import { getTodayISO, ordenarPorCriacao } from "./utils.js";
 
 function subDoc(subId) {
@@ -38,12 +38,85 @@ function verificacaoDoc(subId, dia) {
   return doc(db, COLLECTION_ROOT, subId, "verificacoes", dia);
 }
 
+/* SUBS */
+
+export async function criarSubsPadraoSeNecessario() {
+  const snap = await getDocs(collection(db, COLLECTION_ROOT));
+
+  if (!snap.empty) return;
+
+  for (const sub of Object.values(DEFAULT_SUBS)) {
+    await setDoc(subDoc(sub.id), {
+      ...sub,
+      criadoEm: getTodayISO(),
+      atualizadoEm: getTodayISO()
+    }, { merge: true });
+  }
+}
+
+export async function listarSubs() {
+  const snap = await getDocs(collection(db, COLLECTION_ROOT));
+
+  const subs = snap.docs.map(docSnap => ({
+    id: docSnap.id,
+    ...docSnap.data()
+  }));
+
+  return subs.sort((a, b) => String(a.id || "").localeCompare(String(b.id || "")));
+}
+
+export async function buscarSub(subId) {
+  const snap = await getDoc(subDoc(subId));
+
+  if (!snap.exists()) return null;
+
+  return {
+    id: snap.id,
+    ...snap.data()
+  };
+}
+
+export async function salvarSub(sub) {
+  const id = String(sub.id || "").trim().toUpperCase();
+
+  if (!id) {
+    throw new Error("Código do sub obrigatório.");
+  }
+
+  await setDoc(subDoc(id), {
+    id,
+    nome: sub.nome || id,
+    botao: sub.botao || sub.nome || id,
+    subtitulo: sub.subtitulo || `Sub Lunar ${id}`,
+    cor: sub.cor || "#10b981",
+    modelo: sub.modelo || "chama",
+    obrasPorDia: Number(sub.obrasPorDia || 2),
+    ativo: Boolean(sub.ativo),
+    atualizadoEm: getTodayISO(),
+    criadoEm: sub.criadoEm || getTodayISO()
+  }, { merge: true });
+}
+
+export async function atualizarSub(subId, dados) {
+  await updateDoc(subDoc(subId), {
+    nome: dados.nome,
+    botao: dados.botao,
+    subtitulo: dados.subtitulo,
+    cor: dados.cor,
+    modelo: dados.modelo,
+    obrasPorDia: Number(dados.obrasPorDia || 2),
+    ativo: Boolean(dados.ativo),
+    atualizadoEm: getTodayISO()
+  });
+}
+
+export async function excluirSub(subId) {
+  await deleteDoc(subDoc(subId));
+}
+
 export async function garantirSub(sub) {
   await setDoc(subDoc(sub.id), {
-    id: sub.id,
-    nome: sub.nome,
-    modelo: sub.modelo,
-    cor: sub.cor,
+    ...sub,
     atualizadoEm: getTodayISO()
   }, { merge: true });
 }
@@ -138,6 +211,8 @@ export async function criarObra(subId, dados) {
     link: dados.link || "",
     membroId: dados.membroId,
 
+    isPoesia: Boolean(dados.isPoesia),
+
     capitulosMais4100: dados.capitulosMais4100 || "",
     capitulosMenos500: dados.capitulosMenos500 || "",
     prologoMais1000: Boolean(dados.prologoMais1000),
@@ -160,6 +235,8 @@ export async function atualizarObra(subId, obraId, dados) {
     titulo: dados.titulo,
     link: dados.link || "",
     membroId: dados.membroId,
+
+    isPoesia: Boolean(dados.isPoesia),
 
     capitulosMais4100: dados.capitulosMais4100 || "",
     capitulosMenos500: dados.capitulosMenos500 || "",
