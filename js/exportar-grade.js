@@ -1,7 +1,6 @@
 import { SUBS } from "./config.js";
 
 import {
-  escapeHTML,
   limparUser,
   normalizarDiaMaiusculo,
   normalizarDiaTitulo,
@@ -22,6 +21,10 @@ function obsBaseTrono() {
 
 function obsBaseNormal() {
   return "Leiam os especiais votando e deixando pelo menos 1 comentário + 2 capítulos comentando no mínimo 6 vezes em cada.";
+}
+
+function obsBaseCicatrizes() {
+  return "Leiam os especiais e +5 capítulos, efetuando no máximo 3 comentários em cada.";
 }
 
 function obsDistribuicao() {
@@ -91,6 +94,26 @@ function montarObsObra(obra, modelo) {
     return texto;
   }
 
+  if (modelo === "cicatrizes") {
+    if (obra.prologoMais1000) {
+      texto += `\n🧠 OBS: O prólogo tem +1k de palavras, então conta como capítulo normal.\n`;
+    }
+
+    if (obra.capitulosMais4100) {
+      texto += `\n🧠 OBS: Os capítulos ${obra.capitulosMais4100} possuem +4,1k de palavras. Leia apenas 1 capítulo por vez, efetuando mais comentários conforme orientação da ADM.\n`;
+    }
+
+    if (obra.capitulosMenos500) {
+      texto += `\n🧠 OBS: Os capítulos ${obra.capitulosMenos500} possuem menos de 500 palavras. Leia capítulos extras conforme orientação da ADM.\n`;
+    }
+
+    if (obra.observacoes) {
+      texto += `\n🧠 OBS: ${obra.observacoes}\n`;
+    }
+
+    return texto;
+  }
+
   if (obra.prologoMais1000) {
     texto += `\n🍂♦️Obs: O prólogo tem +1k de palavras, então conta como capítulo normal.♦️🍂\n`;
   }
@@ -145,6 +168,16 @@ function montarAlternativa(obra, modelo) {
     if (obra.alternativaTitulo) texto += `🎃 Obra: ${obra.alternativaTitulo}\n`;
     if (obra.alternativaLink) texto += `👁️ Link: ${obra.alternativaLink}\n`;
     if (obra.alternativaObservacoes) texto += `🛎Obs.: ${obra.alternativaObservacoes}\n`;
+
+    return texto;
+  }
+
+  if (modelo === "cicatrizes") {
+    let texto = `\n🩻 𝑷𝒂𝒓𝒂 𝒒𝒖𝒆𝒎 𝒋𝒂́ 𝒍𝒆𝒖:\n\n`;
+
+    if (obra.alternativaTitulo) texto += `🩻𝑜𝑏𝑟𝑎: ${obra.alternativaTitulo}\n`;
+    if (obra.alternativaLink) texto += `🩻𝑙𝑖𝑛𝑘: ${obra.alternativaLink}\n`;
+    if (obra.alternativaObservacoes) texto += `\n🧠 OBS: ${obra.alternativaObservacoes}\n`;
 
     return texto;
   }
@@ -415,6 +448,91 @@ async function gradeMargensDia({ grade, obrasPorId, membros, dia }) {
   return texto.trim();
 }
 
+/* A-9 */
+
+function cabecalhoCicatrizesSemana() {
+  return `✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦
+
+✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦
+🫀𝐕𝐄𝐑𝐈𝐅𝐈𝐂𝐀𝐂̧𝐎̃𝐄𝐒 🫀
+
+🩻𝐎𝐧𝐝𝐞 𝐚 𝐥𝐮𝐚 𝐢𝐥𝐮𝐦𝐢𝐧𝐚 𝐨𝐬 𝐋𝐢𝐯𝐫𝐨𝐬 
+𝐂𝐢𝐜𝐚𝐭𝐫𝐢𝐳𝐞𝐬 𝐋𝐢𝐭𝐞𝐫𝐚́𝐫𝐢𝐚𝐬 𝐀-9🩻
+
+`;
+}
+
+function cabecalhoCicatrizesDia() {
+  return `✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦✦ ✦ ✦ ✦ ✦ ✦ ✦
+             A-9 - CICATRIZES LITERÁRIAS
+✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦✦ ✦ ✦ ✦ ✦ ✦ ✦
+
+`;
+}
+
+async function blocoCicatrizes({ dia, numero, obra, membros, mostrarNumero }) {
+  if (isSemObra(obra)) return "";
+
+  const membro = getMembroDaObra(obra, membros);
+  const tituloDia = mostrarNumero
+    ? `${normalizarDiaMaiusculo(dia)} ${numeroObra(numero)}`
+    : normalizarDiaMaiusculo(dia);
+
+  let texto = "";
+
+  texto += `🪻*${tituloDia}*🪻\n\n`;
+
+  texto += `🩻𝑛𝑜𝑚𝑒: ${membro?.nome || ""}\n`;
+  texto += `🩻𝑢𝑠𝑒𝑟: ${limparUser(membro?.user || "")}\n`;
+  texto += `🩻𝑜𝑏𝑟𝑎: ${obra.titulo || ""}\n`;
+  texto += `🩻𝑙𝑖𝑛𝑘: ${obra.link || ""}\n\n`;
+
+  texto += `🧠 OBS: ${obsBaseCicatrizes()}\n`;
+
+  texto += montarObsObra(obra, "cicatrizes");
+  texto += montarAlternativa(obra, "cicatrizes");
+
+  texto += `\n✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦\n\n`;
+
+  return texto;
+}
+
+async function gradeCicatrizesSemana({ grade, obrasPorId, membros }) {
+  let texto = cabecalhoCicatrizesSemana();
+
+  for (const dia of Object.keys(grade)) {
+    if (dia === "atualizadoEm") continue;
+
+    const obra1 = obrasPorId.get(grade[dia]?.obra1);
+    const obra2 = obrasPorId.get(grade[dia]?.obra2);
+
+    const temObra1 = !isSemObra(obra1);
+    const temObra2 = !isSemObra(obra2);
+    const mostrarNumero = temObra1 && temObra2;
+
+    texto += await blocoCicatrizes({ dia, numero: 1, obra: obra1, membros, mostrarNumero });
+    texto += await blocoCicatrizes({ dia, numero: 2, obra: obra2, membros, mostrarNumero });
+  }
+
+  return texto.trim();
+}
+
+async function gradeCicatrizesDia({ grade, obrasPorId, membros, dia }) {
+  const obra1 = obrasPorId.get(grade[dia]?.obra1);
+  const obra2 = obrasPorId.get(grade[dia]?.obra2);
+
+  const temObra1 = !isSemObra(obra1);
+  const temObra2 = !isSemObra(obra2);
+  const mostrarNumero = temObra1 && temObra2;
+
+  let texto = cabecalhoCicatrizesDia();
+
+  texto += await blocoCicatrizes({ dia, numero: 1, obra: obra1, membros, mostrarNumero });
+  texto += await blocoCicatrizes({ dia, numero: 2, obra: obra2, membros, mostrarNumero });
+
+  return texto.trim();
+}
+
 /* EXPORTADOR */
 
 export async function gerarGradeExportada({
@@ -452,6 +570,12 @@ export async function gerarGradeExportada({
     return tipo === "dia"
       ? await gradeMargensDia(base)
       : await gradeMargensSemana(base);
+  }
+
+  if (sub.modelo === "cicatrizes") {
+    return tipo === "dia"
+      ? await gradeCicatrizesDia(base)
+      : await gradeCicatrizesSemana(base);
   }
 
   return tipo === "dia"
