@@ -6,15 +6,22 @@ import {
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
 
-import { ROTAS, SUBS } from "./config.js";
+import { ROTAS } from "./config.js";
 
-import { garantirSub } from "./data.js";
+import {
+  criarSubsPadraoSeNecessario,
+  listarSubs,
+  buscarSub,
+  garantirSub
+} from "./data.js";
+
 import { renderMembrosPage } from "./membros.js";
 import { renderObrasPage } from "./obras.js";
 import { renderGradePage } from "./grade.js";
 import { renderVerificacoesPage } from "./verificacoes.js";
 import { renderFichaPage } from "./ficha.js";
 import { renderPontuacaoPage } from "./pontuacao.js";
+import { renderSubsPage } from "./subs.js";
 
 import {
   escapeHTML,
@@ -31,12 +38,13 @@ const root = document.getElementById("root");
 const state = {
   user: null,
   subId: null,
+  subConfig: null,
+  subs: [],
   rota: ROTAS.DASHBOARD
 };
 
 function getSubConfig() {
-  if (!state.subId) return null;
-  return SUBS[state.subId] || null;
+  return state.subConfig;
 }
 
 function aplicarTema() {
@@ -49,9 +57,24 @@ function aplicarTema() {
     return;
   }
 
-  document.documentElement.style.setProperty("--accent", sub.cor);
-  document.documentElement.style.setProperty("--accent-dark", sub.cor);
-  document.documentElement.style.setProperty("--accent-soft", `${sub.cor}33`);
+  document.documentElement.style.setProperty("--accent", sub.cor || "#10b981");
+  document.documentElement.style.setProperty("--accent-dark", sub.cor || "#10b981");
+  document.documentElement.style.setProperty("--accent-soft", `${sub.cor || "#10b981"}33`);
+}
+
+async function carregarSubs() {
+  await criarSubsPadraoSeNecessario();
+  state.subs = await listarSubs();
+
+  if (state.subId) {
+    state.subConfig = await buscarSub(state.subId);
+
+    if (!state.subConfig) {
+      limparSubAtual();
+      state.subId = null;
+      state.subConfig = null;
+    }
+  }
 }
 
 function renderLogin() {
@@ -99,13 +122,16 @@ function renderLogin() {
   });
 }
 
-function renderSelecionarSub() {
+async function renderSelecionarSub() {
+  await carregarSubs();
   aplicarTema();
 
-  const botoes = Object.values(SUBS).map(sub => `
+  const subsAtivos = state.subs.filter(sub => sub.ativo !== false);
+
+  const botoes = subsAtivos.map(sub => `
     <button class="sub-card" data-sub="${sub.id}">
-      <strong>${escapeHTML(sub.botao)}</strong>
-      <span>${escapeHTML(sub.subtitulo)}</span>
+      <strong>${escapeHTML(sub.botao || sub.nome || sub.id)}</strong>
+      <span>${escapeHTML(sub.subtitulo || "")}</span>
     </button>
   `).join("");
 
@@ -116,10 +142,11 @@ function renderSelecionarSub() {
         <p>Selecione qual sub você quer gerenciar agora.</p>
 
         <div class="sub-grid">
-          ${botoes}
+          ${botoes || `<div class="empty-state">Nenhum sub ativo cadastrado.</div>`}
         </div>
 
         <div class="form-actions">
+          <button class="btn secondary" id="gerenciarSubsButton">⚙️ Gerenciar Subs</button>
           <button class="btn secondary" id="logoutButton">Sair</button>
         </div>
       </section>
@@ -132,15 +159,22 @@ function renderSelecionarSub() {
 
       setSubAtual(subId);
       state.subId = subId;
+      state.subConfig = await buscarSub(subId);
       state.rota = ROTAS.DASHBOARD;
       setRotaAtual(ROTAS.DASHBOARD);
 
-      const sub = SUBS[subId];
-
-      await garantirSub(sub);
+      await garantirSub(state.subConfig);
 
       renderAppShell();
     });
+  });
+
+  document.getElementById("gerenciarSubsButton").addEventListener("click", async () => {
+    state.subId = null;
+    state.subConfig = null;
+    state.rota = ROTAS.SUBS;
+    setRotaAtual(ROTAS.SUBS);
+    renderAppShellSemSub();
   });
 
   document.getElementById("logoutButton").addEventListener("click", logout);
@@ -155,6 +189,72 @@ function navButton(rota, icon, label) {
       <span>${label}</span>
     </button>
   `;
+}
+
+function renderAppShellSemSub() {
+  aplicarTema();
+
+  root.innerHTML = `
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <div class="brand-icon">🌙</div>
+          <div>
+            <h1>Verificação Lunar</h1>
+            <p>V2 • Configurações</p>
+          </div>
+        </div>
+
+        <div class="sidebar-section-title">Sistema</div>
+
+        <nav class="nav-list">
+          ${navButton(ROTAS.SUBS, "⚙️", "Subs")}
+        </nav>
+
+        <div class="sidebar-section-title">Acesso</div>
+
+        <div class="nav-list">
+          <button class="nav-button" id="voltarSelecaoButton">
+            <span>🔁</span>
+            <span>Escolher Sub</span>
+          </button>
+
+          <button class="nav-button danger" id="logoutButton">
+            <span>🚪</span>
+            <span>Sair</span>
+          </button>
+        </div>
+      </aside>
+
+      <main class="main-area">
+        <div class="topbar">
+          <button class="btn secondary mobile-menu-button" id="mobileMenuButton">☰ Menu</button>
+
+          <div class="topbar-title">
+            <h2>⚙️ Configurações</h2>
+            <p id="pageSubtitle">Gerencie os subs disponíveis na plataforma.</p>
+          </div>
+        </div>
+
+        <section class="content" id="view"></section>
+      </main>
+    </div>
+  `;
+
+  document.getElementById("voltarSelecaoButton").addEventListener("click", () => {
+    limparSubAtual();
+    state.subId = null;
+    state.subConfig = null;
+    renderSelecionarSub();
+  });
+
+  document.getElementById("logoutButton").addEventListener("click", logout);
+
+  document.getElementById("mobileMenuButton").addEventListener("click", () => {
+    document.body.classList.toggle("menu-open");
+  });
+
+  renderRotaAtual();
 }
 
 function renderAppShell() {
@@ -193,6 +293,8 @@ function renderAppShell() {
         <div class="sidebar-section-title">Sistema</div>
 
         <div class="nav-list">
+          ${navButton(ROTAS.SUBS, "⚙️", "Subs")}
+          
           <button class="nav-button" id="trocarSubButton">
             <span>🔁</span>
             <span>Trocar Sub</span>
@@ -210,12 +312,12 @@ function renderAppShell() {
           <button class="btn secondary mobile-menu-button" id="mobileMenuButton">☰ Menu</button>
 
           <div class="topbar-title">
-            <h2>${escapeHTML(sub.botao)}</h2>
+            <h2>${escapeHTML(sub.botao || sub.nome)}</h2>
             <p id="pageSubtitle">Sistema de verificação e grade do Projeto Lunar.</p>
           </div>
 
           <div class="topbar-actions">
-            <span class="badge">🔥 ${escapeHTML(sub.subtitulo)}</span>
+            <span class="badge">🔥 ${escapeHTML(sub.subtitulo || "")}</span>
           </div>
         </div>
 
@@ -233,6 +335,7 @@ function renderAppShell() {
   document.getElementById("trocarSubButton").addEventListener("click", () => {
     limparSubAtual();
     state.subId = null;
+    state.subConfig = null;
     renderSelecionarSub();
   });
 
@@ -249,6 +352,12 @@ function navegar(rota) {
   state.rota = rota;
   setRotaAtual(rota);
   document.body.classList.remove("menu-open");
+
+  if (rota === ROTAS.SUBS) {
+    renderAppShellSemSub();
+    return;
+  }
+
   renderAppShell();
 }
 
@@ -317,6 +426,16 @@ function renderDashboard() {
 }
 
 async function renderRotaAtual() {
+  if (state.rota === ROTAS.SUBS) {
+    await renderSubsPage(getContext());
+    return;
+  }
+
+  if (!state.subConfig) {
+    await renderSelecionarSub();
+    return;
+  }
+
   if (state.rota === ROTAS.DASHBOARD) {
     renderDashboard();
     return;
@@ -358,11 +477,12 @@ async function renderRotaAtual() {
 async function logout() {
   limparSubAtual();
   state.subId = null;
+  state.subConfig = null;
   state.rota = ROTAS.DASHBOARD;
   await signOut(auth);
 }
 
-onAuthStateChanged(auth, user => {
+onAuthStateChanged(auth, async user => {
   state.user = user;
 
   if (!user) {
@@ -373,8 +493,15 @@ onAuthStateChanged(auth, user => {
   state.subId = getSubAtual();
   state.rota = getRotaAtual();
 
-  if (!state.subId) {
-    renderSelecionarSub();
+  await carregarSubs();
+
+  if (!state.subId && state.rota !== ROTAS.SUBS) {
+    await renderSelecionarSub();
+    return;
+  }
+
+  if (state.rota === ROTAS.SUBS) {
+    renderAppShellSemSub();
     return;
   }
 
