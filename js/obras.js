@@ -37,6 +37,7 @@ export async function renderObrasPage(context) {
             <h4>${escapeHTML(obra.titulo)}</h4>
             <p>Autor: ${escapeHTML(membro?.nome || "Membro não encontrado")} ${membro?.user ? `• ${escapeHTML(membro.user)}` : ""}</p>
             <p>Link: ${obra.link ? escapeHTML(obra.link) : "Não informado"}</p>
+            <p>Tipo: ${obra.isPoesia ? "Poesia" : "Obra normal"}</p>
 
             ${
               obra.capitulosMais4100 || obra.capitulosMenos500 || obra.prologoMais1000
@@ -63,7 +64,7 @@ export async function renderObrasPage(context) {
       <div class="card-header">
         <div>
           <h3>📚 Obras</h3>
-          <p>Cadastre obras, links e observações fixas que serão usadas automaticamente na grade.</p>
+          <p>Cadastre obras, links, tipo de leitura e observações fixas que serão usadas automaticamente na grade.</p>
         </div>
 
         <button class="btn" id="novaObraButton" ${membros.length ? "" : "disabled"}>+ Nova Obra</button>
@@ -162,6 +163,15 @@ function abrirFormularioObra({ state, refresh, membros, obra }) {
         />
       </div>
 
+      <label class="checkbox-row">
+        <input 
+          id="isPoesia" 
+          type="checkbox" 
+          ${obra?.isPoesia ? "checked" : ""}
+        />
+        Esta obra é poesia
+      </label>
+
       <div class="grid grid-2">
         <div class="form-row">
           <label for="capitulosMais4100">Capítulos com +4,1k palavras</label>
@@ -252,6 +262,8 @@ function abrirFormularioObra({ state, refresh, membros, obra }) {
       titulo: document.getElementById("tituloObra").value.trim(),
       membroId: document.getElementById("membroObra").value,
       link: document.getElementById("linkObra").value.trim(),
+
+      isPoesia: document.getElementById("isPoesia").checked,
 
       capitulosMais4100: document.getElementById("capitulosMais4100").value.trim(),
       capitulosMenos500: document.getElementById("capitulosMenos500").value.trim(),
