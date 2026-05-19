@@ -48,6 +48,8 @@ export async function renderGradePage(context) {
     return;
   }
 
+  const obrasPorDia = Number(state.subConfig?.obrasPorDia || 2);
+
   const opcoesObras = obras.map(obra => `
     <option value="${obra.id}">${escapeHTML(obra.titulo)}</option>
   `).join("");
@@ -59,7 +61,7 @@ export async function renderGradePage(context) {
       <article class="grade-day">
         <h4>${dia}</h4>
 
-        <div class="grade-columns">
+        <div class="grade-columns ${obrasPorDia === 1 ? "grid-1" : ""}">
           <div class="grade-slot">
             <h5>Obra 01</h5>
 
@@ -71,16 +73,18 @@ export async function renderGradePage(context) {
             </select>
           </div>
 
-          <div class="grade-slot">
-            <h5>Obra 02</h5>
+          ${obrasPorDia === 2 ? `
+            <div class="grade-slot">
+              <h5>Obra 02</h5>
 
-            <label for="${dia}_obra2">Selecione a obra</label>
-            <select id="${dia}_obra2">
-              <option value="">Selecione</option>
-              <option value="${SEM_OBRA_ID}">⏳ Sem Obra</option>
-              ${opcoesObras}
-            </select>
-          </div>
+              <label for="${dia}_obra2">Selecione a obra</label>
+              <select id="${dia}_obra2">
+                <option value="">Selecione</option>
+                <option value="${SEM_OBRA_ID}">⏳ Sem Obra</option>
+                ${opcoesObras}
+              </select>
+            </div>
+          ` : ""}
         </div>
       </article>
     `;
@@ -128,21 +132,24 @@ export async function renderGradePage(context) {
 
   DIAS_SEMANA.forEach(dia => {
     document.getElementById(`${dia}_obra1`).value = grade[dia]?.obra1 || "";
-    document.getElementById(`${dia}_obra2`).value = grade[dia]?.obra2 || "";
+
+    if (obrasPorDia === 2) {
+      document.getElementById(`${dia}_obra2`).value = grade[dia]?.obra2 || "";
+    }
   });
 
   document.getElementById("salvarGradeButton").addEventListener("click", async () => {
-    await salvarGradeDaTela(state.subId);
+    await salvarGradeDaTela(state.subId, obrasPorDia);
     mostrarToast("Grade salva.");
     await refresh();
   });
 
   document.getElementById("exportarDiaButton").addEventListener("click", async () => {
-    const gradeAtual = await salvarGradeDaTela(state.subId);
+    const gradeAtual = await salvarGradeDaTela(state.subId, obrasPorDia);
     const dia = document.getElementById("diaExportar").value;
 
     const texto = await gerarGradeExportada({
-      subId: state.subId,
+      sub: state.subConfig,
       tipo: "dia",
       dia,
       grade: gradeAtual,
@@ -154,10 +161,10 @@ export async function renderGradePage(context) {
   });
 
   document.getElementById("exportarSemanaButton").addEventListener("click", async () => {
-    const gradeAtual = await salvarGradeDaTela(state.subId);
+    const gradeAtual = await salvarGradeDaTela(state.subId, obrasPorDia);
 
     const texto = await gerarGradeExportada({
-      subId: state.subId,
+      sub: state.subConfig,
       tipo: "semana",
       dia: null,
       grade: gradeAtual,
@@ -169,13 +176,15 @@ export async function renderGradePage(context) {
   });
 }
 
-async function salvarGradeDaTela(subId) {
+async function salvarGradeDaTela(subId, obrasPorDia) {
   const novaGrade = {};
 
   DIAS_SEMANA.forEach(dia => {
     novaGrade[dia] = {
       obra1: document.getElementById(`${dia}_obra1`).value,
-      obra2: document.getElementById(`${dia}_obra2`).value
+      obra2: obrasPorDia === 2
+        ? document.getElementById(`${dia}_obra2`).value
+        : SEM_OBRA_ID
     };
   });
 
