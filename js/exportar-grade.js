@@ -1,5 +1,3 @@
-import { SUBS } from "./config.js";
-
 import {
   limparUser,
   normalizarDiaMaiusculo,
@@ -15,15 +13,27 @@ function isSemObra(obra) {
   return !obra || obra.semObra || obra.id === "__SEM_OBRA__";
 }
 
-function obsBaseTrono() {
-  return "Leiam os especiais votando e deixando pelo menos 1 comentário + 2 capítulos comentando no 𝐌𝐈́𝐍𝐈𝐌𝐎 6 vezes em cada.";
-}
+function regraLeitura(obra, modelo = "normal") {
+  if (obra?.isPoesia) {
+    if (modelo === "trono") {
+      return "Leiam os especiais votando e deixando pelo menos 1 comentário + 5 capítulos deixando no 𝐌𝐈́𝐍𝐈𝐌𝐎 3 comentários.";
+    }
 
-function obsBaseNormal() {
+    return "Leiam os especiais votando e deixando pelo menos 1 comentário + 5 capítulos deixando no mínimo 3 comentários.";
+  }
+
+  if (modelo === "trono") {
+    return "Leiam os especiais votando e deixando pelo menos 1 comentário + 2 capítulos comentando no 𝐌𝐈́𝐍𝐈𝐌𝐎 6 vezes em cada.";
+  }
+
   return "Leiam os especiais votando e deixando pelo menos 1 comentário + 2 capítulos comentando no mínimo 6 vezes em cada.";
 }
 
-function obsBaseCicatrizes() {
+function obsBaseCicatrizes(obra) {
+  if (obra?.isPoesia) {
+    return "Leiam os especiais votando e deixando pelo menos 1 comentário + 5 capítulos deixando no mínimo 3 comentários.";
+  }
+
   return "Leiam os especiais e +5 capítulos, efetuando no máximo 3 comentários em cada.";
 }
 
@@ -145,7 +155,7 @@ function montarAlternativa(obra, modelo) {
     if (obra.alternativaLink) texto += `🔗 𝐋𝐈𝐍𝐊: ${obra.alternativaLink}\n`;
     if (obra.alternativaObservacoes) texto += `\n⚠️ 𝐎𝐁𝐒.: ${obra.alternativaObservacoes}\n`;
 
-    texto += `\n${obsBaseTrono()}\n${obsDistribuicao()}\n`;
+    texto += `\n${regraLeitura(obra, "trono")}\n${obsDistribuicao()}\n`;
 
     return texto;
   }
@@ -157,7 +167,7 @@ function montarAlternativa(obra, modelo) {
     if (obra.alternativaLink) texto += `🔗 𝐋𝐈𝐍𝐊: ${obra.alternativaLink}\n`;
     if (obra.alternativaObservacoes) texto += `\n⚠️ 𝐎𝐁𝐒.: ${obra.alternativaObservacoes}\n`;
 
-    texto += `\n${obsBaseNormal()}\n${obsDistribuicao()}\n`;
+    texto += `\n${regraLeitura(obra)}\n${obsDistribuicao()}\n`;
 
     return texto;
   }
@@ -207,7 +217,7 @@ async function blocoChama({ dia, numero, obra, membros }) {
   texto += `📙Obra.: ${obra.titulo || ""}\n`;
   texto += `🪸 Link.: 🔗 ${obra.link || ""}\n\n`;
 
-  texto += `🍂♦️Obs: Ler 2 capítulos deixando 6 comentários bem distribuídos♦️🍂\n`;
+  texto += `🍂♦️Obs: ${regraLeitura(obra)}♦️🍂\n`;
   texto += montarObsObra(obra, "chama");
   texto += montarAlternativa(obra, "chama");
 
@@ -264,7 +274,7 @@ async function blocoPagina({ dia, numero, obra, membros }) {
   texto += `🛕 Nome da Obra: ${obra.titulo || ""}\n`;
   texto += `🛸 Link: ${obra.link || ""}\n\n`;
 
-  texto += `🛎️Obs.: Leia 02 capítulos comentando no mínimo 6 vezes em cada.\n`;
+  texto += `🛎️Obs.: ${regraLeitura(obra)}\n`;
   texto += montarObsObra(obra, "pagina");
   texto += montarAlternativa(obra, "pagina");
 
@@ -322,7 +332,7 @@ async function blocoTrono({ dia, numero, obra, membros }) {
 
   texto += montarObsObra(obra, "trono");
 
-  texto += `\n⚠️ 𝐎𝐁𝐒.: ${obsBaseTrono()}\n\n`;
+  texto += `\n⚠️ 𝐎𝐁𝐒.: ${regraLeitura(obra, "trono")}\n\n`;
   texto += `${obsDistribuicao()}\n`;
 
   texto += montarAlternativa(obra, "trono");
@@ -395,7 +405,7 @@ async function blocoMargens({ dia, numero, obra, membros }) {
   texto += montarObsObra(obra, "margens");
 
   texto += `\n⚠️ 𝐎𝐁𝐒.:\n\n`;
-  texto += `Leiam os especiais votando e deixando pelo menos 1 comentário + 2 capítulos comentando no 𝐌𝐈́𝐍𝐈𝐌𝐎 6 vezes em cada.\n\n`;
+  texto += `${regraLeitura(obra)}\n\n`;
   texto += `${obsDistribuicao()}\n`;
 
   texto += montarAlternativa(obra, "margens");
@@ -487,7 +497,7 @@ async function blocoCicatrizes({ dia, numero, obra, membros, mostrarNumero }) {
   texto += `🩻𝑜𝑏𝑟𝑎: ${obra.titulo || ""}\n`;
   texto += `🩻𝑙𝑖𝑛𝑘: ${obra.link || ""}\n\n`;
 
-  texto += `🧠 OBS: ${obsBaseCicatrizes()}\n`;
+  texto += `🧠 OBS: ${obsBaseCicatrizes(obra)}\n`;
 
   texto += montarObsObra(obra, "cicatrizes");
   texto += montarAlternativa(obra, "cicatrizes");
@@ -536,16 +546,15 @@ async function gradeCicatrizesDia({ grade, obrasPorId, membros, dia }) {
 /* EXPORTADOR */
 
 export async function gerarGradeExportada({
-  subId,
+  sub,
   tipo,
   dia,
   grade,
   obras,
   membros
 }) {
-  const sub = SUBS[subId];
-
   const obrasPorId = new Map(obras.map(obra => [obra.id, obra]));
+  const modelo = sub?.modelo || "trono";
 
   const base = {
     grade,
@@ -554,25 +563,25 @@ export async function gerarGradeExportada({
     dia
   };
 
-  if (sub.modelo === "chama") {
+  if (modelo === "chama") {
     return tipo === "dia"
       ? await gradeChamaDia(base)
       : await gradeChamaSemana(base);
   }
 
-  if (sub.modelo === "pagina") {
+  if (modelo === "pagina") {
     return tipo === "dia"
       ? await gradePaginaDia(base)
       : await gradePaginaSemana(base);
   }
 
-  if (sub.modelo === "margens") {
+  if (modelo === "margens") {
     return tipo === "dia"
       ? await gradeMargensDia(base)
       : await gradeMargensSemana(base);
   }
 
-  if (sub.modelo === "cicatrizes") {
+  if (modelo === "cicatrizes") {
     return tipo === "dia"
       ? await gradeCicatrizesDia(base)
       : await gradeCicatrizesSemana(base);
