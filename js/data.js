@@ -11,7 +11,7 @@ import {
   deleteDoc
 } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
-import { COLLECTION_ROOT, DEFAULT_SUBS, DEFAULT_MODELOS } from "./config.js";
+import { COLLECTION_ROOT, CONFIG_ROOT, DEFAULT_SUBS, DEFAULT_MODELOS } from "./config.js";
 import { getTodayISO, ordenarPorCriacao } from "./utils.js";
 
 function subDoc(subId) {
@@ -38,8 +38,32 @@ function verificacaoDoc(subId, dia) {
   return doc(db, COLLECTION_ROOT, subId, "verificacoes", dia);
 }
 
+function configDoc(id) {
+  return doc(db, CONFIG_ROOT, id);
+}
+
 function modelosPadrao(modelo) {
   return DEFAULT_MODELOS[modelo] || DEFAULT_MODELOS.trono;
+}
+
+/* CONFIG GERAL */
+
+export async function buscarConfigGeral(id) {
+  const snap = await getDoc(configDoc(id));
+
+  if (!snap.exists()) return null;
+
+  return {
+    id: snap.id,
+    ...snap.data()
+  };
+}
+
+export async function salvarConfigGeral(id, dados) {
+  await setDoc(configDoc(id), {
+    ...dados,
+    atualizadoEm: getTodayISO()
+  }, { merge: true });
 }
 
 /* SUBS */
@@ -184,6 +208,15 @@ export async function atualizarMembro(subId, membroId, dados) {
     nome: dados.nome,
     user: dados.user,
     semana: Number(dados.semana || 0),
+    atualizadoEm: getTodayISO()
+  });
+}
+
+export async function atualizarSemanaMembro(subId, membroId, novaSemana) {
+  const ref = doc(db, COLLECTION_ROOT, subId, "membros", membroId);
+
+  await updateDoc(ref, {
+    semana: Number(novaSemana || 0),
     atualizadoEm: getTodayISO()
   });
 }

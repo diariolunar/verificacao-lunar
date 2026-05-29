@@ -15,6 +15,8 @@ import {
   garantirSub
 } from "./data.js";
 
+import { atualizarSemanasGeralSeDomingo } from "./semanas.js";
+
 import { renderMembrosPage } from "./membros.js";
 import { renderObrasPage } from "./obras.js";
 import { renderGradePage } from "./grade.js";
@@ -492,6 +494,9 @@ onAuthStateChanged(auth, async user => {
 
   state.subId = getSubAtual();
   state.rota = getRotaAtual();
+
+  await carregarSubs();
+  await atualizarSemanasGeralSeDomingo();
 
   await carregarSubs();
 

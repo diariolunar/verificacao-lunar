@@ -1,6 +1,8 @@
-export const APP_VERSION = "2.2.0";
+export const APP_VERSION = "2.3.0";
 
 export const COLLECTION_ROOT = "v2_subs";
+
+export const CONFIG_ROOT = "v2_config";
 
 export const SEM_OBRA_ID = "__SEM_OBRA__";
 
@@ -30,7 +32,7 @@ export const STATUS_LEITURA = [
   { emoji: "⏰", label: "Leitura feita em tempo estimado" }
 ];
 
-export const STATUS_QUE_CONTAM_LEITURA = ["🌙", "✨"];
+export const STATUS_QUE_CONTAM_LEITURA = ["🌙", "🌼", "✨"];
 
 export const MODELOS_SUB = {
   chama: "Chama Eterna",
@@ -196,7 +198,7 @@ Obra 02.: {{obra2}}`,
 
 🚨 𝐀𝐓𝐄𝐍𝐂̧𝐀̃𝐎 🚨
 
-𝐏𝐚𝐫𝐚 𝐠𝐚𝐫𝐚𝐧𝐭𝐢𝐫 𝐚 𝐨 𝐛𝐨𝐦 𝐚𝐧𝐝𝐚𝐦𝐞𝐧𝐭𝐨 𝐝𝐨 𝐓𝐫𝐨𝐧𝐨 𝐏𝐫𝐨𝐟𝐚𝐧𝐨, 𝐞́ 𝐢𝐦𝐩𝐨𝐫𝐭𝐚𝐧𝐭𝐞 𝐪𝐮𝐞 𝐭𝐨𝐝𝐨𝐬 𝐞𝐬𝐭𝐞𝐣𝐚𝐦 𝐞𝐦 𝐝𝐢𝐚.`,
+𝐏𝐚𝐫𝐚 𝐠𝐚𝐫𝐚𝐧𝐭𝐢𝐫 𝐚 𝐨 𝐛𝐨𝐦 𝐚𝐧𝐝𝐚𝐦𝐞𝐧𝐭𝐨 𝐝𝐨 𝐓𝐫𝐨𝐧𝐨 𝐏𝐫𝐨𝐟𝐀𝐍𝐎, 𝐞́ 𝐢𝐦𝐩𝐨𝐫𝐭𝐚𝐧𝐭𝐞 𝐪𝐮𝐞 𝐭𝐨𝐝𝐨𝐬 𝐞𝐬𝐭𝐞𝐣𝐚𝐦 𝐞𝐦 𝐝𝐢𝐚.`,
 
     gradeSemanaCabecalho: `𖤐⛓️🔥 𝐀-𝟔 — 𝐓𝐑𝐎𝐍𝐎 𝐏𝐑𝐎𝐅𝐀𝐍𝐎 🔥⛓️𖤐
 𝐆𝐑𝐀𝐃𝐄 𝐃𝐄 𝐎𝐁𝐑𝐀𝐒 𝐃𝐀 𝐒𝐄𝐌𝐀𝐍𝐀`,
