@@ -49,19 +49,33 @@ function getSubConfig() {
   return state.subConfig;
 }
 
+function getSubIcon(sub) {
+  const texto = String(sub?.botao || sub?.nome || "🌙").trim();
+
+  if (!texto) return "🌙";
+
+  const primeiroItem = texto.split(/\s+/)[0];
+
+  return primeiroItem || "🌙";
+}
+
 function aplicarTema() {
   const sub = getSubConfig();
 
   if (!sub) {
     document.documentElement.style.setProperty("--accent", "#7c3aed");
-    document.documentElement.style.setProperty("--accent-dark", "#5b21b6");
-    document.documentElement.style.setProperty("--accent-soft", "rgba(124, 58, 237, 0.14)");
+    document.documentElement.style.setProperty("--accent-dark", "#a78bfa");
+    document.documentElement.style.setProperty("--accent-soft", "rgba(124, 58, 237, 0.24)");
+    document.documentElement.style.setProperty("--topbar-gradient", "linear-gradient(90deg, rgba(16, 7, 31, 0.96), rgba(124, 58, 237, 0.30))");
     return;
   }
 
-  document.documentElement.style.setProperty("--accent", sub.cor || "#7c3aed");
-  document.documentElement.style.setProperty("--accent-dark", sub.cor || "#5b21b6");
-  document.documentElement.style.setProperty("--accent-soft", `${sub.cor || "#7c3aed"}26`);
+  const cor = sub.cor || "#7c3aed";
+
+  document.documentElement.style.setProperty("--accent", cor);
+  document.documentElement.style.setProperty("--accent-dark", cor);
+  document.documentElement.style.setProperty("--accent-soft", `${cor}33`);
+  document.documentElement.style.setProperty("--topbar-gradient", `linear-gradient(90deg, rgba(16, 7, 31, 0.97) 0%, ${cor}55 58%, ${cor}77 100%)`);
 }
 
 async function carregarSubs() {
@@ -246,6 +260,10 @@ function renderAppShellSemSub() {
             <h2>⚙️ Configurações</h2>
             <p id="pageSubtitle">Gerencie os subs disponíveis na plataforma.</p>
           </div>
+
+          <div class="topbar-actions">
+            <span class="topbar-sub-icon">🌙</span>
+          </div>
         </div>
 
         <section class="content" id="view"></section>
@@ -337,7 +355,7 @@ function renderAppShell() {
           </div>
 
           <div class="topbar-actions">
-            <span class="badge">${escapeHTML(sub.subtitulo || "")}</span>
+            <span class="topbar-sub-icon">${escapeHTML(getSubIcon(sub))}</span>
           </div>
         </div>
 
