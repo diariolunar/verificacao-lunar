@@ -53,15 +53,15 @@ function aplicarTema() {
   const sub = getSubConfig();
 
   if (!sub) {
-    document.documentElement.style.setProperty("--accent", "#10b981");
-    document.documentElement.style.setProperty("--accent-dark", "#059669");
-    document.documentElement.style.setProperty("--accent-soft", "rgba(16, 185, 129, 0.18)");
+    document.documentElement.style.setProperty("--accent", "#7c3aed");
+    document.documentElement.style.setProperty("--accent-dark", "#5b21b6");
+    document.documentElement.style.setProperty("--accent-soft", "rgba(124, 58, 237, 0.14)");
     return;
   }
 
-  document.documentElement.style.setProperty("--accent", sub.cor || "#10b981");
-  document.documentElement.style.setProperty("--accent-dark", sub.cor || "#10b981");
-  document.documentElement.style.setProperty("--accent-soft", `${sub.cor || "#10b981"}33`);
+  document.documentElement.style.setProperty("--accent", sub.cor || "#7c3aed");
+  document.documentElement.style.setProperty("--accent-dark", sub.cor || "#5b21b6");
+  document.documentElement.style.setProperty("--accent-soft", `${sub.cor || "#7c3aed"}26`);
 }
 
 async function carregarSubs() {
@@ -77,6 +77,14 @@ async function carregarSubs() {
       state.subConfig = null;
     }
   }
+}
+
+function fecharMenuMobile() {
+  document.body.classList.remove("menu-open");
+}
+
+function alternarMenuMobile() {
+  document.body.classList.toggle("menu-open");
 }
 
 function renderLogin() {
@@ -198,6 +206,8 @@ function renderAppShellSemSub() {
 
   root.innerHTML = `
     <div class="app-shell">
+      <div class="mobile-backdrop" id="mobileBackdrop"></div>
+
       <aside class="sidebar">
         <div class="sidebar-brand">
           <div class="brand-icon">🌙</div>
@@ -243,7 +253,15 @@ function renderAppShellSemSub() {
     </div>
   `;
 
+  document.querySelectorAll("[data-route]").forEach(button => {
+    button.addEventListener("click", () => {
+      fecharMenuMobile();
+      navegar(button.dataset.route);
+    });
+  });
+
   document.getElementById("voltarSelecaoButton").addEventListener("click", () => {
+    fecharMenuMobile();
     limparSubAtual();
     state.subId = null;
     state.subConfig = null;
@@ -251,10 +269,8 @@ function renderAppShellSemSub() {
   });
 
   document.getElementById("logoutButton").addEventListener("click", logout);
-
-  document.getElementById("mobileMenuButton").addEventListener("click", () => {
-    document.body.classList.toggle("menu-open");
-  });
+  document.getElementById("mobileMenuButton").addEventListener("click", alternarMenuMobile);
+  document.getElementById("mobileBackdrop").addEventListener("click", fecharMenuMobile);
 
   renderRotaAtual();
 }
@@ -271,6 +287,8 @@ function renderAppShell() {
 
   root.innerHTML = `
     <div class="app-shell">
+      <div class="mobile-backdrop" id="mobileBackdrop"></div>
+
       <aside class="sidebar">
         <div class="sidebar-brand">
           <div class="brand-icon">🌙</div>
@@ -319,7 +337,7 @@ function renderAppShell() {
           </div>
 
           <div class="topbar-actions">
-            <span class="badge">🔥 ${escapeHTML(sub.subtitulo || "")}</span>
+            <span class="badge">${escapeHTML(sub.subtitulo || "")}</span>
           </div>
         </div>
 
@@ -330,11 +348,13 @@ function renderAppShell() {
 
   document.querySelectorAll("[data-route]").forEach(button => {
     button.addEventListener("click", () => {
+      fecharMenuMobile();
       navegar(button.dataset.route);
     });
   });
 
   document.getElementById("trocarSubButton").addEventListener("click", () => {
+    fecharMenuMobile();
     limparSubAtual();
     state.subId = null;
     state.subConfig = null;
@@ -342,10 +362,8 @@ function renderAppShell() {
   });
 
   document.getElementById("logoutButton").addEventListener("click", logout);
-
-  document.getElementById("mobileMenuButton").addEventListener("click", () => {
-    document.body.classList.toggle("menu-open");
-  });
+  document.getElementById("mobileMenuButton").addEventListener("click", alternarMenuMobile);
+  document.getElementById("mobileBackdrop").addEventListener("click", fecharMenuMobile);
 
   renderRotaAtual();
 }
@@ -353,7 +371,7 @@ function renderAppShell() {
 function navegar(rota) {
   state.rota = rota;
   setRotaAtual(rota);
-  document.body.classList.remove("menu-open");
+  fecharMenuMobile();
 
   if (rota === ROTAS.SUBS) {
     renderAppShellSemSub();
@@ -477,6 +495,7 @@ async function renderRotaAtual() {
 }
 
 async function logout() {
+  fecharMenuMobile();
   limparSubAtual();
   state.subId = null;
   state.subConfig = null;
