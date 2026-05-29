@@ -45,25 +45,46 @@ const state = {
   rota: ROTAS.DASHBOARD
 };
 
+const ICONES_FIXOS_SUBS = {
+  A1: "🔥",
+  A2: "📖",
+  A6: "𖤐",
+  A7: "🗺️",
+  A9: "🫀",
+  A10: "☄️"
+};
+
 function getSubConfig() {
   return state.subConfig;
 }
 
 function getSubIcon(sub) {
+  if (sub?.icone) {
+    return String(sub.icone).trim();
+  }
+
+  const id = String(sub?.id || "").trim().toUpperCase();
+
+  if (ICONES_FIXOS_SUBS[id]) {
+    return ICONES_FIXOS_SUBS[id];
+  }
+
   const texto = String(sub?.botao || sub?.nome || "").trim();
 
   if (!texto) return "🌙";
 
   const partes = texto.split(/\s+/);
 
-  const icone = partes.find(parte => {
-    const ehCodigoSub = /^A-\d+$/i.test(parte);
+  for (const parte of partes) {
+    const ehCodigoSub = /^A-\d+$/i.test(parte) || /^A\d+$/i.test(parte);
     const temLetraOuNumero = /[a-zA-ZÀ-ÿ0-9]/.test(parte);
 
-    return !ehCodigoSub && !temLetraOuNumero;
-  });
+    if (!ehCodigoSub && !temLetraOuNumero) {
+      return parte;
+    }
+  }
 
-  return icone || "🌙";
+  return "🌙";
 }
 
 function aplicarTema() {
