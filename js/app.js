@@ -50,13 +50,20 @@ function getSubConfig() {
 }
 
 function getSubIcon(sub) {
-  const texto = String(sub?.botao || sub?.nome || "🌙").trim();
+  const texto = String(sub?.botao || sub?.nome || "").trim();
 
   if (!texto) return "🌙";
 
-  const primeiroItem = texto.split(/\s+/)[0];
+  const partes = texto.split(/\s+/);
 
-  return primeiroItem || "🌙";
+  const icone = partes.find(parte => {
+    const ehCodigoSub = /^A-\d+$/i.test(parte);
+    const temLetraOuNumero = /[a-zA-ZÀ-ÿ0-9]/.test(parte);
+
+    return !ehCodigoSub && !temLetraOuNumero;
+  });
+
+  return icone || "🌙";
 }
 
 function aplicarTema() {
@@ -66,7 +73,7 @@ function aplicarTema() {
     document.documentElement.style.setProperty("--accent", "#7c3aed");
     document.documentElement.style.setProperty("--accent-dark", "#a78bfa");
     document.documentElement.style.setProperty("--accent-soft", "rgba(124, 58, 237, 0.24)");
-    document.documentElement.style.setProperty("--topbar-gradient", "linear-gradient(90deg, rgba(16, 7, 31, 0.96), rgba(124, 58, 237, 0.30))");
+    document.documentElement.style.setProperty("--topbar-gradient", "linear-gradient(90deg, rgba(16, 7, 31, 0.97) 0%, rgba(124, 58, 237, 0.30) 100%)");
     return;
   }
 
@@ -312,7 +319,7 @@ function renderAppShell() {
           <div class="brand-icon">🌙</div>
           <div>
             <h1>Verificação Lunar</h1>
-            <p>V2 • ${escapeHTML(sub.nome)}</p>
+            <p>V2 • ${escapeHTML(sub.nome || sub.botao || sub.id)}</p>
           </div>
         </div>
 
@@ -350,7 +357,7 @@ function renderAppShell() {
           <button class="btn secondary mobile-menu-button" id="mobileMenuButton">☰ Menu</button>
 
           <div class="topbar-title">
-            <h2>${escapeHTML(sub.botao || sub.nome)}</h2>
+            <h2>${escapeHTML(sub.botao || sub.nome || sub.id)}</h2>
             <p id="pageSubtitle">Sistema de verificação e grade do Projeto Lunar.</p>
           </div>
 
