@@ -720,6 +720,10 @@ textarea[readonly] {
   font-weight: 700;
 }
 
+body.modal-open {
+  overflow: hidden;
+}
+
 .modal-root {
   position: fixed;
   inset: 0;
@@ -765,6 +769,10 @@ textarea[readonly] {
   background: rgba(255, 255, 255, 0.12);
   color: #f7f0ff;
   font-weight: 900;
+}
+
+.modal-content {
+  display: block;
 }
 
 .toast {
@@ -919,54 +927,4 @@ pre {
     padding: 16px;
     border-radius: 20px;
   }
-}
-body.modal-open {
-  overflow: hidden;
-}
-
-.modal-root {
-  position: fixed;
-  inset: 0;
-  z-index: 200;
-  display: grid;
-  place-items: center;
-  padding: 18px;
-  background: rgba(5, 2, 10, 0.68);
-  backdrop-filter: blur(8px);
-}
-
-.modal-card {
-  width: min(920px, 100%);
-  max-height: 92vh;
-  overflow: auto;
-  background: #1b0f2f;
-  border: 1px solid var(--border);
-  border-radius: 24px;
-  box-shadow: 0 35px 80px rgba(0, 0, 0, 0.45);
-  padding: 22px;
-}
-
-.modal-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.modal-header h3 {
-  margin: 0;
-  color: var(--text);
-}
-
-.modal-close {
-  width: 38px;
-  height: 38px;
-  display: grid;
-  place-items: center;
-  border: 0;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
-  color: #f7f0ff;
-  font-weight: 900;
 }

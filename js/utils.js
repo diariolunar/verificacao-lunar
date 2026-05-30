@@ -25,7 +25,10 @@ export function ordenarPorCriacao(lista) {
       return dataA.localeCompare(dataB);
     }
 
-    return String(a.nome || a.titulo || "").localeCompare(String(b.nome || b.titulo || ""));
+    const nomeA = String(a.nome || a.titulo || a.user || "");
+    const nomeB = String(b.nome || b.titulo || b.user || "");
+
+    return nomeA.localeCompare(nomeB);
   });
 }
 
@@ -147,6 +150,10 @@ export function setRotaAtual(rota) {
   localStorage.setItem("verificacao_lunar_rota_atual", rota);
 }
 
+export function limparRotaAtual() {
+  localStorage.removeItem("verificacao_lunar_rota_atual");
+}
+
 export function limparUser(user) {
   return String(user || "").replace(/^@+/, "").trim();
 }
@@ -218,4 +225,50 @@ export function numeroObra(numero) {
   if (valor === 2) return "02";
 
   return String(valor).padStart(2, "0");
+}
+
+export function formatarNumero(valor) {
+  const numero = Number(valor || 0);
+
+  if (!Number.isFinite(numero)) {
+    return "0";
+  }
+
+  return String(numero);
+}
+
+export function apenasNumeros(valor) {
+  return String(valor || "").replace(/\D/g, "");
+}
+
+export function normalizarTexto(valor) {
+  return String(valor || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+export function filtrarPorBusca(lista, termo, campos = []) {
+  const busca = normalizarTexto(termo);
+
+  if (!busca) return lista;
+
+  return lista.filter(item => {
+    return campos.some(campo => {
+      return normalizarTexto(item?.[campo]).includes(busca);
+    });
+  });
+}
+
+export function criarIdLocal(prefixo = "id") {
+  return `${prefixo}_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+}
+
+export function isMobileWidth() {
+  return window.matchMedia("(max-width: 768px)").matches;
+}
+
+export function fecharMenuMobile() {
+  document.body.classList.remove("menu-open");
 }
