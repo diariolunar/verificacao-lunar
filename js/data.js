@@ -46,6 +46,32 @@ function modelosPadrao(modelo) {
   return DEFAULT_MODELOS[modelo] || DEFAULT_MODELOS.trono;
 }
 
+function normalizarObra(dados) {
+  return {
+    titulo: dados.titulo || "",
+    link: dados.link || "",
+    membroId: dados.membroId || "",
+
+    isPoesia: Boolean(dados.isPoesia),
+
+    capitulosMais4100: dados.capitulosMais4100 || "",
+    capitulosMenos500: dados.capitulosMenos500 || "",
+    prologoMais1000: Boolean(dados.prologoMais1000),
+
+    observacoes: dados.observacoes || "",
+
+    alternativaTitulo: dados.alternativaTitulo || "",
+    alternativaLink: dados.alternativaLink || "",
+
+    alternativaIsPoesia: Boolean(dados.alternativaIsPoesia),
+    alternativaCapitulosMais4100: dados.alternativaCapitulosMais4100 || "",
+    alternativaCapitulosMenos500: dados.alternativaCapitulosMenos500 || "",
+    alternativaPrologoMais1000: Boolean(dados.alternativaPrologoMais1000),
+
+    alternativaObservacoes: dados.alternativaObservacoes || ""
+  };
+}
+
 /* CONFIG GERAL */
 
 export async function buscarConfigGeral(id) {
@@ -121,6 +147,7 @@ export async function salvarSub(sub) {
     modelo,
     obrasPorDia: Number(sub.obrasPorDia || 2),
     ativo: Boolean(sub.ativo),
+    icone: sub.icone || "",
     modelos: {
       ...modelosPadrao(modelo),
       ...(sub.modelos || {})
@@ -141,6 +168,7 @@ export async function atualizarSub(subId, dados) {
     modelo,
     obrasPorDia: Number(dados.obrasPorDia || 2),
     ativo: Boolean(dados.ativo),
+    icone: dados.icone || "",
     modelos: {
       ...modelosPadrao(modelo),
       ...(dados.modelos || {})
@@ -193,8 +221,8 @@ export async function buscarMembro(subId, membroId) {
 
 export async function criarMembro(subId, dados) {
   await addDoc(membrosCollection(subId), {
-    nome: dados.nome,
-    user: dados.user,
+    nome: dados.nome || "",
+    user: dados.user || "",
     semana: Number(dados.semana || 0),
     criadoEm: getTodayISO(),
     atualizadoEm: getTodayISO()
@@ -205,8 +233,8 @@ export async function atualizarMembro(subId, membroId, dados) {
   const ref = doc(db, COLLECTION_ROOT, subId, "membros", membroId);
 
   await updateDoc(ref, {
-    nome: dados.nome,
-    user: dados.user,
+    nome: dados.nome || "",
+    user: dados.user || "",
     semana: Number(dados.semana || 0),
     atualizadoEm: getTodayISO()
   });
@@ -260,23 +288,10 @@ export async function buscarObra(subId, obraId) {
 }
 
 export async function criarObra(subId, dados) {
+  const obra = normalizarObra(dados);
+
   await addDoc(obrasCollection(subId), {
-    titulo: dados.titulo,
-    link: dados.link || "",
-    membroId: dados.membroId,
-
-    isPoesia: Boolean(dados.isPoesia),
-
-    capitulosMais4100: dados.capitulosMais4100 || "",
-    capitulosMenos500: dados.capitulosMenos500 || "",
-    prologoMais1000: Boolean(dados.prologoMais1000),
-
-    observacoes: dados.observacoes || "",
-
-    alternativaTitulo: dados.alternativaTitulo || "",
-    alternativaLink: dados.alternativaLink || "",
-    alternativaObservacoes: dados.alternativaObservacoes || "",
-
+    ...obra,
     criadoEm: getTodayISO(),
     atualizadoEm: getTodayISO()
   });
@@ -284,24 +299,10 @@ export async function criarObra(subId, dados) {
 
 export async function atualizarObra(subId, obraId, dados) {
   const ref = doc(db, COLLECTION_ROOT, subId, "obras", obraId);
+  const obra = normalizarObra(dados);
 
   await updateDoc(ref, {
-    titulo: dados.titulo,
-    link: dados.link || "",
-    membroId: dados.membroId,
-
-    isPoesia: Boolean(dados.isPoesia),
-
-    capitulosMais4100: dados.capitulosMais4100 || "",
-    capitulosMenos500: dados.capitulosMenos500 || "",
-    prologoMais1000: Boolean(dados.prologoMais1000),
-
-    observacoes: dados.observacoes || "",
-
-    alternativaTitulo: dados.alternativaTitulo || "",
-    alternativaLink: dados.alternativaLink || "",
-    alternativaObservacoes: dados.alternativaObservacoes || "",
-
+    ...obra,
     atualizadoEm: getTodayISO()
   });
 }
