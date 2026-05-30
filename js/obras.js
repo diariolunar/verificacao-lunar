@@ -44,6 +44,12 @@ export async function renderObrasPage(context) {
                 ? `<p>Obs.: ${obra.prologoMais1000 ? "Prólogo +1k. " : ""}${obra.capitulosMais4100 ? `+4,1k: ${escapeHTML(obra.capitulosMais4100)}. ` : ""}${obra.capitulosMenos500 ? `-500: ${escapeHTML(obra.capitulosMenos500)}.` : ""}</p>`
                 : ""
             }
+
+            ${
+              obra.alternativaTitulo
+                ? `<p>Extra: ${escapeHTML(obra.alternativaTitulo)} ${obra.alternativaIsPoesia ? "• Poesia" : "• Obra normal"}</p>`
+                : ""
+            }
           </div>
 
           <div class="item-actions">
@@ -141,95 +147,104 @@ function abrirFormularioObra({ state, refresh, membros, obra }) {
 
   abrirModal(editando ? "Editar obra" : "Nova obra", `
     <form id="obraForm" class="grid">
-      <div class="grid grid-2">
+      <div class="card" style="box-shadow:none;">
+        <div class="card-header">
+          <div>
+            <h3>📖 Obra principal</h3>
+            <p>Dados da obra que aparece na grade do dia.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="form-row">
+            <label for="tituloObra">Nome da obra</label>
+            <input
+              id="tituloObra"
+              type="text"
+              placeholder="Ex: Sancta Corrupta"
+              value="${escapeHTML(obra?.titulo || "")}"
+            />
+          </div>
+
+          <div class="form-row">
+            <label for="membroObra">Autor / membro responsável</label>
+            <select id="membroObra">
+              <option value="">Selecione</option>
+              ${opcoesMembros}
+            </select>
+          </div>
+        </div>
+
         <div class="form-row">
-          <label for="tituloObra">Nome da obra</label>
+          <label for="linkObra">Link da obra</label>
           <input
-            id="tituloObra"
+            id="linkObra"
             type="text"
-            placeholder="Ex: Sancta Corrupta"
-            value="${escapeHTML(obra?.titulo || "")}"
+            placeholder="https://www.wattpad.com/story/..."
+            value="${escapeHTML(obra?.link || "")}"
           />
         </div>
 
-        <div class="form-row">
-          <label for="membroObra">Autor / membro responsável</label>
-          <select id="membroObra">
-            <option value="">Selecione</option>
-            ${opcoesMembros}
-          </select>
-        </div>
-      </div>
-
-      <div class="form-row">
-        <label for="linkObra">Link da obra</label>
-        <input
-          id="linkObra"
-          type="text"
-          placeholder="https://www.wattpad.com/story/..."
-          value="${escapeHTML(obra?.link || "")}"
-        />
-      </div>
-
-      <label class="checkbox-row">
-        <input
-          id="isPoesia"
-          type="checkbox"
-          ${obra?.isPoesia ? "checked" : ""}
-        />
-        Esta obra é poesia
-      </label>
-
-      <div class="grid grid-2">
-        <div class="form-row">
-          <label for="capitulosMais4100">Capítulos com +4,1k palavras</label>
+        <label class="checkbox-row">
           <input
-            id="capitulosMais4100"
-            type="text"
-            placeholder="Ex: 2, 10 e 11"
-            value="${escapeHTML(obra?.capitulosMais4100 || "")}"
+            id="isPoesia"
+            type="checkbox"
+            ${obra?.isPoesia ? "checked" : ""}
           />
+          Esta obra é poesia
+        </label>
+
+        <div class="grid grid-2">
+          <div class="form-row">
+            <label for="capitulosMais4100">Capítulos com +4,1k palavras</label>
+            <input
+              id="capitulosMais4100"
+              type="text"
+              placeholder="Ex: 2, 10 e 11"
+              value="${escapeHTML(obra?.capitulosMais4100 || "")}"
+            />
+          </div>
+
+          <div class="form-row">
+            <label for="capitulosMenos500">Capítulos com -500 palavras</label>
+            <input
+              id="capitulosMenos500"
+              type="text"
+              placeholder="Ex: Capítulo 5, Especial..."
+              value="${escapeHTML(obra?.capitulosMenos500 || "")}"
+            />
+          </div>
         </div>
+
+        <label class="checkbox-row">
+          <input
+            id="prologoMais1000"
+            type="checkbox"
+            ${obra?.prologoMais1000 ? "checked" : ""}
+          />
+          Prólogo tem +1k palavras
+        </label>
 
         <div class="form-row">
-          <label for="capitulosMenos500">Capítulos com -500 palavras</label>
-          <input
-            id="capitulosMenos500"
-            type="text"
-            placeholder="Ex: Capítulo 5, Especial..."
-            value="${escapeHTML(obra?.capitulosMenos500 || "")}"
-          />
+          <label for="observacoesObra">Observações extras da obra</label>
+          <textarea
+            id="observacoesObra"
+            placeholder="Ex: contém gatilhos, especiais, capítulos específicos..."
+          >${escapeHTML(obra?.observacoes || "")}</textarea>
         </div>
-      </div>
-
-      <label class="checkbox-row">
-        <input
-          id="prologoMais1000"
-          type="checkbox"
-          ${obra?.prologoMais1000 ? "checked" : ""}
-        />
-        Prólogo tem +1k palavras
-      </label>
-
-      <div class="form-row">
-        <label for="observacoesObra">Observações extras da obra</label>
-        <textarea
-          id="observacoesObra"
-          placeholder="Ex: contém gatilhos, especiais, capítulos específicos..."
-        >${escapeHTML(obra?.observacoes || "")}</textarea>
       </div>
 
       <div class="card" style="box-shadow:none;">
         <div class="card-header">
           <div>
-            <h3>🌌 Obra alternativa</h3>
+            <h3>🌌 Obra extra / alternativa</h3>
             <p>Use quando existir uma obra para quem já leu a principal.</p>
           </div>
         </div>
 
         <div class="grid grid-2">
           <div class="form-row">
-            <label for="alternativaTitulo">Nome da obra alternativa</label>
+            <label for="alternativaTitulo">Nome da obra extra</label>
             <input
               id="alternativaTitulo"
               type="text"
@@ -239,7 +254,7 @@ function abrirFormularioObra({ state, refresh, membros, obra }) {
           </div>
 
           <div class="form-row">
-            <label for="alternativaLink">Link da alternativa</label>
+            <label for="alternativaLink">Link da obra extra</label>
             <input
               id="alternativaLink"
               type="text"
@@ -249,11 +264,51 @@ function abrirFormularioObra({ state, refresh, membros, obra }) {
           </div>
         </div>
 
+        <label class="checkbox-row">
+          <input
+            id="alternativaIsPoesia"
+            type="checkbox"
+            ${obra?.alternativaIsPoesia ? "checked" : ""}
+          />
+          Esta obra extra é poesia
+        </label>
+
+        <div class="grid grid-2">
+          <div class="form-row">
+            <label for="alternativaCapitulosMais4100">Capítulos da obra extra com +4,1k palavras</label>
+            <input
+              id="alternativaCapitulosMais4100"
+              type="text"
+              placeholder="Ex: 2, 10 e 11"
+              value="${escapeHTML(obra?.alternativaCapitulosMais4100 || "")}"
+            />
+          </div>
+
+          <div class="form-row">
+            <label for="alternativaCapitulosMenos500">Capítulos da obra extra com -500 palavras</label>
+            <input
+              id="alternativaCapitulosMenos500"
+              type="text"
+              placeholder="Ex: Capítulo 5, Especial..."
+              value="${escapeHTML(obra?.alternativaCapitulosMenos500 || "")}"
+            />
+          </div>
+        </div>
+
+        <label class="checkbox-row">
+          <input
+            id="alternativaPrologoMais1000"
+            type="checkbox"
+            ${obra?.alternativaPrologoMais1000 ? "checked" : ""}
+          />
+          Prólogo da obra extra tem +1k palavras
+        </label>
+
         <div class="form-row">
-          <label for="alternativaObservacoes">Observações da alternativa</label>
+          <label for="alternativaObservacoes">Observações da obra extra</label>
           <textarea
             id="alternativaObservacoes"
-            placeholder="Observações específicas da obra alternativa..."
+            placeholder="Observações específicas da obra extra..."
           >${escapeHTML(obra?.alternativaObservacoes || "")}</textarea>
         </div>
       </div>
@@ -295,6 +350,12 @@ function abrirFormularioObra({ state, refresh, membros, obra }) {
 
       alternativaTitulo: document.getElementById("alternativaTitulo")?.value.trim(),
       alternativaLink: document.getElementById("alternativaLink")?.value.trim(),
+
+      alternativaIsPoesia: document.getElementById("alternativaIsPoesia")?.checked || false,
+      alternativaCapitulosMais4100: document.getElementById("alternativaCapitulosMais4100")?.value.trim(),
+      alternativaCapitulosMenos500: document.getElementById("alternativaCapitulosMenos500")?.value.trim(),
+      alternativaPrologoMais1000: document.getElementById("alternativaPrologoMais1000")?.checked || false,
+
       alternativaObservacoes: document.getElementById("alternativaObservacoes")?.value.trim()
     };
 
