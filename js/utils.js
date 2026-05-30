@@ -87,7 +87,7 @@ export function abrirModal(titulo, conteudoHTML) {
 
   document.addEventListener("keydown", fecharModalComEsc);
 
-  const primeiroCampo = modalRoot.querySelector("input, select, textarea, button");
+  const primeiroCampo = modalRoot.querySelector("input, select, textarea");
 
   if (primeiroCampo) {
     setTimeout(() => primeiroCampo.focus(), 50);
