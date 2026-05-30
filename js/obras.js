@@ -34,7 +34,7 @@ export async function renderObrasPage(context) {
       return `
         <article class="item-card">
           <div>
-            <h4>${escapeHTML(obra.titulo)}</h4>
+            <h4>${escapeHTML(obra.titulo || "")}</h4>
             <p>Autor: ${escapeHTML(membro?.nome || "Membro não encontrado")} ${membro?.user ? `• ${escapeHTML(membro.user)}` : ""}</p>
             <p>Link: ${obra.link ? escapeHTML(obra.link) : "Não informado"}</p>
             <p>Tipo: ${obra.isPoesia ? "Poesia" : "Obra normal"}</p>
@@ -47,8 +47,8 @@ export async function renderObrasPage(context) {
           </div>
 
           <div class="item-actions">
-            <button class="btn secondary" data-editar-obra="${obra.id}">Editar</button>
-            <button class="btn danger" data-excluir-obra="${obra.id}">Excluir</button>
+            <button class="btn secondary" type="button" data-editar-obra="${obra.id}">Editar</button>
+            <button class="btn danger" type="button" data-excluir-obra="${obra.id}">Excluir</button>
           </div>
         </article>
       `;
@@ -64,10 +64,10 @@ export async function renderObrasPage(context) {
       <div class="card-header">
         <div>
           <h3>📚 Obras</h3>
-          <p>Cadastre obras, links, tipo de leitura e observações fixas que serão usadas automaticamente na grade.</p>
+          <p>Cadastre obras, links, tipo de leitura e observações fixas usadas automaticamente na grade.</p>
         </div>
 
-        <button class="btn" id="novaObraButton" ${membros.length ? "" : "disabled"}>+ Nova Obra</button>
+        <button class="btn" type="button" id="novaObraButton" ${membros.length ? "" : "disabled"}>+ Nova Obra</button>
       </div>
 
       ${membros.length ? "" : `
@@ -96,9 +96,10 @@ export async function renderObrasPage(context) {
   }
 
   document.querySelectorAll("[data-editar-obra]").forEach(button => {
-    const obra = obras.find(item => item.id === button.dataset.editarObra);
-
     button.addEventListener("click", () => {
+      const obraId = button.dataset.editarObra;
+      const obra = obras.find(item => item.id === obraId);
+
       abrirFormularioObra({
         state,
         refresh,
@@ -117,9 +118,14 @@ export async function renderObrasPage(context) {
 
       if (!confirmar) return;
 
-      await excluirObra(state.subId, obraId);
-      mostrarToast("Obra excluída.");
-      await refresh();
+      try {
+        await excluirObra(state.subId, obraId);
+        mostrarToast("Obra excluída.");
+        await refresh();
+      } catch (error) {
+        console.error(error);
+        mostrarToast("Erro ao excluir obra. Veja o console.");
+      }
     });
   });
 }
@@ -129,7 +135,7 @@ function abrirFormularioObra({ state, refresh, membros, obra }) {
 
   const opcoesMembros = membros.map(membro => `
     <option value="${membro.id}" ${obra?.membroId === membro.id ? "selected" : ""}>
-      ${escapeHTML(membro.nome)} (${escapeHTML(membro.user)})
+      ${escapeHTML(membro.nome || "")} (${escapeHTML(membro.user || "")})
     </option>
   `).join("");
 
@@ -138,9 +144,10 @@ function abrirFormularioObra({ state, refresh, membros, obra }) {
       <div class="grid grid-2">
         <div class="form-row">
           <label for="tituloObra">Nome da obra</label>
-          <input 
-            id="tituloObra" 
-            placeholder="Ex: Sancta Corrupta" 
+          <input
+            id="tituloObra"
+            type="text"
+            placeholder="Ex: Sancta Corrupta"
             value="${escapeHTML(obra?.titulo || "")}"
           />
         </div>
@@ -156,17 +163,18 @@ function abrirFormularioObra({ state, refresh, membros, obra }) {
 
       <div class="form-row">
         <label for="linkObra">Link da obra</label>
-        <input 
-          id="linkObra" 
-          placeholder="https://www.wattpad.com/story/..." 
+        <input
+          id="linkObra"
+          type="text"
+          placeholder="https://www.wattpad.com/story/..."
           value="${escapeHTML(obra?.link || "")}"
         />
       </div>
 
       <label class="checkbox-row">
-        <input 
-          id="isPoesia" 
-          type="checkbox" 
+        <input
+          id="isPoesia"
+          type="checkbox"
           ${obra?.isPoesia ? "checked" : ""}
         />
         Esta obra é poesia
@@ -175,27 +183,29 @@ function abrirFormularioObra({ state, refresh, membros, obra }) {
       <div class="grid grid-2">
         <div class="form-row">
           <label for="capitulosMais4100">Capítulos com +4,1k palavras</label>
-          <input 
-            id="capitulosMais4100" 
-            placeholder="Ex: 2, 10 e 11" 
+          <input
+            id="capitulosMais4100"
+            type="text"
+            placeholder="Ex: 2, 10 e 11"
             value="${escapeHTML(obra?.capitulosMais4100 || "")}"
           />
         </div>
 
         <div class="form-row">
           <label for="capitulosMenos500">Capítulos com -500 palavras</label>
-          <input 
-            id="capitulosMenos500" 
-            placeholder="Ex: Capítulo 5, Especial..." 
+          <input
+            id="capitulosMenos500"
+            type="text"
+            placeholder="Ex: Capítulo 5, Especial..."
             value="${escapeHTML(obra?.capitulosMenos500 || "")}"
           />
         </div>
       </div>
 
       <label class="checkbox-row">
-        <input 
-          id="prologoMais1000" 
-          type="checkbox" 
+        <input
+          id="prologoMais1000"
+          type="checkbox"
           ${obra?.prologoMais1000 ? "checked" : ""}
         />
         Prólogo tem +1k palavras
@@ -203,9 +213,9 @@ function abrirFormularioObra({ state, refresh, membros, obra }) {
 
       <div class="form-row">
         <label for="observacoesObra">Observações extras da obra</label>
-        <textarea 
-          id="observacoesObra" 
-          placeholder="Ex: contém gatilhos, especiais, capítulos específicos, observações de leitura..."
+        <textarea
+          id="observacoesObra"
+          placeholder="Ex: contém gatilhos, especiais, capítulos específicos..."
         >${escapeHTML(obra?.observacoes || "")}</textarea>
       </div>
 
@@ -220,18 +230,20 @@ function abrirFormularioObra({ state, refresh, membros, obra }) {
         <div class="grid grid-2">
           <div class="form-row">
             <label for="alternativaTitulo">Nome da obra alternativa</label>
-            <input 
-              id="alternativaTitulo" 
-              placeholder="Ex: Não é uma maldição" 
+            <input
+              id="alternativaTitulo"
+              type="text"
+              placeholder="Ex: Não é uma maldição"
               value="${escapeHTML(obra?.alternativaTitulo || "")}"
             />
           </div>
 
           <div class="form-row">
             <label for="alternativaLink">Link da alternativa</label>
-            <input 
-              id="alternativaLink" 
-              placeholder="https://www.wattpad.com/story/..." 
+            <input
+              id="alternativaLink"
+              type="text"
+              placeholder="https://www.wattpad.com/story/..."
               value="${escapeHTML(obra?.alternativaLink || "")}"
             />
           </div>
@@ -239,8 +251,8 @@ function abrirFormularioObra({ state, refresh, membros, obra }) {
 
         <div class="form-row">
           <label for="alternativaObservacoes">Observações da alternativa</label>
-          <textarea 
-            id="alternativaObservacoes" 
+          <textarea
+            id="alternativaObservacoes"
             placeholder="Observações específicas da obra alternativa..."
           >${escapeHTML(obra?.alternativaObservacoes || "")}</textarea>
         </div>
@@ -253,27 +265,37 @@ function abrirFormularioObra({ state, refresh, membros, obra }) {
     </form>
   `);
 
-  document.getElementById("cancelarObra").addEventListener("click", fecharModal);
+  const cancelarButton = document.getElementById("cancelarObra");
+  const form = document.getElementById("obraForm");
 
-  document.getElementById("obraForm").addEventListener("submit", async event => {
+  if (cancelarButton) {
+    cancelarButton.addEventListener("click", fecharModal);
+  }
+
+  if (!form) {
+    mostrarToast("Erro ao abrir formulário de obra.");
+    return;
+  }
+
+  form.addEventListener("submit", async event => {
     event.preventDefault();
 
     const dados = {
-      titulo: document.getElementById("tituloObra").value.trim(),
-      membroId: document.getElementById("membroObra").value,
-      link: document.getElementById("linkObra").value.trim(),
+      titulo: document.getElementById("tituloObra")?.value.trim(),
+      membroId: document.getElementById("membroObra")?.value,
+      link: document.getElementById("linkObra")?.value.trim(),
 
-      isPoesia: document.getElementById("isPoesia").checked,
+      isPoesia: document.getElementById("isPoesia")?.checked || false,
 
-      capitulosMais4100: document.getElementById("capitulosMais4100").value.trim(),
-      capitulosMenos500: document.getElementById("capitulosMenos500").value.trim(),
-      prologoMais1000: document.getElementById("prologoMais1000").checked,
+      capitulosMais4100: document.getElementById("capitulosMais4100")?.value.trim(),
+      capitulosMenos500: document.getElementById("capitulosMenos500")?.value.trim(),
+      prologoMais1000: document.getElementById("prologoMais1000")?.checked || false,
 
-      observacoes: document.getElementById("observacoesObra").value.trim(),
+      observacoes: document.getElementById("observacoesObra")?.value.trim(),
 
-      alternativaTitulo: document.getElementById("alternativaTitulo").value.trim(),
-      alternativaLink: document.getElementById("alternativaLink").value.trim(),
-      alternativaObservacoes: document.getElementById("alternativaObservacoes").value.trim()
+      alternativaTitulo: document.getElementById("alternativaTitulo")?.value.trim(),
+      alternativaLink: document.getElementById("alternativaLink")?.value.trim(),
+      alternativaObservacoes: document.getElementById("alternativaObservacoes")?.value.trim()
     };
 
     if (!dados.titulo || !dados.membroId) {
@@ -281,15 +303,20 @@ function abrirFormularioObra({ state, refresh, membros, obra }) {
       return;
     }
 
-    if (editando) {
-      await atualizarObra(state.subId, obra.id, dados);
-      mostrarToast("Obra atualizada.");
-    } else {
-      await criarObra(state.subId, dados);
-      mostrarToast("Obra cadastrada.");
-    }
+    try {
+      if (editando) {
+        await atualizarObra(state.subId, obra.id, dados);
+        mostrarToast("Obra atualizada.");
+      } else {
+        await criarObra(state.subId, dados);
+        mostrarToast("Obra cadastrada.");
+      }
 
-    fecharModal();
-    await refresh();
+      fecharModal();
+      await refresh();
+    } catch (error) {
+      console.error(error);
+      mostrarToast("Erro ao salvar obra. Veja o console.");
+    }
   });
 }
