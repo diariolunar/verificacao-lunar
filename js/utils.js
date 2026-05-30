@@ -1,7 +1,14 @@
-import { DIAS_SEMANA, SEM_OBRA_ID, STATUS_QUE_CONTAM_LEITURA } from "./config.js";
+export function getTodayISO() {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
+  const dia = String(hoje.getDate()).padStart(2, "0");
 
-export function escapeHTML(value) {
-  return String(value ?? "")
+  return `${ano}-${mes}-${dia}`;
+}
+
+export function escapeHTML(valor) {
+  return String(valor ?? "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
@@ -9,121 +16,183 @@ export function escapeHTML(value) {
     .replaceAll("'", "&#039;");
 }
 
-export function limparUser(user) {
-  return String(user || "").replace(/^@/, "").trim();
+export function ordenarPorCriacao(lista) {
+  return [...lista].sort((a, b) => {
+    const dataA = String(a.criadoEm || "");
+    const dataB = String(b.criadoEm || "");
+
+    if (dataA && dataB && dataA !== dataB) {
+      return dataA.localeCompare(dataB);
+    }
+
+    return String(a.nome || a.titulo || "").localeCompare(String(b.nome || b.titulo || ""));
+  });
 }
 
-export function withAt(user) {
-  const clean = limparUser(user);
-  return clean ? `@${clean}` : "";
+export function mostrarToast(mensagem) {
+  const toastAntigo = document.querySelector(".toast");
+
+  if (toastAntigo) {
+    toastAntigo.remove();
+  }
+
+  const toast = document.createElement("div");
+  toast.className = "toast";
+  toast.textContent = mensagem;
+
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.remove();
+  }, 3200);
 }
 
-export function gerarIdLocal() {
-  return `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+export function abrirModal(titulo, conteudoHTML) {
+  fecharModal();
+
+  const modalRoot = document.createElement("div");
+  modalRoot.id = "modalRoot";
+  modalRoot.className = "modal-root";
+
+  modalRoot.innerHTML = `
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <header class="modal-header">
+        <h3 id="modalTitle">${escapeHTML(titulo)}</h3>
+        <button class="modal-close" type="button" id="modalCloseButton" aria-label="Fechar modal">×</button>
+      </header>
+
+      <div class="modal-content">
+        ${conteudoHTML}
+      </div>
+    </section>
+  `;
+
+  document.body.appendChild(modalRoot);
+  document.body.classList.add("modal-open");
+
+  const closeButton = document.getElementById("modalCloseButton");
+
+  if (closeButton) {
+    closeButton.addEventListener("click", fecharModal);
+  }
+
+  modalRoot.addEventListener("click", event => {
+    if (event.target === modalRoot) {
+      fecharModal();
+    }
+  });
+
+  document.addEventListener("keydown", fecharModalComEsc);
+
+  const primeiroCampo = modalRoot.querySelector("input, select, textarea, button");
+
+  if (primeiroCampo) {
+    setTimeout(() => primeiroCampo.focus(), 50);
+  }
 }
 
-export function getTodayISO() {
-  return new Date().toISOString();
+export function fecharModal() {
+  const modalRoot = document.getElementById("modalRoot");
+
+  if (modalRoot) {
+    modalRoot.remove();
+  }
+
+  document.body.classList.remove("modal-open");
+  document.removeEventListener("keydown", fecharModalComEsc);
+}
+
+function fecharModalComEsc(event) {
+  if (event.key === "Escape") {
+    fecharModal();
+  }
+}
+
+export async function copiarTexto(texto) {
+  if (navigator.clipboard && window.isSecureContext) {
+    await navigator.clipboard.writeText(texto);
+    return;
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = texto;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.left = "-9999px";
+  textarea.style.top = "-9999px";
+
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand("copy");
+  textarea.remove();
 }
 
 export function getSubAtual() {
-  return localStorage.getItem("v2_sub_atual");
+  return localStorage.getItem("verificacao_lunar_sub_atual") || null;
 }
 
 export function setSubAtual(subId) {
-  localStorage.setItem("v2_sub_atual", subId);
+  localStorage.setItem("verificacao_lunar_sub_atual", subId);
 }
 
 export function limparSubAtual() {
-  localStorage.removeItem("v2_sub_atual");
+  localStorage.removeItem("verificacao_lunar_sub_atual");
 }
 
 export function getRotaAtual() {
-  return localStorage.getItem("v2_rota_atual") || "dashboard";
+  return localStorage.getItem("verificacao_lunar_rota_atual") || "dashboard";
 }
 
 export function setRotaAtual(rota) {
-  localStorage.setItem("v2_rota_atual", rota);
+  localStorage.setItem("verificacao_lunar_rota_atual", rota);
 }
 
-export function repetirCheck(qtd) {
-  const total = Number(qtd || 0);
-  if (total <= 0) return "";
+export function limparUser(user) {
+  return String(user || "").replace(/^@+/, "").trim();
+}
+
+export function repetirCheck(quantidade) {
+  const total = Number(quantidade || 0);
+
+  if (!total || total <= 0) {
+    return "";
+  }
+
   return "✅".repeat(total);
 }
 
-export function statusEhSemObra(status) {
-  return status === "⏳";
+export function diasComVerificacao(verificacoes) {
+  const ordem = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"];
+
+  return ordem.filter(dia => {
+    const verificacao = verificacoes?.[dia];
+
+    if (!verificacao) return false;
+
+    const membros = verificacao.membros || {};
+
+    return Object.keys(membros).length > 0;
+  }).length;
 }
 
-export function statusContaComoLeitura(status) {
-  return STATUS_QUE_CONTAM_LEITURA.includes(status);
-}
+export function ultimoDiaVerificado(verificacoes) {
+  const ordem = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"];
 
-export function leituraObrigatoriaValida(status) {
-  if (statusEhSemObra(status)) return true;
-  return statusContaComoLeitura(status);
-}
+  let ultimo = null;
 
-export function existePeloMenosUmaObraObrigatoria(status1, status2) {
-  return !statusEhSemObra(status1) || !statusEhSemObra(status2);
-}
+  ordem.forEach(dia => {
+    const verificacao = verificacoes?.[dia];
 
-export function leiturasDoDiaValidas(status1, status2) {
-  return (
-    existePeloMenosUmaObraObrigatoria(status1, status2) &&
-    leituraObrigatoriaValida(status1) &&
-    leituraObrigatoriaValida(status2)
-  );
-}
+    if (!verificacao) return;
 
-export function calcularPontosDoDia(dados) {
-  const obra1Status = dados.obra1Status || "";
-  const obra2Status = dados.obra2Status || "⏳";
+    const membros = verificacao.membros || {};
 
-  const diaValido = leiturasDoDiaValidas(obra1Status, obra2Status);
+    if (Object.keys(membros).length > 0) {
+      ultimo = dia;
+    }
+  });
 
-  if (!diaValido) return 0;
-
-  let pontos = 0;
-
-  if (statusContaComoLeitura(obra1Status) && !statusEhSemObra(obra1Status)) {
-    pontos += 5;
-  }
-
-  if (statusContaComoLeitura(obra2Status) && !statusEhSemObra(obra2Status)) {
-    pontos += 5;
-  }
-
-  if (obra1Status === "🌙" && dados.obra1Feedback) {
-    pontos += 20;
-  }
-
-  if (obra2Status === "🌙" && dados.obra2Feedback) {
-    pontos += 20;
-  }
-
-  if (obra1Status === "🌙" && dados.obra1Extra) {
-    pontos += Math.max(1, Number(dados.obra1ExtraQtd || 1)) * 5;
-  }
-
-  if (obra2Status === "🌙" && dados.obra2Extra) {
-    pontos += Math.max(1, Number(dados.obra2ExtraQtd || 1)) * 5;
-  }
-
-  return pontos;
-}
-
-export function normalizarDiaMaiusculo(dia) {
-  const mapa = {
-    Segunda: "SEGUNDA-FEIRA",
-    Terça: "TERÇA-FEIRA",
-    Quarta: "QUARTA-FEIRA",
-    Quinta: "QUINTA-FEIRA",
-    Sexta: "SEXTA-FEIRA"
-  };
-
-  return mapa[dia] || String(dia || "").toUpperCase();
+  return ultimo;
 }
 
 export function normalizarDiaTitulo(dia) {
@@ -138,136 +207,15 @@ export function normalizarDiaTitulo(dia) {
   return mapa[dia] || dia;
 }
 
+export function normalizarDiaMaiusculo(dia) {
+  return normalizarDiaTitulo(dia).toUpperCase();
+}
+
 export function numeroObra(numero) {
-  return Number(numero) === 1 ? "01" : "02";
-}
+  const valor = Number(numero || 1);
 
-export function resolverObraDaGrade(id, obras) {
-  if (!id || id === SEM_OBRA_ID) {
-    return {
-      id: SEM_OBRA_ID,
-      titulo: "⏳ Sem Obra",
-      link: "",
-      membroId: "",
-      semObra: true
-    };
-  }
+  if (valor === 1) return "01";
+  if (valor === 2) return "02";
 
-  const obra = obras.find(item => item.id === id);
-
-  if (!obra) {
-    return {
-      id: "",
-      titulo: "Obra não encontrada",
-      link: "",
-      membroId: "",
-      semObra: false
-    };
-  }
-
-  return {
-    ...obra,
-    semObra: false
-  };
-}
-
-export function ordenarPorCriacao(lista) {
-  return [...lista].sort((a, b) => {
-    return String(a.criadoEm || "").localeCompare(String(b.criadoEm || ""));
-  });
-}
-
-export function textoBuscaMembro(membro) {
-  return `${membro.nome || ""} ${membro.user || ""}`.toLowerCase();
-}
-
-export function traduzirEmojisTronoProfano(texto) {
-  return String(texto || "")
-    .replaceAll("☠", "☠️")
-    .replaceAll("🌼", "📜")
-    .replaceAll("⚰", "⚰️")
-    .replaceAll("🧕🏻", "🕯️")
-    .replaceAll("⚠", "⚠️");
-}
-
-export function traduzirEmojisMargens(texto) {
-  return String(texto || "")
-    .replaceAll("☠", "🌑")
-    .replaceAll("🌼", "📜")
-    .replaceAll("⚰", "🚪")
-    .replaceAll("🧕🏻", "🧭")
-    .replaceAll("⚠", "⚠️");
-}
-
-export function diasComVerificacao(verificacoes) {
-  let total = 0;
-
-  DIAS_SEMANA.forEach(dia => {
-    if (verificacoes[dia]) total++;
-  });
-
-  return total;
-}
-
-export function ultimoDiaVerificado(verificacoes) {
-  let ultimo = null;
-
-  DIAS_SEMANA.forEach(dia => {
-    if (verificacoes[dia]) ultimo = dia;
-  });
-
-  return ultimo;
-}
-
-export async function copiarTexto(texto) {
-  await navigator.clipboard.writeText(texto);
-}
-
-export function mostrarToast(mensagem) {
-  const antigo = document.querySelector(".toast");
-  if (antigo) antigo.remove();
-
-  const toast = document.createElement("div");
-  toast.className = "toast";
-  toast.textContent = mensagem;
-
-  document.body.appendChild(toast);
-
-  setTimeout(() => {
-    toast.remove();
-  }, 2600);
-}
-
-export function abrirModal(titulo, conteudoHTML) {
-  fecharModal();
-
-  const modal = document.createElement("div");
-  modal.className = "modal-backdrop";
-  modal.id = "modalRoot";
-
-  modal.innerHTML = `
-    <div class="modal">
-      <div class="modal-header">
-        <h3>${escapeHTML(titulo)}</h3>
-        <button class="modal-close" id="modalCloseButton">Fechar</button>
-      </div>
-
-      <div>
-        ${conteudoHTML}
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(modal);
-
-  document.getElementById("modalCloseButton").addEventListener("click", fecharModal);
-
-  modal.addEventListener("click", event => {
-    if (event.target === modal) fecharModal();
-  });
-}
-
-export function fecharModal() {
-  const modal = document.getElementById("modalRoot");
-  if (modal) modal.remove();
+  return String(valor).padStart(2, "0");
 }
