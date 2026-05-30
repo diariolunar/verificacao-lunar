@@ -9,7 +9,8 @@ import {
   abrirModal,
   fecharModal,
   escapeHTML,
-  mostrarToast
+  mostrarToast,
+  confirmarAcao
 } from "./utils.js";
 
 export async function renderMembrosPage(context) {
@@ -88,9 +89,13 @@ export async function renderMembrosPage(context) {
       const membroId = button.dataset.excluirMembro;
       const membro = membros.find(item => item.id === membroId);
 
-      const confirmar = confirm(
-        `Tem certeza que deseja excluir o membro "${membro?.nome || ""}"?\n\nAs obras vinculadas a ele também serão removidas.`
-      );
+      const confirmar = await confirmarAcao({
+        titulo: "Excluir membro?",
+        mensagem: `Tem certeza que deseja excluir o membro "${membro?.nome || ""}"? As obras vinculadas a ele também serão removidas.`,
+        confirmarTexto: "Sim, excluir",
+        cancelarTexto: "Cancelar",
+        perigo: true
+      });
 
       if (!confirmar) return;
 

@@ -10,7 +10,8 @@ import {
   abrirModal,
   fecharModal,
   escapeHTML,
-  mostrarToast
+  mostrarToast,
+  confirmarAcao
 } from "./utils.js";
 
 export async function renderObrasPage(context) {
@@ -120,7 +121,13 @@ export async function renderObrasPage(context) {
       const obraId = button.dataset.excluirObra;
       const obra = obras.find(item => item.id === obraId);
 
-      const confirmar = confirm(`Tem certeza que deseja excluir a obra "${obra?.titulo || ""}"?`);
+      const confirmar = await confirmarAcao({
+        titulo: "Excluir obra?",
+        mensagem: `Tem certeza que deseja excluir a obra "${obra?.titulo || ""}"?`,
+        confirmarTexto: "Sim, excluir",
+        cancelarTexto: "Cancelar",
+        perigo: true
+      });
 
       if (!confirmar) return;
 

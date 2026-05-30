@@ -32,22 +32,166 @@ export function ordenarPorCriacao(lista) {
   });
 }
 
-export function mostrarToast(mensagem) {
-  const toastAntigo = document.querySelector(".toast");
+function criarOverlayModalExtra(id) {
+  const antigo = document.getElementById(id);
 
-  if (toastAntigo) {
-    toastAntigo.remove();
+  if (antigo) {
+    antigo.remove();
   }
 
-  const toast = document.createElement("div");
-  toast.className = "toast";
-  toast.textContent = mensagem;
+  const overlay = document.createElement("div");
+  overlay.id = id;
 
-  document.body.appendChild(toast);
+  overlay.style.position = "fixed";
+  overlay.style.inset = "0";
+  overlay.style.zIndex = id === "confirmRoot" ? "500" : "450";
+  overlay.style.display = "grid";
+  overlay.style.placeItems = "center";
+  overlay.style.padding = "18px";
+  overlay.style.background = "rgba(5, 2, 10, 0.72)";
+  overlay.style.backdropFilter = "blur(8px)";
 
-  setTimeout(() => {
-    toast.remove();
-  }, 3200);
+  return overlay;
+}
+
+function criarCardModalExtra() {
+  const card = document.createElement("section");
+
+  card.style.width = "min(460px, 100%)";
+  card.style.background = "#1b0f2f";
+  card.style.border = "1px solid rgba(216, 198, 255, 0.18)";
+  card.style.borderRadius = "22px";
+  card.style.boxShadow = "0 35px 80px rgba(0, 0, 0, 0.45)";
+  card.style.padding = "24px";
+  card.style.color = "#f7f0ff";
+
+  return card;
+}
+
+function criarBotaoModal(texto, tipo = "primary") {
+  const button = document.createElement("button");
+
+  button.type = "button";
+  button.textContent = texto;
+
+  button.style.minHeight = "42px";
+  button.style.border = "0";
+  button.style.borderRadius = "14px";
+  button.style.padding = "10px 16px";
+  button.style.fontWeight = "850";
+  button.style.cursor = "pointer";
+
+  if (tipo === "danger") {
+    button.style.background = "#ef4444";
+    button.style.color = "#ffffff";
+  } else if (tipo === "secondary") {
+    button.style.background = "rgba(255, 255, 255, 0.12)";
+    button.style.color = "#f7f0ff";
+  } else {
+    button.style.background = "var(--accent, #7c3aed)";
+    button.style.color = "#ffffff";
+  }
+
+  return button;
+}
+
+export function mostrarToast(mensagem) {
+  abrirAviso("Aviso", mensagem);
+}
+
+export function abrirAviso(titulo, mensagem) {
+  const overlay = criarOverlayModalExtra("alertRoot");
+  const card = criarCardModalExtra();
+
+  card.innerHTML = `
+    <h3 style="margin:0 0 10px;font-size:1.25rem;">${escapeHTML(titulo)}</h3>
+    <p style="margin:0;color:#c7b7dd;line-height:1.5;">${escapeHTML(mensagem)}</p>
+  `;
+
+  const actions = document.createElement("div");
+  actions.style.display = "flex";
+  actions.style.justifyContent = "flex-end";
+  actions.style.gap = "10px";
+  actions.style.marginTop = "22px";
+
+  const okButton = criarBotaoModal("OK", "primary");
+
+  okButton.addEventListener("click", () => {
+    overlay.remove();
+  });
+
+  overlay.addEventListener("click", event => {
+    if (event.target === overlay) {
+      overlay.remove();
+    }
+  });
+
+  actions.appendChild(okButton);
+  card.appendChild(actions);
+  overlay.appendChild(card);
+  document.body.appendChild(overlay);
+
+  setTimeout(() => okButton.focus(), 30);
+}
+
+export function confirmarAcao({
+  titulo = "Confirmar ação",
+  mensagem = "Tem certeza que deseja continuar?",
+  confirmarTexto = "Confirmar",
+  cancelarTexto = "Cancelar",
+  perigo = false
+} = {}) {
+  return new Promise(resolve => {
+    const overlay = criarOverlayModalExtra("confirmRoot");
+    const card = criarCardModalExtra();
+
+    card.innerHTML = `
+      <h3 style="margin:0 0 10px;font-size:1.25rem;">${escapeHTML(titulo)}</h3>
+      <p style="margin:0;color:#c7b7dd;line-height:1.5;">${escapeHTML(mensagem)}</p>
+    `;
+
+    const actions = document.createElement("div");
+    actions.style.display = "flex";
+    actions.style.justifyContent = "flex-end";
+    actions.style.flexWrap = "wrap";
+    actions.style.gap = "10px";
+    actions.style.marginTop = "22px";
+
+    const cancelarButton = criarBotaoModal(cancelarTexto, "secondary");
+    const confirmarButton = criarBotaoModal(confirmarTexto, perigo ? "danger" : "primary");
+
+    function fechar(resultado) {
+      overlay.remove();
+      resolve(resultado);
+    }
+
+    cancelarButton.addEventListener("click", () => fechar(false));
+    confirmarButton.addEventListener("click", () => fechar(true));
+
+    overlay.addEventListener("click", event => {
+      if (event.target === overlay) {
+        fechar(false);
+      }
+    });
+
+    actions.appendChild(cancelarButton);
+    actions.appendChild(confirmarButton);
+    card.appendChild(actions);
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+
+    setTimeout(() => cancelarButton.focus(), 30);
+  });
+}
+
+async function confirmarFechamentoModal() {
+  return confirmarAcao({
+    titulo: "Sair sem salvar?",
+    mensagem: "Você clicou fora do modal. Se sair agora, pode perder as informações preenchidas. Deseja fechar mesmo assim?",
+    confirmarTexto: "Sim, fechar",
+    cancelarTexto: "Continuar editando",
+    perigo: true
+  });
 }
 
 export function abrirModal(titulo, conteudoHTML) {
@@ -79,9 +223,13 @@ export function abrirModal(titulo, conteudoHTML) {
     closeButton.addEventListener("click", fecharModal);
   }
 
-  modalRoot.addEventListener("click", event => {
+  modalRoot.addEventListener("click", async event => {
     if (event.target === modalRoot) {
-      fecharModal();
+      const podeFechar = await confirmarFechamentoModal();
+
+      if (podeFechar) {
+        fecharModal();
+      }
     }
   });
 
@@ -105,9 +253,13 @@ export function fecharModal() {
   document.removeEventListener("keydown", fecharModalComEsc);
 }
 
-function fecharModalComEsc(event) {
+async function fecharModalComEsc(event) {
   if (event.key === "Escape") {
-    fecharModal();
+    const podeFechar = await confirmarFechamentoModal();
+
+    if (podeFechar) {
+      fecharModal();
+    }
   }
 }
 
