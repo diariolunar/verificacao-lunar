@@ -108,13 +108,11 @@ function calcularPontosMembro({ registro, gradeDia, obras, membroId }) {
   const slots = [
     {
       numero: 1,
-      obraId: gradeDia?.obra1,
       obra: obra1,
       status: getStatusRegistro(registroComTravas, 1)
     },
     {
       numero: 2,
-      obraId: gradeDia?.obra2,
       obra: obra2,
       status: getStatusRegistro(registroComTravas, 2)
     }
@@ -139,11 +137,11 @@ function calcularPontosMembro({ registro, gradeDia, obras, membroId }) {
   obrasObrigatorias.forEach(slot => {
     const ehObraPropria = isObraDoProprioMembro(slot.obra, membroId);
 
+    pontos += 5;
+
     if (ehObraPropria) {
       return;
     }
-
-    pontos += 5;
 
     if (statusPermiteFeedbackEExtra(slot.status)) {
       if (getFeedbackRegistro(registroComTravas, slot.numero)) {
@@ -186,7 +184,7 @@ function montarCardObra({ numero, obra, registro, membroId }) {
 
       ${
         obraPropria
-          ? `<p class="muted">✨ Obra do próprio membro. Status travado automaticamente.</p>`
+          ? `<p class="muted">✨ Obra do próprio membro. Status travado automaticamente e vale 5 pontos ao salvar a verificação.</p>`
           : ""
       }
 
@@ -238,7 +236,7 @@ function montarCardObra({ numero, obra, registro, membroId }) {
       <div class="note-warning" data-warning="obra${numero}">
         ${
           obraPropria
-            ? "Obra do próprio membro: feedback e extra ficam bloqueados."
+            ? "Obra do próprio membro: vale 5 pontos, mas feedback e extra ficam bloqueados."
             : podeFeedbackEExtra
               ? ""
               : "Feedback e extra só contam quando o status for 🌙 Leu."
@@ -321,6 +319,7 @@ function coletarRegistroDoCard(card) {
 
 function atualizarEstadoCard({ card, gradeDia, obras, obra1, obra2 }) {
   const membroId = card.dataset.memberCard;
+
   const registro = aplicarTravasObraPropria(
     coletarRegistroDoCard(card),
     membroId,
@@ -371,7 +370,7 @@ function atualizarEstadoCard({ card, gradeDia, obras, obra1, obra2 }) {
 
     if (warning) {
       warning.textContent = obraPropria
-        ? "Obra do próprio membro: feedback e extra ficam bloqueados."
+        ? "Obra do próprio membro: vale 5 pontos, mas feedback e extra ficam bloqueados."
         : podeFeedbackEExtra
           ? ""
           : "Feedback e extra só contam quando o status for 🌙 Leu.";
@@ -452,7 +451,7 @@ export async function renderVerificacoesPage(context) {
       <div class="card-header">
         <div>
           <h3>📜 Verificações</h3>
-          <p>Escolha o dia, marque os status e salve. Obras do próprio membro ficam travadas automaticamente como ✨.</p>
+          <p>Escolha o dia, marque os status e salve. Obras do próprio membro ficam travadas automaticamente como ✨ e entram na ficha apenas depois de salvar a verificação.</p>
         </div>
       </div>
 
