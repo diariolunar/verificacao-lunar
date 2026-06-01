@@ -149,30 +149,28 @@ function montarDadosMembro(membro, verificacoes) {
   };
 }
 
+function normalizarLinhaParaBusca(linha) {
+  return String(linha || "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
 function contemLabelLeituraLunar(linha) {
-  const linhaOriginal = String(linha || "");
+  const texto = normalizarLinhaParaBusca(linha);
 
-  if (linhaOriginal.includes("Leitura Lunar")) return true;
-  if (linhaOriginal.includes("LEITURA LUNAR")) return true;
-  if (linhaOriginal.includes("𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐋𝐮𝐧𝐚𝐫")) return true;
-  if (linhaOriginal.includes("𝐋𝐄𝐈𝐓𝐔𝐑𝐀 𝐋𝐔𝐍𝐀𝐑")) return true;
-  if (linhaOriginal.includes("𝑳𝒆𝒊𝒕𝒖𝒓𝒂 𝑳𝒖𝒏𝒂𝒓")) return true;
-  if (linhaOriginal.includes("🌟𝑳𝒆𝒊𝒕𝒖𝒓𝒂 𝑳𝒖𝒏𝒂𝒓")) return true;
-  if (linhaOriginal.includes("🌌 Leitura Lunar")) return true;
-  if (linhaOriginal.includes("🔮 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐋𝐮𝐧𝐚𝐫")) return true;
-
-  return false;
+  return texto.includes("leitura lunar");
 }
 
 function inserirLeituraLunarNoBloco(bloco, leituraLunar) {
   const valor = leituraLunar || "";
 
-  if (!valor) {
-    return bloco.replaceAll("{{leituraLunar}}", "");
-  }
-
   if (bloco.includes("{{leituraLunar}}")) {
     return bloco.replaceAll("{{leituraLunar}}", valor);
+  }
+
+  if (!valor) {
+    return bloco;
   }
 
   return bloco
@@ -185,7 +183,7 @@ function inserirLeituraLunarNoBloco(bloco, leituraLunar) {
       const partes = linha.split(":");
 
       if (partes.length < 2) {
-        return linha;
+        return `${linha} ${valor}`.trimEnd();
       }
 
       const antes = partes.shift();

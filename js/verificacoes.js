@@ -31,6 +31,10 @@ function getObraPorId(obras, obraId) {
   return obras.find(obra => obra.id === obraId) || null;
 }
 
+function isObraDoProprioMembro(obra, membroId) {
+  return Boolean(obra && obra.membroId === membroId);
+}
+
 function getStatusRegistro(registro, numeroObra) {
   return registro?.[`obra${numeroObra}`] || "";
 }
@@ -73,23 +77,51 @@ function statusOptions(statusAtual = "") {
   `).join("");
 }
 
-function calcularPontosMembro({ registro, gradeDia, obras }) {
+function aplicarTravasObraPropria(registro, membroId, obra1, obra2) {
+  const novoRegistro = {
+    ...registro
+  };
+
+  if (isObraDoProprioMembro(obra1, membroId)) {
+    novoRegistro.obra1 = "✨";
+    novoRegistro.feedback1 = false;
+    novoRegistro.extra1 = false;
+    novoRegistro.extraQtd1 = 1;
+  }
+
+  if (isObraDoProprioMembro(obra2, membroId)) {
+    novoRegistro.obra2 = "✨";
+    novoRegistro.feedback2 = false;
+    novoRegistro.extra2 = false;
+    novoRegistro.extraQtd2 = 1;
+  }
+
+  return novoRegistro;
+}
+
+function calcularPontosMembro({ registro, gradeDia, obras, membroId }) {
+  const obra1 = getObraPorId(obras, gradeDia?.obra1);
+  const obra2 = getObraPorId(obras, gradeDia?.obra2);
+
+  const registroComTravas = aplicarTravasObraPropria(registro, membroId, obra1, obra2);
+
   const slots = [
     {
       numero: 1,
       obraId: gradeDia?.obra1,
-      status: getStatusRegistro(registro, 1)
+      obra: obra1,
+      status: getStatusRegistro(registroComTravas, 1)
     },
     {
       numero: 2,
       obraId: gradeDia?.obra2,
-      status: getStatusRegistro(registro, 2)
+      obra: obra2,
+      status: getStatusRegistro(registroComTravas, 2)
     }
   ];
 
   const obrasObrigatorias = slots.filter(slot => {
-    const obra = getObraPorId(obras, slot.obraId);
-    return Boolean(obra);
+    return Boolean(slot.obra);
   });
 
   if (!obrasObrigatorias.length) {
@@ -105,15 +137,21 @@ function calcularPontosMembro({ registro, gradeDia, obras }) {
   let pontos = 0;
 
   obrasObrigatorias.forEach(slot => {
+    const ehObraPropria = isObraDoProprioMembro(slot.obra, membroId);
+
+    if (ehObraPropria) {
+      return;
+    }
+
     pontos += 5;
 
     if (statusPermiteFeedbackEExtra(slot.status)) {
-      if (getFeedbackRegistro(registro, slot.numero)) {
+      if (getFeedbackRegistro(registroComTravas, slot.numero)) {
         pontos += 20;
       }
 
-      if (getExtraAtivoRegistro(registro, slot.numero)) {
-        pontos += getExtraQtdRegistro(registro, slot.numero) * 5;
+      if (getExtraAtivoRegistro(registroComTravas, slot.numero)) {
+        pontos += getExtraQtdRegistro(registroComTravas, slot.numero) * 5;
       }
     }
   });
@@ -121,12 +159,14 @@ function calcularPontosMembro({ registro, gradeDia, obras }) {
   return pontos;
 }
 
-function montarCardObra({ numero, obra, registro }) {
-  const status = getStatusRegistro(registro, numero);
-  const feedbackMarcado = getFeedbackRegistro(registro, numero);
-  const extraMarcado = getExtraAtivoRegistro(registro, numero);
-  const extraQtd = getExtraQtdRegistro(registro, numero);
-  const podeFeedbackEExtra = statusPermiteFeedbackEExtra(status);
+function montarCardObra({ numero, obra, registro, membroId }) {
+  const obraPropria = isObraDoProprioMembro(obra, membroId);
+
+  const status = obraPropria ? "✨" : getStatusRegistro(registro, numero);
+  const feedbackMarcado = obraPropria ? false : getFeedbackRegistro(registro, numero);
+  const extraMarcado = obraPropria ? false : getExtraAtivoRegistro(registro, numero);
+  const extraQtd = obraPropria ? 1 : getExtraQtdRegistro(registro, numero);
+  const podeFeedbackEExtra = !obraPropria && statusPermiteFeedbackEExtra(status);
 
   if (!obra) {
     return `
@@ -144,11 +184,23 @@ function montarCardObra({ numero, obra, registro }) {
       <h5>Obra ${String(numero).padStart(2, "0")}</h5>
       <p>${escapeHTML(obra.titulo || "Obra sem título")}</p>
 
+      ${
+        obraPropria
+          ? `<p class="muted">✨ Obra do próprio membro. Status travado automaticamente.</p>`
+          : ""
+      }
+
       <div class="form-row">
         <label>Status da leitura</label>
-        <select data-field="obra${numero}">
+        <select data-field="obra${numero}" ${obraPropria ? "disabled" : ""}>
           ${statusOptions(status)}
         </select>
+
+        ${
+          obraPropria
+            ? `<input type="hidden" data-field="obra${numero}" value="✨" />`
+            : ""
+        }
       </div>
 
       <label class="checkbox-row">
@@ -184,14 +236,21 @@ function montarCardObra({ numero, obra, registro }) {
       </div>
 
       <div class="note-warning" data-warning="obra${numero}">
-        ${podeFeedbackEExtra ? "" : "Feedback e extra só contam quando o status for 🌙 Leu."}
+        ${
+          obraPropria
+            ? "Obra do próprio membro: feedback e extra ficam bloqueados."
+            : podeFeedbackEExtra
+              ? ""
+              : "Feedback e extra só contam quando o status for 🌙 Leu."
+        }
       </div>
     </div>
   `;
 }
 
 function montarCardMembro({ membro, registro, obra1, obra2, pontos }) {
-  const leituraLunarMarcada = getLeituraLunarRegistro(registro);
+  const registroComTravas = aplicarTravasObraPropria(registro, membro.id, obra1, obra2);
+  const leituraLunarMarcada = getLeituraLunarRegistro(registroComTravas);
 
   return `
     <article class="member-check-card" data-member-card="${membro.id}">
@@ -217,8 +276,8 @@ function montarCardMembro({ membro, registro, obra1, obra2, pontos }) {
       </label>
 
       <div class="check-columns">
-        ${montarCardObra({ numero: 1, obra: obra1, registro })}
-        ${montarCardObra({ numero: 2, obra: obra2, registro })}
+        ${montarCardObra({ numero: 1, obra: obra1, registro: registroComTravas, membroId: membro.id })}
+        ${montarCardObra({ numero: 2, obra: obra2, registro: registroComTravas, membroId: membro.id })}
       </div>
     </article>
   `;
@@ -260,17 +319,31 @@ function coletarRegistroDoCard(card) {
   return registro;
 }
 
-function atualizarEstadoCard({ card, gradeDia, obras }) {
-  const registro = coletarRegistroDoCard(card);
+function atualizarEstadoCard({ card, gradeDia, obras, obra1, obra2 }) {
+  const membroId = card.dataset.memberCard;
+  const registro = aplicarTravasObraPropria(
+    coletarRegistroDoCard(card),
+    membroId,
+    obra1,
+    obra2
+  );
 
   [1, 2].forEach(numero => {
+    const obra = numero === 1 ? obra1 : obra2;
+    const obraPropria = isObraDoProprioMembro(obra, membroId);
     const status = registro[`obra${numero}`];
-    const podeFeedbackEExtra = statusPermiteFeedbackEExtra(status);
+    const podeFeedbackEExtra = !obraPropria && statusPermiteFeedbackEExtra(status);
 
+    const select = card.querySelector(`select[data-field="obra${numero}"]`);
     const feedback = card.querySelector(`[data-field="feedback${numero}"]`);
     const extra = card.querySelector(`[data-field="extra${numero}"]`);
     const extraQtd = card.querySelector(`[data-field="extraQtd${numero}"]`);
     const warning = card.querySelector(`[data-warning="obra${numero}"]`);
+
+    if (select && obraPropria) {
+      select.value = "✨";
+      select.disabled = true;
+    }
 
     if (feedback) {
       feedback.disabled = !podeFeedbackEExtra;
@@ -297,14 +370,19 @@ function atualizarEstadoCard({ card, gradeDia, obras }) {
     }
 
     if (warning) {
-      warning.textContent = podeFeedbackEExtra ? "" : "Feedback e extra só contam quando o status for 🌙 Leu.";
+      warning.textContent = obraPropria
+        ? "Obra do próprio membro: feedback e extra ficam bloqueados."
+        : podeFeedbackEExtra
+          ? ""
+          : "Feedback e extra só contam quando o status for 🌙 Leu.";
     }
   });
 
   const pontos = calcularPontosMembro({
     registro: coletarRegistroDoCard(card),
     gradeDia,
-    obras
+    obras,
+    membroId
   });
 
   const pontosEl = card.querySelector("[data-pontos-membro]");
@@ -345,12 +423,14 @@ export async function renderVerificacoesPage(context) {
 
   const cards = membros.length
     ? membros.map(membro => {
-      const registro = verificacaoSalva?.membros?.[membro.id] || {};
+      const registroOriginal = verificacaoSalva?.membros?.[membro.id] || {};
+      const registro = aplicarTravasObraPropria(registroOriginal, membro.id, obra1, obra2);
 
       const pontos = calcularPontosMembro({
         registro,
         gradeDia,
-        obras
+        obras,
+        membroId: membro.id
       });
 
       return montarCardMembro({
@@ -372,7 +452,7 @@ export async function renderVerificacoesPage(context) {
       <div class="card-header">
         <div>
           <h3>📜 Verificações</h3>
-          <p>Escolha o dia, marque os status e salve. A Leitura Lunar é semanal: marcou uma vez, aparece na ficha da semana.</p>
+          <p>Escolha o dia, marque os status e salve. Obras do próprio membro ficam travadas automaticamente como ✨.</p>
         </div>
       </div>
 
@@ -435,7 +515,9 @@ export async function renderVerificacoesPage(context) {
       atualizarEstadoCard({
         card,
         gradeDia,
-        obras
+        obras,
+        obra1,
+        obra2
       });
     });
 
@@ -443,8 +525,18 @@ export async function renderVerificacoesPage(context) {
       atualizarEstadoCard({
         card,
         gradeDia,
-        obras
+        obras,
+        obra1,
+        obra2
       });
+    });
+
+    atualizarEstadoCard({
+      card,
+      gradeDia,
+      obras,
+      obra1,
+      obra2
     });
   });
 
@@ -453,7 +545,15 @@ export async function renderVerificacoesPage(context) {
 
     document.querySelectorAll("[data-member-card]").forEach(card => {
       const membroId = card.dataset.memberCard;
-      dadosMembros[membroId] = coletarRegistroDoCard(card);
+
+      const registro = aplicarTravasObraPropria(
+        coletarRegistroDoCard(card),
+        membroId,
+        obra1,
+        obra2
+      );
+
+      dadosMembros[membroId] = registro;
     });
 
     try {
