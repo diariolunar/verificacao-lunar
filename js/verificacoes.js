@@ -1,5 +1,3 @@
-import { DIAS_SEMANA, STATUS_LEITURA } from "./config.js";
-
 import {
   listarMembros,
   listarObras,
@@ -9,19 +7,326 @@ import {
 } from "./data.js";
 
 import {
-  calcularPontosDoDia,
+  DIAS_SEMANA,
+  STATUS_LEITURA,
+  STATUS_QUE_CONTAM_LEITURA,
+  SEM_OBRA_ID
+} from "./config.js";
+
+import {
   escapeHTML,
-  leiturasDoDiaValidas,
   mostrarToast,
-  resolverObraDaGrade,
-  statusEhSemObra,
-  textoBuscaMembro
+  normalizarTexto
 } from "./utils.js";
 
-export async function renderVerificacoesPage(context) {
-  const { state, setSubtitle, refresh } = context;
+function isSemObraId(obraId) {
+  return !obraId || obraId === SEM_OBRA_ID || obraId === "__SEM_OBRA__";
+}
 
-  setSubtitle("Verificação de leitura e pontuação.");
+function getObraPorId(obras, obraId) {
+  if (isSemObraId(obraId)) {
+    return null;
+  }
+
+  return obras.find(obra => obra.id === obraId) || null;
+}
+
+function getStatusRegistro(registro, numeroObra) {
+  return registro?.[`obra${numeroObra}`] || "";
+}
+
+function getFeedbackRegistro(registro, numeroObra) {
+  return Boolean(registro?.[`feedback${numeroObra}`]);
+}
+
+function getExtraAtivoRegistro(registro, numeroObra) {
+  return Boolean(registro?.[`extra${numeroObra}`]);
+}
+
+function getExtraQtdRegistro(registro, numeroObra) {
+  const valor = Number(registro?.[`extraQtd${numeroObra}`] || 1);
+
+  if (!Number.isFinite(valor) || valor < 1) {
+    return 1;
+  }
+
+  return valor;
+}
+
+function getLeituraLunarRegistro(registro) {
+  return Boolean(registro?.leituraLunar);
+}
+
+function statusContaLeitura(status) {
+  return STATUS_QUE_CONTAM_LEITURA.includes(status);
+}
+
+function statusPermiteFeedbackEExtra(status) {
+  return status === "🌙";
+}
+
+function statusOptions(statusAtual = "") {
+  return STATUS_LEITURA.map(status => `
+    <option value="${escapeHTML(status.emoji)}" ${statusAtual === status.emoji ? "selected" : ""}>
+      ${status.emoji ? `${status.emoji} ` : ""}${escapeHTML(status.label)}
+    </option>
+  `).join("");
+}
+
+function calcularPontosMembro({ registro, gradeDia, obras }) {
+  const slots = [
+    {
+      numero: 1,
+      obraId: gradeDia?.obra1,
+      status: getStatusRegistro(registro, 1)
+    },
+    {
+      numero: 2,
+      obraId: gradeDia?.obra2,
+      status: getStatusRegistro(registro, 2)
+    }
+  ];
+
+  const obrasObrigatorias = slots.filter(slot => {
+    const obra = getObraPorId(obras, slot.obraId);
+    return Boolean(obra);
+  });
+
+  if (!obrasObrigatorias.length) {
+    return 0;
+  }
+
+  const cumpriuTodas = obrasObrigatorias.every(slot => statusContaLeitura(slot.status));
+
+  if (!cumpriuTodas) {
+    return 0;
+  }
+
+  let pontos = 0;
+
+  obrasObrigatorias.forEach(slot => {
+    pontos += 5;
+
+    if (statusPermiteFeedbackEExtra(slot.status)) {
+      if (getFeedbackRegistro(registro, slot.numero)) {
+        pontos += 20;
+      }
+
+      if (getExtraAtivoRegistro(registro, slot.numero)) {
+        pontos += getExtraQtdRegistro(registro, slot.numero) * 5;
+      }
+    }
+  });
+
+  return pontos;
+}
+
+function montarCardObra({ numero, obra, registro }) {
+  const status = getStatusRegistro(registro, numero);
+  const feedbackMarcado = getFeedbackRegistro(registro, numero);
+  const extraMarcado = getExtraAtivoRegistro(registro, numero);
+  const extraQtd = getExtraQtdRegistro(registro, numero);
+  const podeFeedbackEExtra = statusPermiteFeedbackEExtra(status);
+
+  if (!obra) {
+    return `
+      <div class="check-slot">
+        <h5>Obra ${String(numero).padStart(2, "0")}</h5>
+        <p>⏳ Sem obra cadastrada para este campo.</p>
+
+        <input type="hidden" data-field="obra${numero}" value="⏳" />
+      </div>
+    `;
+  }
+
+  return `
+    <div class="check-slot">
+      <h5>Obra ${String(numero).padStart(2, "0")}</h5>
+      <p>${escapeHTML(obra.titulo || "Obra sem título")}</p>
+
+      <div class="form-row">
+        <label>Status da leitura</label>
+        <select data-field="obra${numero}">
+          ${statusOptions(status)}
+        </select>
+      </div>
+
+      <label class="checkbox-row">
+        <input
+          type="checkbox"
+          data-field="feedback${numero}"
+          ${feedbackMarcado ? "checked" : ""}
+          ${podeFeedbackEExtra ? "" : "disabled"}
+        />
+        Feedback entregue nesta obra
+      </label>
+
+      <label class="checkbox-row">
+        <input
+          type="checkbox"
+          data-field="extra${numero}"
+          ${extraMarcado ? "checked" : ""}
+          ${podeFeedbackEExtra ? "" : "disabled"}
+        />
+        Teve capítulo extra nesta obra
+      </label>
+
+      <div class="form-row">
+        <label>Quantidade de capítulos extras</label>
+        <input
+          type="number"
+          min="1"
+          step="1"
+          data-field="extraQtd${numero}"
+          value="${extraQtd}"
+          ${extraMarcado && podeFeedbackEExtra ? "" : "disabled"}
+        />
+      </div>
+
+      <div class="note-warning" data-warning="obra${numero}">
+        ${podeFeedbackEExtra ? "" : "Feedback e extra só contam quando o status for 🌙 Leu."}
+      </div>
+    </div>
+  `;
+}
+
+function montarCardMembro({ membro, registro, obra1, obra2, pontos }) {
+  const leituraLunarMarcada = getLeituraLunarRegistro(registro);
+
+  return `
+    <article class="member-check-card" data-member-card="${membro.id}">
+      <div class="member-check-header">
+        <div>
+          <h4>${escapeHTML(membro.nome || "")}</h4>
+          <p>${escapeHTML(membro.user || "")} • Semana ${Number(membro.semana || 0)}</p>
+        </div>
+
+        <div class="points-pill">
+          <small>Pontos</small>
+          <strong data-pontos-membro="${membro.id}">${pontos}</strong>
+        </div>
+      </div>
+
+      <label class="checkbox-row" style="margin-bottom: 14px;">
+        <input
+          type="checkbox"
+          data-field="leituraLunar"
+          ${leituraLunarMarcada ? "checked" : ""}
+        />
+        🌌 Fez Leitura Lunar da semana
+      </label>
+
+      <div class="check-columns">
+        ${montarCardObra({ numero: 1, obra: obra1, registro })}
+        ${montarCardObra({ numero: 2, obra: obra2, registro })}
+      </div>
+    </article>
+  `;
+}
+
+function coletarRegistroDoCard(card) {
+  const registro = {};
+
+  card.querySelectorAll("[data-field]").forEach(campo => {
+    const nomeCampo = campo.dataset.field;
+
+    if (campo.type === "checkbox") {
+      registro[nomeCampo] = campo.checked;
+      return;
+    }
+
+    if (campo.type === "number") {
+      registro[nomeCampo] = Number(campo.value || 1);
+      return;
+    }
+
+    registro[nomeCampo] = campo.value;
+  });
+
+  [1, 2].forEach(numero => {
+    const status = registro[`obra${numero}`];
+
+    if (!statusPermiteFeedbackEExtra(status)) {
+      registro[`feedback${numero}`] = false;
+      registro[`extra${numero}`] = false;
+      registro[`extraQtd${numero}`] = 1;
+    }
+
+    if (registro[`extra${numero}`] && (!registro[`extraQtd${numero}`] || registro[`extraQtd${numero}`] < 1)) {
+      registro[`extraQtd${numero}`] = 1;
+    }
+  });
+
+  return registro;
+}
+
+function atualizarEstadoCard({ card, gradeDia, obras }) {
+  const registro = coletarRegistroDoCard(card);
+
+  [1, 2].forEach(numero => {
+    const status = registro[`obra${numero}`];
+    const podeFeedbackEExtra = statusPermiteFeedbackEExtra(status);
+
+    const feedback = card.querySelector(`[data-field="feedback${numero}"]`);
+    const extra = card.querySelector(`[data-field="extra${numero}"]`);
+    const extraQtd = card.querySelector(`[data-field="extraQtd${numero}"]`);
+    const warning = card.querySelector(`[data-warning="obra${numero}"]`);
+
+    if (feedback) {
+      feedback.disabled = !podeFeedbackEExtra;
+
+      if (!podeFeedbackEExtra) {
+        feedback.checked = false;
+      }
+    }
+
+    if (extra) {
+      extra.disabled = !podeFeedbackEExtra;
+
+      if (!podeFeedbackEExtra) {
+        extra.checked = false;
+      }
+    }
+
+    if (extraQtd) {
+      extraQtd.disabled = !podeFeedbackEExtra || !extra?.checked;
+
+      if (!extraQtd.value || Number(extraQtd.value) < 1) {
+        extraQtd.value = 1;
+      }
+    }
+
+    if (warning) {
+      warning.textContent = podeFeedbackEExtra ? "" : "Feedback e extra só contam quando o status for 🌙 Leu.";
+    }
+  });
+
+  const pontos = calcularPontosMembro({
+    registro: coletarRegistroDoCard(card),
+    gradeDia,
+    obras
+  });
+
+  const pontosEl = card.querySelector("[data-pontos-membro]");
+
+  if (pontosEl) {
+    pontosEl.textContent = String(pontos);
+  }
+}
+
+function filtrarCardsMembros(termo) {
+  const busca = normalizarTexto(termo);
+
+  document.querySelectorAll("[data-member-card]").forEach(card => {
+    const texto = normalizarTexto(card.textContent || "");
+    card.style.display = !busca || texto.includes(busca) ? "" : "none";
+  });
+}
+
+export async function renderVerificacoesPage(context) {
+  const { state, setSubtitle } = context;
+
+  setSubtitle("Marque leituras, feedbacks, extras e Leitura Lunar semanal.");
 
   const view = document.getElementById("view");
 
@@ -31,387 +336,138 @@ export async function renderVerificacoesPage(context) {
     buscarGrade(state.subId)
   ]);
 
-  if (!membros.length || !obras.length) {
-    view.innerHTML = `
-      <section class="card">
-        <div class="card-header">
-          <div>
-            <h3>📜 Verificações</h3>
-            <p>Antes de verificar, cadastre membros, obras e monte a grade.</p>
-          </div>
-        </div>
+  const diaAtual = localStorage.getItem(`verificacao_lunar_dia_${state.subId}`) || DIAS_SEMANA[0];
+  const verificacaoSalva = await buscarVerificacaoDia(state.subId, diaAtual);
+  const gradeDia = grade?.[diaAtual] || {};
 
-        <div class="empty-state">
-          ${!membros.length ? "Cadastre pelo menos um membro." : "Cadastre pelo menos uma obra."}
-        </div>
-      </section>
-    `;
+  const obra1 = getObraPorId(obras, gradeDia.obra1);
+  const obra2 = getObraPorId(obras, gradeDia.obra2);
 
-    return;
-  }
+  const cards = membros.length
+    ? membros.map(membro => {
+      const registro = verificacaoSalva?.membros?.[membro.id] || {};
 
-  const diaInicial = document.getElementById("diaVerificacao")?.value || "Segunda";
-
-  await renderVerificacaoDia({
-    state,
-    view,
-    membros,
-    obras,
-    grade,
-    dia: diaInicial,
-    refresh
-  });
-}
-
-async function renderVerificacaoDia({ state, view, membros, obras, grade, dia, refresh }) {
-  const dadosDia = grade[dia];
-
-  if (!dadosDia || !dadosDia.obra1 || !dadosDia.obra2) {
-    view.innerHTML = `
-      <section class="card">
-        <div class="card-header">
-          <div>
-            <h3>📜 Verificações</h3>
-            <p>Selecione o dia para verificar.</p>
-          </div>
-        </div>
-
-        <div class="grid grid-2">
-          <div class="form-row">
-            <label for="diaVerificacao">Dia da semana</label>
-            <select id="diaVerificacao">
-              ${DIAS_SEMANA.map(item => `<option value="${item}" ${item === dia ? "selected" : ""}>${item}</option>`).join("")}
-            </select>
-          </div>
-        </div>
-
-        <div class="empty-state" style="margin-top:18px;">
-          A grade de ${dia} ainda não está completa. Escolha Obra 1 e Obra 2 ou marque Sem Obra na grade.
-        </div>
-      </section>
-    `;
-
-    document.getElementById("diaVerificacao").addEventListener("change", async event => {
-      await renderVerificacaoDia({
-        state,
-        view,
-        membros,
-        obras,
-        grade,
-        dia: event.target.value,
-        refresh
+      const pontos = calcularPontosMembro({
+        registro,
+        gradeDia,
+        obras
       });
-    });
 
-    return;
-  }
-
-  const obra1 = resolverObraDaGrade(dadosDia.obra1, obras);
-  const obra2 = resolverObraDaGrade(dadosDia.obra2, obras);
-
-  const verificacaoSalva = await buscarVerificacaoDia(state.subId, dia);
-
-  const membrosHTML = membros.map(membro => {
-    const salvo = verificacaoSalva?.membros?.[membro.id] || {};
-
-    const dadosMembro = {
-      obra1Status: obra1.semObra ? "⏳" : salvo.obra1Status || "",
-      obra1Feedback: obra1.semObra ? false : Boolean(salvo.obra1Feedback),
-      obra1Extra: obra1.semObra ? false : Boolean(salvo.obra1Extra),
-      obra1ExtraQtd: obra1.semObra ? 1 : Number(salvo.obra1ExtraQtd || 1),
-
-      obra2Status: obra2.semObra ? "⏳" : salvo.obra2Status || "",
-      obra2Feedback: obra2.semObra ? false : Boolean(salvo.obra2Feedback),
-      obra2Extra: obra2.semObra ? false : Boolean(salvo.obra2Extra),
-      obra2ExtraQtd: obra2.semObra ? 1 : Number(salvo.obra2ExtraQtd || 1)
-    };
-
-    const pontos = calcularPontosDoDia(dadosMembro);
-
-    return `
-      <article class="member-check-card" data-member-card data-search="${escapeHTML(textoBuscaMembro(membro))}" data-member-id="${membro.id}">
-        <div class="member-check-header">
-          <div>
-            <h4>${escapeHTML(membro.nome)}</h4>
-            <p>${escapeHTML(membro.user)} • Semana ${membro.semana ?? 0}</p>
-          </div>
-
-          <div class="points-pill">
-            <small>Hoje</small>
-            <strong id="pontos_${membro.id}">${pontos}</strong>
-          </div>
-        </div>
-
-        <div class="check-columns">
-          ${renderSlotVerificacao(membro.id, 1, obra1, dadosMembro)}
-          ${renderSlotVerificacao(membro.id, 2, obra2, dadosMembro)}
-        </div>
-      </article>
+      return montarCardMembro({
+        membro,
+        registro,
+        obra1,
+        obra2,
+        pontos
+      });
+    }).join("")
+    : `
+      <div class="empty-state">
+        Nenhum membro cadastrado neste sub.
+      </div>
     `;
-  }).join("");
 
   view.innerHTML = `
     <section class="card">
       <div class="card-header">
         <div>
           <h3>📜 Verificações</h3>
-          <p>Marque leitura, feedback e capítulos extras comprados.</p>
+          <p>Escolha o dia, marque os status e salve. A Leitura Lunar é semanal: marcou uma vez, aparece na ficha da semana.</p>
         </div>
       </div>
 
       <div class="grid grid-2">
         <div class="form-row">
-          <label for="diaVerificacao">Dia da semana</label>
+          <label for="diaVerificacao">Dia da verificação</label>
           <select id="diaVerificacao">
-            ${DIAS_SEMANA.map(item => `<option value="${item}" ${item === dia ? "selected" : ""}>${item}</option>`).join("")}
+            ${DIAS_SEMANA.map(dia => `
+              <option value="${dia}" ${dia === diaAtual ? "selected" : ""}>${dia}</option>
+            `).join("")}
           </select>
         </div>
 
         <div class="form-row">
-          <label for="buscaMembro">Buscar membro</label>
-          <input id="buscaMembro" placeholder="Digite nome ou user..." />
+          <label for="buscaMembroVerificacao">Buscar membro</label>
+          <input
+            id="buscaMembroVerificacao"
+            type="search"
+            placeholder="Digite nome ou user..."
+          />
         </div>
       </div>
+    </section>
 
-      <div class="grid grid-2" style="margin-top:18px;">
-        <div class="grade-slot">
-          <h5>Obra 01</h5>
-          <p class="muted">${escapeHTML(obra1.titulo)}</p>
+    <section class="card">
+      <div class="card-header">
+        <div>
+          <h3>Obras do dia</h3>
+          <p>
+            Obra 01: ${obra1 ? escapeHTML(obra1.titulo || "") : "⏳ Sem obra"}
+            <br />
+            Obra 02: ${obra2 ? escapeHTML(obra2.titulo || "") : "⏳ Sem obra"}
+          </p>
         </div>
 
-        <div class="grade-slot">
-          <h5>Obra 02</h5>
-          <p class="muted">${escapeHTML(obra2.titulo)}</p>
-        </div>
+        <button class="btn" type="button" id="salvarVerificacaoButton">Salvar verificação</button>
       </div>
 
-      <div class="item-list" style="margin-top:18px;">
-        ${membrosHTML}
+      <div class="item-list" id="listaVerificacaoMembros">
+        ${cards}
       </div>
 
       <div class="form-actions">
-        <button class="btn" id="salvarVerificacaoButton">Salvar verificação</button>
+        <button class="btn" type="button" id="salvarVerificacaoButtonBottom">Salvar verificação</button>
       </div>
     </section>
   `;
 
-  document.getElementById("diaVerificacao").addEventListener("change", async event => {
-    await renderVerificacaoDia({
-      state,
-      view,
-      membros,
-      obras,
-      grade,
-      dia: event.target.value,
-      refresh
+  document.getElementById("diaVerificacao")?.addEventListener("change", event => {
+    localStorage.setItem(`verificacao_lunar_dia_${state.subId}`, event.target.value);
+    renderVerificacoesPage(context);
+  });
+
+  document.getElementById("buscaMembroVerificacao")?.addEventListener("input", event => {
+    filtrarCardsMembros(event.target.value);
+  });
+
+  document.querySelectorAll("[data-member-card]").forEach(card => {
+    card.addEventListener("change", () => {
+      atualizarEstadoCard({
+        card,
+        gradeDia,
+        obras
+      });
+    });
+
+    card.addEventListener("input", () => {
+      atualizarEstadoCard({
+        card,
+        gradeDia,
+        obras
+      });
     });
   });
 
-  document.getElementById("buscaMembro").addEventListener("input", event => {
-    const busca = event.target.value.toLowerCase().trim();
+  async function salvar() {
+    const dadosMembros = {};
 
     document.querySelectorAll("[data-member-card]").forEach(card => {
-      const texto = String(card.dataset.search || "").toLowerCase();
-      card.style.display = texto.includes(busca) ? "" : "none";
-    });
-  });
-
-  membros.forEach(membro => {
-    atualizarPontosMembro(membro.id);
-    [1, 2].forEach(numero => {
-      atualizarVisibilidadeExtra(membro.id, numero);
-    });
-  });
-
-  document.querySelectorAll("[data-check-control]").forEach(control => {
-    control.addEventListener("change", event => {
-      const membroId = event.target.dataset.memberId;
-      atualizarPontosMembro(membroId);
+      const membroId = card.dataset.memberCard;
+      dadosMembros[membroId] = coletarRegistroDoCard(card);
     });
 
-    control.addEventListener("input", event => {
-      const membroId = event.target.dataset.memberId;
-      atualizarPontosMembro(membroId);
-    });
-  });
+    try {
+      await salvarVerificacaoDia(state.subId, diaAtual, {
+        membros: dadosMembros
+      });
 
-  document.getElementById("salvarVerificacaoButton").addEventListener("click", async () => {
-    const dados = montarDadosVerificacaoDaTela(membros, dia);
-
-    await salvarVerificacaoDia(state.subId, dia, dados);
-
-    mostrarToast("Verificação salva.");
-    await refresh();
-  });
-}
-
-function renderSlotVerificacao(membroId, numero, obra, dados) {
-  const status = dados[`obra${numero}Status`] || "";
-  const feedback = dados[`obra${numero}Feedback`] || false;
-  const extra = dados[`obra${numero}Extra`] || false;
-  const extraQtd = dados[`obra${numero}ExtraQtd`] || 1;
-
-  return `
-    <div class="check-slot">
-      <h5>Obra ${numero}</h5>
-      <p>${escapeHTML(obra.titulo)}</p>
-
-      <div class="form-row">
-        <label>Status</label>
-        <select
-          id="m_${membroId}_o${numero}_status"
-          data-check-control
-          data-member-id="${membroId}"
-          ${obra.semObra ? "disabled" : ""}
-        >
-          ${STATUS_LEITURA.map(item => `
-            <option value="${item.emoji}" ${item.emoji === status ? "selected" : ""}>
-              ${item.emoji ? `${item.emoji} ` : ""}${item.label}
-            </option>
-          `).join("")}
-        </select>
-      </div>
-
-      <label class="checkbox-row">
-        <input
-          type="checkbox"
-          id="m_${membroId}_o${numero}_feedback"
-          data-check-control
-          data-member-id="${membroId}"
-          ${feedback ? "checked" : ""}
-          ${obra.semObra ? "disabled" : ""}
-        />
-        Feedback entregue (+20)
-      </label>
-
-      <label class="checkbox-row">
-        <input
-          type="checkbox"
-          id="m_${membroId}_o${numero}_extra"
-          data-check-control
-          data-member-id="${membroId}"
-          ${extra ? "checked" : ""}
-          ${obra.semObra ? "disabled" : ""}
-        />
-        Leitura extra comprada (+5 cada)
-      </label>
-
-      <div class="form-row" id="m_${membroId}_o${numero}_extraBox" style="display:none;">
-        <label>Quantidade de capítulos extras</label>
-        <input
-          type="number"
-          min="1"
-          id="m_${membroId}_o${numero}_extraQtd"
-          data-check-control
-          data-member-id="${membroId}"
-          value="${extraQtd}"
-          ${obra.semObra ? "disabled" : ""}
-        />
-      </div>
-
-      <div class="note-warning" id="m_${membroId}_o${numero}_aviso"></div>
-    </div>
-  `;
-}
-
-function lerDadosMembroDaTela(membroId) {
-  const dados = {};
-
-  [1, 2].forEach(numero => {
-    const status = document.getElementById(`m_${membroId}_o${numero}_status`)?.value || "⏳";
-
-    dados[`obra${numero}Status`] = status;
-    dados[`obra${numero}Feedback`] = document.getElementById(`m_${membroId}_o${numero}_feedback`)?.checked || false;
-    dados[`obra${numero}Extra`] = document.getElementById(`m_${membroId}_o${numero}_extra`)?.checked || false;
-    dados[`obra${numero}ExtraQtd`] = Math.max(1, Number(document.getElementById(`m_${membroId}_o${numero}_extraQtd`)?.value || 1));
-  });
-
-  return dados;
-}
-
-function atualizarPontosMembro(membroId) {
-  const dados = lerDadosMembroDaTela(membroId);
-  const diaValido = leiturasDoDiaValidas(dados.obra1Status, dados.obra2Status);
-
-  [1, 2].forEach(numero => {
-    const status = dados[`obra${numero}Status`];
-
-    const feedbackInput = document.getElementById(`m_${membroId}_o${numero}_feedback`);
-    const extraInput = document.getElementById(`m_${membroId}_o${numero}_extra`);
-    const extraQtdInput = document.getElementById(`m_${membroId}_o${numero}_extraQtd`);
-    const aviso = document.getElementById(`m_${membroId}_o${numero}_aviso`);
-
-    if (!feedbackInput || !extraInput || !extraQtdInput || !aviso) return;
-
-    if (!diaValido) {
-      feedbackInput.checked = false;
-      feedbackInput.disabled = true;
-
-      extraInput.checked = false;
-      extraInput.disabled = true;
-      extraQtdInput.value = 1;
-
-      aviso.textContent = "Só pontua se as leituras obrigatórias do dia estiverem válidas.";
-    } else if (status === "🌙") {
-      feedbackInput.disabled = false;
-      extraInput.disabled = false;
-      aviso.textContent = "";
-    } else {
-      feedbackInput.checked = false;
-      feedbackInput.disabled = true;
-
-      extraInput.checked = false;
-      extraInput.disabled = true;
-      extraQtdInput.value = 1;
-
-      if (statusEhSemObra(status)) {
-        aviso.textContent = "Sem obra neste campo.";
-      } else {
-        aviso.textContent = "Feedback e extra só contam quando marcou 🌙 Leu.";
-      }
+      mostrarToast("Verificação salva.");
+    } catch (error) {
+      console.error(error);
+      mostrarToast("Erro ao salvar verificação.");
     }
-
-    atualizarVisibilidadeExtra(membroId, numero);
-  });
-
-  const dadosAtualizados = lerDadosMembroDaTela(membroId);
-  const pontos = calcularPontosDoDia(dadosAtualizados);
-
-  const campoPontos = document.getElementById(`pontos_${membroId}`);
-
-  if (campoPontos) {
-    campoPontos.textContent = pontos;
   }
-}
 
-function atualizarVisibilidadeExtra(membroId, numero) {
-  const box = document.getElementById(`m_${membroId}_o${numero}_extraBox`);
-  const extra = document.getElementById(`m_${membroId}_o${numero}_extra`);
-
-  if (!box || !extra) return;
-
-  box.style.display = extra.checked ? "" : "none";
-}
-
-function montarDadosVerificacaoDaTela(membros, dia) {
-  const dados = {
-    dia,
-    atualizadoEm: new Date().toISOString(),
-    membros: {}
-  };
-
-  membros.forEach(membro => {
-    const dadosMembro = lerDadosMembroDaTela(membro.id);
-    const pontos = calcularPontosDoDia(dadosMembro);
-
-    dados.membros[membro.id] = {
-      nome: membro.nome,
-      user: membro.user,
-      semana: membro.semana ?? 0,
-      ...dadosMembro,
-      pontos
-    };
-  });
-
-  return dados;
+  document.getElementById("salvarVerificacaoButton")?.addEventListener("click", salvar);
+  document.getElementById("salvarVerificacaoButtonBottom")?.addEventListener("click", salvar);
 }

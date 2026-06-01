@@ -9,7 +9,8 @@ import {
   abrirModal,
   fecharModal,
   escapeHTML,
-  mostrarToast
+  mostrarToast,
+  confirmarAcao
 } from "./utils.js";
 
 export async function renderMembrosPage(context) {
@@ -18,21 +19,20 @@ export async function renderMembrosPage(context) {
   setSubtitle("Cadastro e edição de membros.");
 
   const view = document.getElementById("view");
-
   const membros = await listarMembros(state.subId);
 
   const listaHTML = membros.length
     ? membros.map(membro => `
       <article class="item-card">
         <div>
-          <h4>${escapeHTML(membro.nome)}</h4>
-          <p>User: ${escapeHTML(membro.user)}</p>
-          <p>Semana atual: ${membro.semana ?? 0}</p>
+          <h4>${escapeHTML(membro.nome || "")}</h4>
+          <p>User: ${escapeHTML(membro.user || "")}</p>
+          <p>Semana atual: ${Number(membro.semana || 0)}</p>
         </div>
 
         <div class="item-actions">
-          <button class="btn secondary" data-editar-membro="${membro.id}">Editar</button>
-          <button class="btn danger" data-excluir-membro="${membro.id}">Excluir</button>
+          <button class="btn secondary" type="button" data-editar-membro="${membro.id}">Editar</button>
+          <button class="btn danger" type="button" data-excluir-membro="${membro.id}">Excluir</button>
         </div>
       </article>
     `).join("")
@@ -47,10 +47,10 @@ export async function renderMembrosPage(context) {
       <div class="card-header">
         <div>
           <h3>👥 Membros</h3>
-          <p>Cadastre nome, user e a semana atual de cada participante.</p>
+          <p>Cadastre os leitores do sub, seus usuários e a semana atual de cada um.</p>
         </div>
 
-        <button class="btn" id="novoMembroButton">+ Novo Membro</button>
+        <button class="btn" type="button" id="novoMembroButton">+ Novo Membro</button>
       </div>
 
       <div class="item-list">
@@ -59,18 +59,23 @@ export async function renderMembrosPage(context) {
     </section>
   `;
 
-  document.getElementById("novoMembroButton").addEventListener("click", () => {
-    abrirFormularioMembro({
-      state,
-      refresh,
-      membro: null
+  const novoMembroButton = document.getElementById("novoMembroButton");
+
+  if (novoMembroButton) {
+    novoMembroButton.addEventListener("click", () => {
+      abrirFormularioMembro({
+        state,
+        refresh,
+        membro: null
+      });
     });
-  });
+  }
 
   document.querySelectorAll("[data-editar-membro]").forEach(button => {
-    const membro = membros.find(item => item.id === button.dataset.editarMembro);
-
     button.addEventListener("click", () => {
+      const membroId = button.dataset.editarMembro;
+      const membro = membros.find(item => item.id === membroId);
+
       abrirFormularioMembro({
         state,
         refresh,
@@ -84,15 +89,24 @@ export async function renderMembrosPage(context) {
       const membroId = button.dataset.excluirMembro;
       const membro = membros.find(item => item.id === membroId);
 
-      const confirmar = confirm(
-        `Tem certeza que deseja excluir ${membro?.nome || "este membro"}?\n\nAs obras vinculadas a esse membro também serão removidas.`
-      );
+      const confirmar = await confirmarAcao({
+        titulo: "Excluir membro?",
+        mensagem: `Tem certeza que deseja excluir o membro "${membro?.nome || ""}"? As obras vinculadas a ele também serão removidas.`,
+        confirmarTexto: "Sim, excluir",
+        cancelarTexto: "Cancelar",
+        perigo: true
+      });
 
       if (!confirmar) return;
 
-      await excluirMembro(state.subId, membroId);
-      mostrarToast("Membro excluído.");
-      await refresh();
+      try {
+        await excluirMembro(state.subId, membroId);
+        mostrarToast("Membro excluído.");
+        await refresh();
+      } catch (error) {
+        console.error(error);
+        mostrarToast("Erro ao excluir membro. Veja o console.");
+      }
     });
   });
 }
@@ -102,32 +116,37 @@ function abrirFormularioMembro({ state, refresh, membro }) {
 
   abrirModal(editando ? "Editar membro" : "Novo membro", `
     <form id="membroForm" class="grid">
-      <div class="form-row">
-        <label for="nomeMembro">Nome</label>
-        <input 
-          id="nomeMembro" 
-          placeholder="Ex: Mayke Arrais" 
-          value="${escapeHTML(membro?.nome || "")}"
-        />
-      </div>
+      <div class="grid grid-2">
+        <div class="form-row">
+          <label for="nomeMembro">Nome</label>
+          <input
+            id="nomeMembro"
+            type="text"
+            placeholder="Ex: Mayke"
+            value="${escapeHTML(membro?.nome || "")}"
+          />
+        </div>
 
-      <div class="form-row">
-        <label for="userMembro">User</label>
-        <input 
-          id="userMembro" 
-          placeholder="Ex: RKymae" 
-          value="${escapeHTML(membro?.user || "")}"
-        />
+        <div class="form-row">
+          <label for="userMembro">User</label>
+          <input
+            id="userMembro"
+            type="text"
+            placeholder="Ex: RKymae"
+            value="${escapeHTML(membro?.user || "")}"
+          />
+        </div>
       </div>
 
       <div class="form-row">
         <label for="semanaMembro">Semana atual</label>
-        <input 
-          id="semanaMembro" 
-          type="number" 
-          min="0" 
-          placeholder="Ex: 2" 
-          value="${membro?.semana ?? 0}"
+        <input
+          id="semanaMembro"
+          type="number"
+          min="0"
+          step="1"
+          placeholder="Ex: 5"
+          value="${Number(membro?.semana || 0)}"
         />
       </div>
 
@@ -138,31 +157,50 @@ function abrirFormularioMembro({ state, refresh, membro }) {
     </form>
   `);
 
-  document.getElementById("cancelarMembro").addEventListener("click", fecharModal);
+  const cancelarButton = document.getElementById("cancelarMembro");
+  const form = document.getElementById("membroForm");
 
-  document.getElementById("membroForm").addEventListener("submit", async event => {
+  if (cancelarButton) {
+    cancelarButton.addEventListener("click", fecharModal);
+  }
+
+  if (!form) {
+    mostrarToast("Erro ao abrir formulário de membro.");
+    return;
+  }
+
+  form.addEventListener("submit", async event => {
     event.preventDefault();
 
-    const dados = {
-      nome: document.getElementById("nomeMembro").value.trim(),
-      user: document.getElementById("userMembro").value.trim(),
-      semana: Number(document.getElementById("semanaMembro").value || 0)
-    };
+    const nome = document.getElementById("nomeMembro")?.value.trim();
+    const user = document.getElementById("userMembro")?.value.trim();
+    const semana = Number(document.getElementById("semanaMembro")?.value || 0);
 
-    if (!dados.nome || !dados.user) {
-      mostrarToast("Preencha nome e user.");
+    if (!nome || !user) {
+      mostrarToast("Preencha nome e user do membro.");
       return;
     }
 
-    if (editando) {
-      await atualizarMembro(state.subId, membro.id, dados);
-      mostrarToast("Membro atualizado.");
-    } else {
-      await criarMembro(state.subId, dados);
-      mostrarToast("Membro cadastrado.");
-    }
+    const dados = {
+      nome,
+      user,
+      semana
+    };
 
-    fecharModal();
-    await refresh();
+    try {
+      if (editando) {
+        await atualizarMembro(state.subId, membro.id, dados);
+        mostrarToast("Membro atualizado.");
+      } else {
+        await criarMembro(state.subId, dados);
+        mostrarToast("Membro cadastrado.");
+      }
+
+      fecharModal();
+      await refresh();
+    } catch (error) {
+      console.error(error);
+      mostrarToast("Erro ao salvar membro. Veja o console.");
+    }
   });
 }
