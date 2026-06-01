@@ -1,19 +1,16 @@
-import { DIAS_SEMANA } from "./config.js";
-
 import {
   listarMembros,
-  listarVerificacoes,
-  limparVerificacoesDaSemana
+  listarVerificacoes
 } from "./data.js";
 
+import { DIAS_SEMANA, STATUS_QUE_CONTAM_LEITURA } from "./config.js";
+
 import {
-  abrirModal,
   copiarTexto,
   diasComVerificacao,
   escapeHTML,
   mostrarToast,
-  repetirCheck,
-  ultimoDiaVerificado
+  repetirCheck
 } from "./utils.js";
 
 import {
@@ -22,10 +19,212 @@ import {
   limparLinhasVazias
 } from "./templates.js";
 
-export async function renderFichaPage(context) {
-  const { state, setSubtitle, refresh } = context;
+function getStatus(registro, numeroObra) {
+  return registro?.[`obra${numeroObra}`] || "";
+}
 
-  setSubtitle("Ficha acumulada para WhatsApp.");
+function getFeedback(registro, numeroObra) {
+  return Boolean(registro?.[`feedback${numeroObra}`]);
+}
+
+function getExtra(registro, numeroObra) {
+  return Boolean(registro?.[`extra${numeroObra}`]);
+}
+
+function getExtraQtd(registro, numeroObra) {
+  const valor = Number(registro?.[`extraQtd${numeroObra}`] || 1);
+
+  if (!Number.isFinite(valor) || valor < 1) {
+    return 1;
+  }
+
+  return valor;
+}
+
+function getLeituraLunar(registro) {
+  return Boolean(registro?.leituraLunar);
+}
+
+function statusContaLeitura(status) {
+  return STATUS_QUE_CONTAM_LEITURA.includes(status);
+}
+
+function statusPermiteFeedbackEExtra(status) {
+  return status === "🌙";
+}
+
+function calcularPontosDia(registro) {
+  const status1 = getStatus(registro, 1);
+  const status2 = getStatus(registro, 2);
+
+  const temObra1 = status1 && status1 !== "⏳";
+  const temObra2 = status2 && status2 !== "⏳";
+
+  const obrigatorias = [];
+
+  if (temObra1) obrigatorias.push({ numero: 1, status: status1 });
+  if (temObra2) obrigatorias.push({ numero: 2, status: status2 });
+
+  if (!obrigatorias.length) {
+    return 0;
+  }
+
+  const cumpriuTodas = obrigatorias.every(item => statusContaLeitura(item.status));
+
+  if (!cumpriuTodas) {
+    return 0;
+  }
+
+  let pontos = 0;
+
+  obrigatorias.forEach(item => {
+    pontos += 5;
+
+    if (statusPermiteFeedbackEExtra(item.status)) {
+      if (getFeedback(registro, item.numero)) {
+        pontos += 20;
+      }
+
+      if (getExtra(registro, item.numero)) {
+        pontos += getExtraQtd(registro, item.numero) * 5;
+      }
+    }
+  });
+
+  return pontos;
+}
+
+function montarDadosMembro(membro, verificacoes) {
+  let pontos = 0;
+  let feedbacks = 0;
+  let extras = 0;
+  let leituraLunar = false;
+
+  const obra1 = [];
+  const obra2 = [];
+
+  DIAS_SEMANA.forEach(dia => {
+    const registro = verificacoes?.[dia]?.membros?.[membro.id];
+
+    if (!registro) return;
+
+    const status1 = getStatus(registro, 1);
+    const status2 = getStatus(registro, 2);
+
+    if (status1) obra1.push(status1);
+    if (status2) obra2.push(status2);
+
+    pontos += calcularPontosDia(registro);
+
+    [1, 2].forEach(numero => {
+      const status = getStatus(registro, numero);
+
+      if (statusPermiteFeedbackEExtra(status)) {
+        if (getFeedback(registro, numero)) {
+          feedbacks += 1;
+        }
+
+        if (getExtra(registro, numero)) {
+          extras += getExtraQtd(registro, numero);
+        }
+      }
+    });
+
+    if (getLeituraLunar(registro)) {
+      leituraLunar = true;
+    }
+  });
+
+  return {
+    nome: membro.nome || "",
+    user: membro.user || "",
+    semana: Number(membro.semana || 0),
+    dias: diasComVerificacao(verificacoes),
+    pontos,
+    feedbacks: repetirCheck(feedbacks),
+    extras: repetirCheck(extras),
+    leituraLunar: leituraLunar ? "✅" : "",
+    obra1: obra1.join(""),
+    obra2: obra2.join("")
+  };
+}
+
+function contemLabelLeituraLunar(linha) {
+  const linhaOriginal = String(linha || "");
+
+  if (linhaOriginal.includes("Leitura Lunar")) return true;
+  if (linhaOriginal.includes("LEITURA LUNAR")) return true;
+  if (linhaOriginal.includes("𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐋𝐮𝐧𝐚𝐫")) return true;
+  if (linhaOriginal.includes("𝐋𝐄𝐈𝐓𝐔𝐑𝐀 𝐋𝐔𝐍𝐀𝐑")) return true;
+  if (linhaOriginal.includes("𝑳𝒆𝒊𝒕𝒖𝒓𝒂 𝑳𝒖𝒏𝒂𝒓")) return true;
+  if (linhaOriginal.includes("🌟𝑳𝒆𝒊𝒕𝒖𝒓𝒂 𝑳𝒖𝒏𝒂𝒓")) return true;
+  if (linhaOriginal.includes("🌌 Leitura Lunar")) return true;
+  if (linhaOriginal.includes("🔮 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐋𝐮𝐧𝐚𝐫")) return true;
+
+  return false;
+}
+
+function inserirLeituraLunarNoBloco(bloco, leituraLunar) {
+  const valor = leituraLunar || "";
+
+  if (!valor) {
+    return bloco.replaceAll("{{leituraLunar}}", "");
+  }
+
+  if (bloco.includes("{{leituraLunar}}")) {
+    return bloco.replaceAll("{{leituraLunar}}", valor);
+  }
+
+  return bloco
+    .split("\n")
+    .map(linha => {
+      if (!contemLabelLeituraLunar(linha)) {
+        return linha;
+      }
+
+      const partes = linha.split(":");
+
+      if (partes.length < 2) {
+        return linha;
+      }
+
+      const antes = partes.shift();
+      const depois = partes.join(":").trim();
+
+      if (depois) {
+        return linha;
+      }
+
+      return `${antes}: ${valor}`;
+    })
+    .join("\n");
+}
+
+function gerarFicha({ sub, membros, verificacoes }) {
+  const modelos = getModelosDoSub(sub);
+  const partes = [];
+
+  partes.push(modelos.fichaCabecalho || "");
+
+  membros.forEach(membro => {
+    const dados = montarDadosMembro(membro, verificacoes);
+
+    let bloco = renderTemplate(modelos.fichaMembro || "", dados);
+
+    bloco = inserirLeituraLunarNoBloco(bloco, dados.leituraLunar);
+
+    partes.push(bloco);
+  });
+
+  partes.push(modelos.fichaRodape || "");
+
+  return limparLinhasVazias(partes.filter(Boolean).join("\n\n"));
+}
+
+export async function renderFichaPage(context) {
+  const { state, setSubtitle } = context;
+
+  setSubtitle("Visualize e copie a ficha acumulada da semana.");
 
   const view = document.getElementById("view");
 
@@ -34,47 +233,7 @@ export async function renderFichaPage(context) {
     listarVerificacoes(state.subId)
   ]);
 
-  const ultimoDia = ultimoDiaVerificado(verificacoes);
-
-  if (!membros.length) {
-    view.innerHTML = `
-      <section class="card">
-        <div class="card-header">
-          <div>
-            <h3>👁️ Visualizar Ficha</h3>
-            <p>Cadastre membros antes de gerar a ficha.</p>
-          </div>
-        </div>
-
-        <div class="empty-state">
-          Nenhum membro cadastrado.
-        </div>
-      </section>
-    `;
-
-    return;
-  }
-
-  if (!ultimoDia) {
-    view.innerHTML = `
-      <section class="card">
-        <div class="card-header">
-          <div>
-            <h3>👁️ Visualizar Ficha</h3>
-            <p>A ficha aparece depois que pelo menos uma verificação for salva.</p>
-          </div>
-        </div>
-
-        <div class="empty-state">
-          Ainda não existe nenhuma verificação salva nesta semana.
-        </div>
-      </section>
-    `;
-
-    return;
-  }
-
-  const texto = gerarFicha({
+  const textoFicha = gerarFicha({
     sub: state.subConfig,
     membros,
     verificacoes
@@ -85,121 +244,23 @@ export async function renderFichaPage(context) {
       <div class="card-header">
         <div>
           <h3>👁️ Visualizar Ficha</h3>
-          <p>Dias acumulados: ${diasComVerificacao(verificacoes)}</p>
+          <p>A ficha abaixo mostra somente a semana atual salva nas verificações.</p>
         </div>
 
-        <button class="btn danger" id="limparFichaButton">🧹 Limpar semana</button>
+        <button class="btn" type="button" id="copiarFichaButton">Copiar ficha</button>
       </div>
 
-      <textarea id="fichaTexto" readonly>${escapeHTML(texto)}</textarea>
-
-      <div class="form-actions">
-        <button class="btn" id="copiarFichaButton">Copiar ficha</button>
-      </div>
+      <textarea readonly id="textoFicha">${escapeHTML(textoFicha)}</textarea>
     </section>
   `;
 
-  document.getElementById("copiarFichaButton").addEventListener("click", async () => {
-    await copiarTexto(document.getElementById("fichaTexto").value);
-    mostrarToast("Ficha copiada.");
+  document.getElementById("copiarFichaButton")?.addEventListener("click", async () => {
+    try {
+      await copiarTexto(textoFicha);
+      mostrarToast("Ficha copiada.");
+    } catch (error) {
+      console.error(error);
+      mostrarToast("Não foi possível copiar a ficha.");
+    }
   });
-
-  document.getElementById("limparFichaButton").addEventListener("click", () => {
-    abrirModal("Limpar ficha da semana", `
-      <p class="muted">
-        Isso vai apagar apenas as verificações salvas de segunda a sexta.
-        Membros, obras e grade semanal continuarão cadastrados.
-      </p>
-
-      <div class="form-actions">
-        <button class="btn danger" id="confirmarLimparFicha">Sim, limpar semana</button>
-      </div>
-    `);
-
-    document.getElementById("confirmarLimparFicha").addEventListener("click", async () => {
-      await limparVerificacoesDaSemana(state.subId, DIAS_SEMANA);
-      mostrarToast("Ficha da semana limpa.");
-      document.getElementById("modalRoot")?.remove();
-      await refresh();
-    });
-  });
-}
-
-function gerarFicha({ sub, membros, verificacoes }) {
-  const modelos = getModelosDoSub(sub);
-  const dias = diasComVerificacao(verificacoes);
-
-  const partes = [];
-
-  partes.push(modelos.fichaCabecalho || "");
-
-  membros.forEach(membro => {
-    const valores = {
-      nome: membro.nome || "",
-      user: membro.user || "",
-      semana: membro.semana ?? 0,
-      dias,
-      pontos: pontosAcumulados(membro.id, verificacoes),
-      feedbacks: repetirCheck(feedbacksAcumulados(membro.id, verificacoes)),
-      extras: repetirCheck(extrasAcumulados(membro.id, verificacoes)),
-      obra1: emojisAcumulados(membro.id, verificacoes, "obra1Status"),
-      obra2: emojisAcumulados(membro.id, verificacoes, "obra2Status")
-    };
-
-    partes.push(renderTemplate(modelos.fichaMembro, valores));
-  });
-
-  partes.push(modelos.fichaRodape || "");
-
-  return limparLinhasVazias(partes.filter(Boolean).join("\n\n"));
-}
-
-function pontosAcumulados(membroId, verificacoes) {
-  let total = 0;
-
-  DIAS_SEMANA.forEach(dia => {
-    total += Number(verificacoes[dia]?.membros?.[membroId]?.pontos || 0);
-  });
-
-  return total;
-}
-
-function emojisAcumulados(membroId, verificacoes, campo) {
-  let texto = "";
-
-  DIAS_SEMANA.forEach(dia => {
-    texto += verificacoes[dia]?.membros?.[membroId]?.[campo] || "";
-  });
-
-  return texto;
-}
-
-function feedbacksAcumulados(membroId, verificacoes) {
-  let total = 0;
-
-  DIAS_SEMANA.forEach(dia => {
-    const dados = verificacoes[dia]?.membros?.[membroId];
-
-    if (!dados) return;
-
-    if (dados.obra1Feedback) total++;
-    if (dados.obra2Feedback) total++;
-  });
-
-  return total;
-}
-
-function extrasAcumulados(membroId, verificacoes) {
-  let total = 0;
-
-  DIAS_SEMANA.forEach(dia => {
-    const dados = verificacoes[dia]?.membros?.[membroId];
-
-    if (!dados) return;
-
-    if (dados.obra1Extra) total += Math.max(1, Number(dados.obra1ExtraQtd || 1));
-    if (dados.obra2Extra) total += Math.max(1, Number(dados.obra2ExtraQtd || 1));
-  });
-
-  return total;
 }
