@@ -49,6 +49,7 @@ export function getVariaveisGradeTexto() {
 {{diaMaiusculo}}
 {{numeroObra}}
 {{autor}}
+{{nome}}
 {{user}}
 {{tituloObra}}
 {{link}}
