@@ -41,6 +41,16 @@ function getExtraQtd(registro, numeroObra) {
   return valor;
 }
 
+function getPontosAdicionais(registro) {
+  const valor = Number(registro?.pontosAdicionais || 0);
+
+  if (!Number.isFinite(valor) || valor < 0) {
+    return 0;
+  }
+
+  return Math.floor(valor);
+}
+
 function getLeituraLunar(registro) {
   return Boolean(registro?.leituraLunar);
 }
@@ -56,6 +66,7 @@ function statusPermiteFeedbackEExtra(status) {
 function calcularPontosDia(registro) {
   const status1 = getStatus(registro, 1);
   const status2 = getStatus(registro, 2);
+  const pontosAdicionais = getPontosAdicionais(registro);
 
   const temObra1 = status1 && status1 !== "⏳";
   const temObra2 = status2 && status2 !== "⏳";
@@ -66,13 +77,13 @@ function calcularPontosDia(registro) {
   if (temObra2) obrigatorias.push({ numero: 2, status: status2 });
 
   if (!obrigatorias.length) {
-    return 0;
+    return pontosAdicionais;
   }
 
   const cumpriuTodas = obrigatorias.every(item => statusContaLeitura(item.status));
 
   if (!cumpriuTodas) {
-    return 0;
+    return pontosAdicionais;
   }
 
   let pontos = 0;
@@ -91,7 +102,7 @@ function calcularPontosDia(registro) {
     }
   });
 
-  return pontos;
+  return pontos + pontosAdicionais;
 }
 
 function montarDadosMembro(membro, verificacoes) {

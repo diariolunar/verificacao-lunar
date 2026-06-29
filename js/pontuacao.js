@@ -32,6 +32,16 @@ function getExtraQtd(registro, numeroObra) {
   return valor;
 }
 
+function getPontosAdicionais(registro) {
+  const valor = Number(registro?.pontosAdicionais || 0);
+
+  if (!Number.isFinite(valor) || valor < 0) {
+    return 0;
+  }
+
+  return Math.floor(valor);
+}
+
 function statusContaLeitura(status) {
   return STATUS_QUE_CONTAM_LEITURA.includes(status);
 }
@@ -43,6 +53,7 @@ function statusPermiteFeedbackEExtra(status) {
 function calcularPontosDia(registro) {
   const status1 = getStatus(registro, 1);
   const status2 = getStatus(registro, 2);
+  const pontosAdicionais = getPontosAdicionais(registro);
 
   const temObra1 = status1 && status1 !== "⏳";
   const temObra2 = status2 && status2 !== "⏳";
@@ -53,13 +64,13 @@ function calcularPontosDia(registro) {
   if (temObra2) obrigatorias.push({ numero: 2, status: status2 });
 
   if (!obrigatorias.length) {
-    return 0;
+    return pontosAdicionais;
   }
 
   const cumpriuTodas = obrigatorias.every(item => statusContaLeitura(item.status));
 
   if (!cumpriuTodas) {
-    return 0;
+    return pontosAdicionais;
   }
 
   let pontos = 0;
@@ -78,13 +89,14 @@ function calcularPontosDia(registro) {
     }
   });
 
-  return pontos;
+  return pontos + pontosAdicionais;
 }
 
 function calcularPontuacaoMembroSemana(membro, verificacoes) {
   let pontos = 0;
   let feedbacks = 0;
   let extras = 0;
+  let pontosAdicionais = 0;
   let diasComRegistro = 0;
   let leituraLunar = false;
 
@@ -95,6 +107,7 @@ function calcularPontuacaoMembroSemana(membro, verificacoes) {
 
     diasComRegistro += 1;
     pontos += calcularPontosDia(registro);
+    pontosAdicionais += getPontosAdicionais(registro);
 
     [1, 2].forEach(numero => {
       const status = getStatus(registro, numero);
@@ -123,6 +136,7 @@ function calcularPontuacaoMembroSemana(membro, verificacoes) {
     pontos,
     feedbacks,
     extras,
+    pontosAdicionais,
     diasComRegistro,
     leituraLunar
   };
@@ -164,6 +178,7 @@ export async function renderPontuacaoPage(context) {
           <p>User: ${escapeHTML(item.user)}</p>
           <p>Semana do membro: ${item.semana}</p>
           <p>Dias com registro nesta semana: ${item.diasComRegistro}</p>
+          <p>Pontos adicionais: ${item.pontosAdicionais || "-"}</p>
           <p>Feedbacks: ${item.feedbacks ? repetirCheck(item.feedbacks) : "—"}</p>
           <p>Extras: ${item.extras ? repetirCheck(item.extras) : "—"}</p>
           <p>Leitura Lunar: ${item.leituraLunar ? "✅" : "—"}</p>

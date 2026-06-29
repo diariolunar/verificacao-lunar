@@ -61,6 +61,16 @@ function getLeituraLunarRegistro(registro) {
   return Boolean(registro?.leituraLunar);
 }
 
+function getPontosAdicionaisRegistro(registro) {
+  const valor = Number(registro?.pontosAdicionais || 0);
+
+  if (!Number.isFinite(valor) || valor < 0) {
+    return 0;
+  }
+
+  return Math.floor(valor);
+}
+
 function statusContaLeitura(status) {
   return STATUS_QUE_CONTAM_LEITURA.includes(status);
 }
@@ -121,15 +131,16 @@ function calcularPontosMembro({ registro, gradeDia, obras, membroId }) {
   const obrasObrigatorias = slots.filter(slot => {
     return Boolean(slot.obra);
   });
+  const pontosAdicionais = getPontosAdicionaisRegistro(registroComTravas);
 
   if (!obrasObrigatorias.length) {
-    return 0;
+    return pontosAdicionais;
   }
 
   const cumpriuTodas = obrasObrigatorias.every(slot => statusContaLeitura(slot.status));
 
   if (!cumpriuTodas) {
-    return 0;
+    return pontosAdicionais;
   }
 
   let pontos = 0;
@@ -154,7 +165,7 @@ function calcularPontosMembro({ registro, gradeDia, obras, membroId }) {
     }
   });
 
-  return pontos;
+  return pontos + pontosAdicionais;
 }
 
 function montarCardObra({ numero, obra, registro, membroId }) {
@@ -249,6 +260,7 @@ function montarCardObra({ numero, obra, registro, membroId }) {
 function montarCardMembro({ membro, registro, obra1, obra2, pontos }) {
   const registroComTravas = aplicarTravasObraPropria(registro, membro.id, obra1, obra2);
   const leituraLunarMarcada = getLeituraLunarRegistro(registroComTravas);
+  const pontosAdicionais = getPontosAdicionaisRegistro(registroComTravas);
 
   return `
     <article class="member-check-card" data-member-card="${membro.id}">
@@ -273,6 +285,18 @@ function montarCardMembro({ membro, registro, obra1, obra2, pontos }) {
         🌌 Fez Leitura Lunar da semana
       </label>
 
+      <div class="form-row" style="margin-bottom: 14px;">
+        <label>Pontos adicionais</label>
+        <input
+          type="number"
+          min="0"
+          step="1"
+          data-field="pontosAdicionais"
+          value="${pontosAdicionais}"
+          placeholder="0"
+        />
+      </div>
+
       <div class="check-columns">
         ${montarCardObra({ numero: 1, obra: obra1, registro: registroComTravas, membroId: membro.id })}
         ${montarCardObra({ numero: 2, obra: obra2, registro: registroComTravas, membroId: membro.id })}
@@ -293,7 +317,7 @@ function coletarRegistroDoCard(card) {
     }
 
     if (campo.type === "number") {
-      registro[nomeCampo] = Number(campo.value || 1);
+      registro[nomeCampo] = Number(campo.value || (nomeCampo === "pontosAdicionais" ? 0 : 1));
       return;
     }
 
@@ -313,6 +337,12 @@ function coletarRegistroDoCard(card) {
       registro[`extraQtd${numero}`] = 1;
     }
   });
+
+  if (!Number.isFinite(registro.pontosAdicionais) || registro.pontosAdicionais < 0) {
+    registro.pontosAdicionais = 0;
+  }
+
+  registro.pontosAdicionais = Math.floor(registro.pontosAdicionais);
 
   return registro;
 }
