@@ -134,13 +134,13 @@ function calcularPontosMembro({ registro, gradeDia, obras, membroId }) {
   const pontosAdicionais = getPontosAdicionaisRegistro(registroComTravas);
 
   if (!obrasObrigatorias.length) {
-    return pontosAdicionais;
+    return 0;
   }
 
   const cumpriuTodas = obrasObrigatorias.every(slot => statusContaLeitura(slot.status));
 
   if (!cumpriuTodas) {
-    return pontosAdicionais;
+    return 0;
   }
 
   let pontos = 0;

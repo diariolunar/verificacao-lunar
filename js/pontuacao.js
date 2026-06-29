@@ -64,13 +64,13 @@ function calcularPontosDia(registro) {
   if (temObra2) obrigatorias.push({ numero: 2, status: status2 });
 
   if (!obrigatorias.length) {
-    return pontosAdicionais;
+    return 0;
   }
 
   const cumpriuTodas = obrigatorias.every(item => statusContaLeitura(item.status));
 
   if (!cumpriuTodas) {
-    return pontosAdicionais;
+    return 0;
   }
 
   let pontos = 0;
