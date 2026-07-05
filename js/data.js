@@ -57,10 +57,7 @@ function normalizarObra(dados) {
     capitulosMais4100: dados.capitulosMais4100 || "",
     capitulosMenos500: dados.capitulosMenos500 || "",
     prologoMais1000: Boolean(dados.prologoMais1000),
-    prologoMais1000Qtd: dados.prologoMais1000Qtd || "",
 
-    gatilhosObra: dados.gatilhosObra || "",
-    gatilhosLeitura: dados.gatilhosLeitura || "",
     observacoes: dados.observacoes || "",
 
     alternativaTitulo: dados.alternativaTitulo || "",
