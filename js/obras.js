@@ -42,7 +42,7 @@ export async function renderObrasPage(context) {
 
             ${
               obra.capitulosMais4100 || obra.capitulosMenos500 || obra.prologoMais1000
-                ? `<p>Obs.: ${obra.prologoMais1000 ? "Prólogo +1k. " : ""}${obra.capitulosMais4100 ? `+4,1k: ${escapeHTML(obra.capitulosMais4100)}. ` : ""}${obra.capitulosMenos500 ? `-500: ${escapeHTML(obra.capitulosMenos500)}.` : ""}</p>`
+                ? `<p>Obs.: ${obra.prologoMais1000 ? `Prólogo +1k${obra.prologoMais1000Qtd ? ` (${escapeHTML(obra.prologoMais1000Qtd)})` : ""}. ` : ""}${obra.capitulosMais4100 ? `+4,1k: ${escapeHTML(obra.capitulosMais4100)}. ` : ""}${obra.capitulosMenos500 ? `-500: ${escapeHTML(obra.capitulosMenos500)}.` : ""}</p>`
                 : ""
             }
 
@@ -233,6 +233,34 @@ function abrirFormularioObra({ state, refresh, membros, obra }) {
         </label>
 
         <div class="form-row">
+          <label for="prologoMais1000Qtd">Quantidade de palavras do prólogo</label>
+          <input
+            id="prologoMais1000Qtd"
+            type="text"
+            placeholder="Ex: 1.250 palavras"
+            value="${escapeHTML(obra?.prologoMais1000Qtd || "")}"
+          />
+        </div>
+
+        <div class="grid grid-2">
+          <div class="form-row">
+            <label for="gatilhosObra">Gatilhos da obra</label>
+            <textarea
+              id="gatilhosObra"
+              placeholder="Ex: abandono, violência, culpa..."
+            >${escapeHTML(obra?.gatilhosObra || "")}</textarea>
+          </div>
+
+          <div class="form-row">
+            <label for="gatilhosLeitura">Gatilhos de leitura do autor</label>
+            <textarea
+              id="gatilhosLeitura"
+              placeholder="Ex: não possui, abandono, violência..."
+            >${escapeHTML(obra?.gatilhosLeitura || "")}</textarea>
+          </div>
+        </div>
+
+        <div class="form-row">
           <label for="observacoesObra">Observações extras da obra</label>
           <textarea
             id="observacoesObra"
@@ -352,7 +380,10 @@ function abrirFormularioObra({ state, refresh, membros, obra }) {
       capitulosMais4100: document.getElementById("capitulosMais4100")?.value.trim(),
       capitulosMenos500: document.getElementById("capitulosMenos500")?.value.trim(),
       prologoMais1000: document.getElementById("prologoMais1000")?.checked || false,
+      prologoMais1000Qtd: document.getElementById("prologoMais1000Qtd")?.value.trim(),
 
+      gatilhosObra: document.getElementById("gatilhosObra")?.value.trim(),
+      gatilhosLeitura: document.getElementById("gatilhosLeitura")?.value.trim(),
       observacoes: document.getElementById("observacoesObra")?.value.trim(),
 
       alternativaTitulo: document.getElementById("alternativaTitulo")?.value.trim(),

@@ -57,7 +57,10 @@ function normalizarObra(dados) {
     capitulosMais4100: dados.capitulosMais4100 || "",
     capitulosMenos500: dados.capitulosMenos500 || "",
     prologoMais1000: Boolean(dados.prologoMais1000),
+    prologoMais1000Qtd: dados.prologoMais1000Qtd || "",
 
+    gatilhosObra: dados.gatilhosObra || "",
+    gatilhosLeitura: dados.gatilhosLeitura || "",
     observacoes: dados.observacoes || "",
 
     alternativaTitulo: dados.alternativaTitulo || "",
@@ -97,7 +100,24 @@ export async function salvarConfigGeral(id, dados) {
 export async function criarSubsPadraoSeNecessario() {
   const snap = await getDocs(collection(db, COLLECTION_ROOT));
 
-  if (!snap.empty) return;
+  if (!snap.empty) {
+    const subsExistentes = new Set(snap.docs.map(docSnap => docSnap.id));
+    const novosSubsPadrao = ["SF04"];
+
+    for (const subId of novosSubsPadrao) {
+      const sub = DEFAULT_SUBS[subId];
+
+      if (sub && !subsExistentes.has(sub.id)) {
+        await setDoc(subDoc(sub.id), {
+          ...sub,
+          criadoEm: getTodayISO(),
+          atualizadoEm: getTodayISO()
+        }, { merge: true });
+      }
+    }
+
+    return;
+  }
 
   for (const sub of Object.values(DEFAULT_SUBS)) {
     await setDoc(subDoc(sub.id), {

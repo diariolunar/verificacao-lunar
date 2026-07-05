@@ -39,7 +39,8 @@ export const MODELOS_SUB = {
   pagina: "Página Livre",
   trono: "Trono Profano",
   margens: "Margens de Mundos",
-  cicatrizes: "Cicatrizes Literárias"
+  cicatrizes: "Cicatrizes Literárias",
+  ferias: "Sub de Férias"
 };
 
 export const DEFAULT_MODELOS = {
@@ -375,6 +376,82 @@ nas 𝐌𝐚𝐫𝐠𝐞𝐧𝐬 𝐝𝐞 𝐌𝐮𝐧𝐝𝐨𝐬.`
     gradeSeparador: `✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦`,
 
     gradeRodape: ``
+  },
+
+  ferias: {
+    fichaCabecalho: `🌴🌊 SUB DE FÉRIAS SF-04 • ÁGUA FRESCA 🥥☀️
+
+🌙 Leu
+☠️ Não leu
+💅 Justificado
+🌼 Já havia lido antes
+🙍 Falta algo
+✨ Obra do dia
+⏳ Sem obra`,
+
+    fichaMembro: `━━━━━━━━━━━━━━
+
+👤 Nome: {{nome}}
+🏖️ User: {{user}}
+
+📆 Semanas: {{semana}}
+🗓️ Dias: {{dias}}
+⭐ Pontos: {{pontos}}
+💬 Feedbacks: {{feedbacks}}
+📚 Capítulos Extras: {{extras}}
+🌌 Leitura Lunar: {{leituraLunar}}
+
+📖 Obra 01: {{obra1}}
+📖 Obra 02: {{obra2}}`,
+
+    fichaRodape: `━━━━━━━━━━━━━━
+
+🌴🌊 Projeto Lunar • Sub de Férias SF-04 – Água Fresca 🥥☀️`,
+
+    gradeSemanaCabecalho: `🌴🌊 SUB DE FÉRIAS SF-04 • ÁGUA FRESCA 🥥☀️`,
+
+    gradeDiaCabecalho: `🌴🌊 SUB DE FÉRIAS SF-04 • ÁGUA FRESCA 🥥☀️`,
+
+    gradeObra: `📖 Nome da Obra: *{{tituloObra}}*
+✍️ Autor: *{{autor}}*
+👤 User: *{{user}}*
+🔗 Link:
+{{link}}
+
+━━━━━━━━━━━━━━
+
+📜 O prólogo possui mais de 1.000 palavras?
+Se sim, informe a quantidade.
+*{{prologoMais1000}}*
+
+━━━━━━━━━━━━━━
+
+📚 Há capítulos com mais de 4.100 palavras?
+Se sim, informe apenas os números.
+*{{capitulosMais4100}}*
+
+━━━━━━━━━━━━━━
+
+📝 Há capítulos com menos de 500 palavras?
+Se sim, informe apenas os números.
+*{{capitulosMenos500}}*
+━━━━━━━━━━━━━━
+
+⚠️ A obra contém gatilhos?
+Se sim, informe quais.
+*{{gatilhosObra}}*
+━━━━━━━━━━━━━━
+
+🛡️ Você possui algum gatilho de leitura?
+Se sim, informe quais.
+*{{gatilhosLeitura}}*
+━━━━━━━━━━━━━━
+
+{{alternativa}}`,
+
+    gradeSeparador: `━━━━━━━━━━━━━━`,
+
+    gradeRodape: `🌴🌊 Projeto Lunar • Sub de Férias SF-04 – Água Fresca 🥥☀️`
   }
 };
 
@@ -437,6 +514,19 @@ export const DEFAULT_SUBS = {
     obrasPorDia: 2,
     ativo: true,
     modelos: DEFAULT_MODELOS.cicatrizes
+  },
+
+  SF04: {
+    id: "SF04",
+    nome: "SUB DE FÉRIAS SF-04 • ÁGUA FRESCA",
+    botao: "🌴🌊 SUB DE FÉRIAS SF-04 • ÁGUA FRESCA",
+    subtitulo: "Projeto Lunar • Sub de Férias SF-04",
+    cor: "#0f9f9a",
+    modelo: "ferias",
+    obrasPorDia: 2,
+    ativo: true,
+    icone: "🌴🌊",
+    modelos: DEFAULT_MODELOS.ferias
   }
 };
 

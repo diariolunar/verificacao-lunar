@@ -55,7 +55,8 @@ function montarObservacoesPrincipal(obra) {
   const linhas = [];
 
   if (obra.prologoMais1000) {
-    linhas.push("O prólogo tem +1k de palavras, então conta como capítulo normal.");
+    const quantidade = obra.prologoMais1000Qtd ? ` (${obra.prologoMais1000Qtd})` : "";
+    linhas.push(`O prólogo tem +1k de palavras${quantidade}, então conta como capítulo normal.`);
   }
 
   if (obra.capitulosMais4100) {
@@ -64,6 +65,14 @@ function montarObservacoesPrincipal(obra) {
 
   if (obra.capitulosMenos500) {
     linhas.push(`Capítulos com -500 palavras: ${obra.capitulosMenos500}. Ler 1 capítulo a mais e comentar normalmente.`);
+  }
+
+  if (obra.gatilhosObra) {
+    linhas.push(`Gatilhos da obra: ${obra.gatilhosObra}.`);
+  }
+
+  if (obra.gatilhosLeitura) {
+    linhas.push(`Gatilhos de leitura: ${obra.gatilhosLeitura}.`);
   }
 
   if (obra.observacoes) {
@@ -93,6 +102,20 @@ function montarObservacoesAlternativa(obra) {
   }
 
   return linhas.join("\n\n");
+}
+
+function valorOuNao(valor) {
+  const texto = String(valor || "").trim();
+
+  return texto || "Não";
+}
+
+function detalhePrologo(obra) {
+  if (!obra?.prologoMais1000) {
+    return "Não";
+  }
+
+  return valorOuNao(obra.prologoMais1000Qtd || "Sim");
 }
 
 function montarAlternativa(obra, sub) {
@@ -216,6 +239,11 @@ function montarBlocoObra({ template, dia, numero, obra, membros, mostrarNumero, 
     user: limparUser(membro?.user || ""),
     tituloObra: obra.titulo || "",
     link: obra.link || "",
+    prologoMais1000: detalhePrologo(obra),
+    capitulosMais4100: valorOuNao(obra.capitulosMais4100),
+    capitulosMenos500: valorOuNao(obra.capitulosMenos500),
+    gatilhosObra: valorOuNao(obra.gatilhosObra || obra.observacoes),
+    gatilhosLeitura: valorOuNao(obra.gatilhosLeitura),
     regraLeitura: regraLeituraPrincipal(obra, sub?.modelo),
     observacoes: montarObservacoesPrincipal(obra),
     alternativa: montarAlternativa(obra, sub)

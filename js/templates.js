@@ -37,6 +37,7 @@ export function getVariaveisFichaTexto() {
 {{pontos}}
 {{feedbacks}}
 {{extras}}
+{{leituraLunar}}
 {{obra1}}
 {{obra2}}`;
 }
@@ -53,6 +54,11 @@ export function getVariaveisGradeTexto() {
 {{user}}
 {{tituloObra}}
 {{link}}
+{{prologoMais1000}}
+{{capitulosMais4100}}
+{{capitulosMenos500}}
+{{gatilhosObra}}
+{{gatilhosLeitura}}
 {{regraLeitura}}
 {{observacoes}}
 {{alternativa}}`;
