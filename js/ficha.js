@@ -19,6 +19,10 @@ import {
   limparLinhasVazias
 } from "./templates.js";
 
+function membroAtivo(membro) {
+  return membro?.ativo !== false;
+}
+
 function getStatus(registro, numeroObra) {
   return registro?.[`obra${numeroObra}`] || "";
 }
@@ -241,10 +245,11 @@ export async function renderFichaPage(context) {
     listarMembros(state.subId),
     listarVerificacoes(state.subId)
   ]);
+  const membrosAtivos = membros.filter(membroAtivo);
 
   const textoFicha = gerarFicha({
     sub: state.subConfig,
-    membros,
+    membros: membrosAtivos,
     verificacoes
   });
 

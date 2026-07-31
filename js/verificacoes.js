@@ -19,6 +19,10 @@ import {
   normalizarTexto
 } from "./utils.js";
 
+function membroAtivo(membro) {
+  return membro?.ativo !== false;
+}
+
 function isSemObraId(obraId) {
   return !obraId || obraId === SEM_OBRA_ID || obraId === "__SEM_OBRA__";
 }
@@ -442,23 +446,26 @@ export async function renderVerificacoesPage(context) {
     listarObras(state.subId),
     buscarGrade(state.subId)
   ]);
+  const membrosAtivos = membros.filter(membroAtivo);
+  const idsMembrosAtivos = new Set(membrosAtivos.map(membro => membro.id));
+  const obrasAtivas = obras.filter(obra => idsMembrosAtivos.has(obra.membroId));
 
   const diaAtual = localStorage.getItem(`verificacao_lunar_dia_${state.subId}`) || DIAS_SEMANA[0];
   const verificacaoSalva = await buscarVerificacaoDia(state.subId, diaAtual);
   const gradeDia = grade?.[diaAtual] || {};
 
-  const obra1 = getObraPorId(obras, gradeDia.obra1);
-  const obra2 = getObraPorId(obras, gradeDia.obra2);
+  const obra1 = getObraPorId(obrasAtivas, gradeDia.obra1);
+  const obra2 = getObraPorId(obrasAtivas, gradeDia.obra2);
 
-  const cards = membros.length
-    ? membros.map(membro => {
+  const cards = membrosAtivos.length
+    ? membrosAtivos.map(membro => {
       const registroOriginal = verificacaoSalva?.membros?.[membro.id] || {};
       const registro = aplicarTravasObraPropria(registroOriginal, membro.id, obra1, obra2);
 
       const pontos = calcularPontosMembro({
         registro,
         gradeDia,
-        obras,
+        obras: obrasAtivas,
         membroId: membro.id
       });
 
@@ -472,7 +479,7 @@ export async function renderVerificacoesPage(context) {
     }).join("")
     : `
       <div class="empty-state">
-        Nenhum membro cadastrado neste sub.
+        Nenhum membro ativo neste sub.
       </div>
     `;
 
@@ -544,7 +551,7 @@ export async function renderVerificacoesPage(context) {
       atualizarEstadoCard({
         card,
         gradeDia,
-        obras,
+        obras: obrasAtivas,
         obra1,
         obra2
       });
@@ -554,7 +561,7 @@ export async function renderVerificacoesPage(context) {
       atualizarEstadoCard({
         card,
         gradeDia,
-        obras,
+        obras: obrasAtivas,
         obra1,
         obra2
       });
@@ -563,7 +570,7 @@ export async function renderVerificacoesPage(context) {
     atualizarEstadoCard({
       card,
       gradeDia,
-      obras,
+      obras: obrasAtivas,
       obra1,
       obra2
     });

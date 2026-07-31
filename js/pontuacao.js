@@ -10,6 +10,10 @@ import {
   repetirCheck
 } from "./utils.js";
 
+function membroAtivo(membro) {
+  return membro?.ativo !== false;
+}
+
 function getStatus(registro, numeroObra) {
   return registro?.[`obra${numeroObra}`] || "";
 }
@@ -160,9 +164,10 @@ export async function renderPontuacaoPage(context) {
     listarMembros(state.subId),
     listarVerificacoes(state.subId)
   ]);
+  const membrosAtivos = membros.filter(membroAtivo);
 
   const ranking = ordenarRanking(
-    membros.map(membro => calcularPontuacaoMembroSemana(membro, verificacoes))
+    membrosAtivos.map(membro => calcularPontuacaoMembroSemana(membro, verificacoes))
   );
 
   const totalPontos = ranking.reduce((acc, item) => acc + item.pontos, 0);

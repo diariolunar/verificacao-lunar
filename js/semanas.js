@@ -8,6 +8,10 @@ import {
 
 import { mostrarToast } from "./utils.js";
 
+function membroAtivo(membro) {
+  return membro?.ativo !== false;
+}
+
 function hojeEhDomingo() {
   const hoje = new Date();
   return hoje.getDay() === 0;
@@ -37,7 +41,7 @@ export async function atualizarSemanasGeralSeDomingo() {
   let totalSubsAtualizados = 0;
 
   for (const sub of subs) {
-    const membros = await listarMembros(sub.id);
+    const membros = (await listarMembros(sub.id)).filter(membroAtivo);
 
     if (!membros.length) continue;
 

@@ -2,6 +2,7 @@ import {
   listarMembros,
   criarMembro,
   atualizarMembro,
+  atualizarStatusMembro,
   excluirMembro
 } from "./data.js";
 
@@ -13,32 +14,56 @@ import {
   confirmarAcao
 } from "./utils.js";
 
+function membroAtivo(membro) {
+  return membro?.ativo !== false;
+}
+
+function getAbaMembros() {
+  return localStorage.getItem("verificacao_lunar_membros_aba") === "desativados"
+    ? "desativados"
+    : "ativos";
+}
+
+function setAbaMembros(aba) {
+  localStorage.setItem("verificacao_lunar_membros_aba", aba);
+}
+
 export async function renderMembrosPage(context) {
   const { state, setSubtitle, refresh } = context;
 
-  setSubtitle("Cadastro e edição de membros.");
+  setSubtitle("Cadastro e edicao de membros.");
 
   const view = document.getElementById("view");
   const membros = await listarMembros(state.subId);
+  const abaAtual = getAbaMembros();
+  const membrosAtivos = membros.filter(membroAtivo);
+  const membrosDesativados = membros.filter(membro => !membroAtivo(membro));
+  const membrosExibidos = abaAtual === "desativados" ? membrosDesativados : membrosAtivos;
 
-  const listaHTML = membros.length
-    ? membros.map(membro => `
+  const listaHTML = membrosExibidos.length
+    ? membrosExibidos.map(membro => `
       <article class="item-card">
         <div>
           <h4>${escapeHTML(membro.nome || "")}</h4>
           <p>User: ${escapeHTML(membro.user || "")}</p>
           <p>Semana atual: ${Number(membro.semana || 0)}</p>
+          ${membroAtivo(membro) ? "" : `<p><span class="badge">Desativado</span></p>`}
         </div>
 
         <div class="item-actions">
           <button class="btn secondary" type="button" data-editar-membro="${membro.id}">Editar</button>
+          ${
+            membroAtivo(membro)
+              ? `<button class="btn secondary" type="button" data-status-membro="${membro.id}" data-ativo="false">Desativar</button>`
+              : `<button class="btn" type="button" data-status-membro="${membro.id}" data-ativo="true">Reativar</button>`
+          }
           <button class="btn danger" type="button" data-excluir-membro="${membro.id}">Excluir</button>
         </div>
       </article>
     `).join("")
     : `
       <div class="empty-state">
-        Nenhum membro cadastrado ainda.
+        ${abaAtual === "desativados" ? "Nenhum membro desativado." : "Nenhum membro ativo cadastrado ainda."}
       </div>
     `;
 
@@ -47,10 +72,19 @@ export async function renderMembrosPage(context) {
       <div class="card-header">
         <div>
           <h3>👥 Membros</h3>
-          <p>Cadastre os leitores do sub, seus usuários e a semana atual de cada um.</p>
+          <p>Cadastre os leitores do sub, seus usuarios e a semana atual de cada um.</p>
         </div>
 
         <button class="btn" type="button" id="novoMembroButton">+ Novo Membro</button>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-button ${abaAtual === "ativos" ? "active" : ""}" type="button" data-aba-membros="ativos">
+          Ativos (${membrosAtivos.length})
+        </button>
+        <button class="tab-button ${abaAtual === "desativados" ? "active" : ""}" type="button" data-aba-membros="desativados">
+          Desativados (${membrosDesativados.length})
+        </button>
       </div>
 
       <div class="item-list">
@@ -59,17 +93,20 @@ export async function renderMembrosPage(context) {
     </section>
   `;
 
-  const novoMembroButton = document.getElementById("novoMembroButton");
-
-  if (novoMembroButton) {
-    novoMembroButton.addEventListener("click", () => {
-      abrirFormularioMembro({
-        state,
-        refresh,
-        membro: null
-      });
+  document.getElementById("novoMembroButton")?.addEventListener("click", () => {
+    abrirFormularioMembro({
+      state,
+      refresh,
+      membro: null
     });
-  }
+  });
+
+  document.querySelectorAll("[data-aba-membros]").forEach(button => {
+    button.addEventListener("click", async () => {
+      setAbaMembros(button.dataset.abaMembros);
+      await refresh();
+    });
+  });
 
   document.querySelectorAll("[data-editar-membro]").forEach(button => {
     button.addEventListener("click", () => {
@@ -84,6 +121,35 @@ export async function renderMembrosPage(context) {
     });
   });
 
+  document.querySelectorAll("[data-status-membro]").forEach(button => {
+    button.addEventListener("click", async () => {
+      const membroId = button.dataset.statusMembro;
+      const membro = membros.find(item => item.id === membroId);
+      const ativar = button.dataset.ativo === "true";
+
+      const confirmar = await confirmarAcao({
+        titulo: ativar ? "Reativar membro?" : "Desativar membro?",
+        mensagem: ativar
+          ? `Deseja reativar "${membro?.nome || ""}"? As obras vinculadas voltarao a aparecer como opcao na grade.`
+          : `Deseja desativar "${membro?.nome || ""}"? O membro nao sera apagado e as obras vinculadas nao aparecerao como opcao na grade.`,
+        confirmarTexto: ativar ? "Sim, reativar" : "Sim, desativar",
+        cancelarTexto: "Cancelar",
+        perigo: !ativar
+      });
+
+      if (!confirmar) return;
+
+      try {
+        await atualizarStatusMembro(state.subId, membroId, ativar);
+        mostrarToast(ativar ? "Membro reativado." : "Membro desativado.");
+        await refresh();
+      } catch (error) {
+        console.error(error);
+        mostrarToast("Erro ao alterar status do membro. Veja o console.");
+      }
+    });
+  });
+
   document.querySelectorAll("[data-excluir-membro]").forEach(button => {
     button.addEventListener("click", async () => {
       const membroId = button.dataset.excluirMembro;
@@ -91,7 +157,7 @@ export async function renderMembrosPage(context) {
 
       const confirmar = await confirmarAcao({
         titulo: "Excluir membro?",
-        mensagem: `Tem certeza que deseja excluir o membro "${membro?.nome || ""}"? As obras vinculadas a ele também serão removidas.`,
+        mensagem: `Tem certeza que deseja excluir o membro "${membro?.nome || ""}"? As obras vinculadas a ele tambem serao removidas.`,
         confirmarTexto: "Sim, excluir",
         cancelarTexto: "Cancelar",
         perigo: true
@@ -101,7 +167,7 @@ export async function renderMembrosPage(context) {
 
       try {
         await excluirMembro(state.subId, membroId);
-        mostrarToast("Membro excluído.");
+        mostrarToast("Membro excluido.");
         await refresh();
       } catch (error) {
         console.error(error);
@@ -151,7 +217,7 @@ function abrirFormularioMembro({ state, refresh, membro }) {
       </div>
 
       <div class="form-actions">
-        <button class="btn" type="submit">${editando ? "Salvar alterações" : "Cadastrar membro"}</button>
+        <button class="btn" type="submit">${editando ? "Salvar alteracoes" : "Cadastrar membro"}</button>
         <button class="btn secondary" type="button" id="cancelarMembro">Cancelar</button>
       </div>
     </form>
@@ -165,7 +231,7 @@ function abrirFormularioMembro({ state, refresh, membro }) {
   }
 
   if (!form) {
-    mostrarToast("Erro ao abrir formulário de membro.");
+    mostrarToast("Erro ao abrir formulario de membro.");
     return;
   }
 
@@ -184,7 +250,8 @@ function abrirFormularioMembro({ state, refresh, membro }) {
     const dados = {
       nome,
       user,
-      semana
+      semana,
+      ativo: membro?.ativo !== false
     };
 
     try {

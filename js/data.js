@@ -338,6 +338,7 @@ export async function criarMembro(subId, dados) {
     nome: dados.nome || "",
     user: dados.user || "",
     semana: Number(dados.semana || 0),
+    ativo: dados.ativo !== false,
     criadoEm: getTodayISO(),
     atualizadoEm: getTodayISO()
   });
@@ -352,6 +353,16 @@ export async function atualizarMembro(subId, membroId, dados) {
     nome: dados.nome || "",
     user: dados.user || "",
     semana: Number(dados.semana || 0),
+    ativo: dados.ativo !== false,
+    atualizadoEm: getTodayISO()
+  });
+}
+
+export async function atualizarStatusMembro(subId, membroId, ativo) {
+  const ref = doc(db, COLLECTION_ROOT, subId, "membros", membroId);
+
+  await updateDoc(ref, {
+    ativo: Boolean(ativo),
     atualizadoEm: getTodayISO()
   });
 }

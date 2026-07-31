@@ -16,6 +16,10 @@ import {
   mostrarToast
 } from "./utils.js";
 
+function membroAtivo(membro) {
+  return membro?.ativo !== false;
+}
+
 export async function renderGradePage(context) {
   const { state, setSubtitle, refresh } = context;
 
@@ -28,8 +32,11 @@ export async function renderGradePage(context) {
     listarObras(state.subId),
     buscarGrade(state.subId)
   ]);
+  const membrosAtivos = membros.filter(membroAtivo);
+  const idsMembrosAtivos = new Set(membrosAtivos.map(membro => membro.id));
+  const obrasDisponiveis = obras.filter(obra => idsMembrosAtivos.has(obra.membroId));
 
-  if (!membros.length || !obras.length) {
+  if (!membrosAtivos.length || !obrasDisponiveis.length) {
     view.innerHTML = `
       <section class="card">
         <div class="card-header">
@@ -40,7 +47,7 @@ export async function renderGradePage(context) {
         </div>
 
         <div class="empty-state">
-          ${!membros.length ? "Cadastre pelo menos um membro." : "Cadastre pelo menos uma obra."}
+          ${!membrosAtivos.length ? "Cadastre ou reative pelo menos um membro." : "Cadastre pelo menos uma obra de membro ativo."}
         </div>
       </section>
     `;
@@ -50,7 +57,7 @@ export async function renderGradePage(context) {
 
   const obrasPorDia = Number(state.subConfig?.obrasPorDia || 2);
 
-  const opcoesObras = obras.map(obra => `
+  const opcoesObras = obrasDisponiveis.map(obra => `
     <option value="${obra.id}">${escapeHTML(obra.titulo)}</option>
   `).join("");
 
@@ -159,8 +166,8 @@ export async function renderGradePage(context) {
         tipo: "dia",
         dia,
         grade: gradeAtual,
-        obras,
-        membros
+        obras: obrasDisponiveis,
+        membros: membrosAtivos
       });
 
       abrirExportacao(`Grade de ${dia}`, texto);
@@ -179,8 +186,8 @@ export async function renderGradePage(context) {
         tipo: "semana",
         dia: null,
         grade: gradeAtual,
-        obras,
-        membros
+        obras: obrasDisponiveis,
+        membros: membrosAtivos
       });
 
       abrirExportacao("Grade da semana", texto);
