@@ -139,40 +139,55 @@ export async function renderGradePage(context) {
   });
 
   document.getElementById("salvarGradeButton").addEventListener("click", async () => {
-    await salvarGradeDaTela(state.subId, obrasPorDia);
-    mostrarToast("Grade salva.");
-    await refresh();
+    try {
+      await salvarGradeDaTela(state.subId, obrasPorDia);
+      mostrarToast("Grade salva.");
+      await refresh();
+    } catch (error) {
+      console.error(error);
+      mostrarToast("Erro ao salvar grade. Veja o console.");
+    }
   });
 
   document.getElementById("exportarDiaButton").addEventListener("click", async () => {
-    const gradeAtual = await salvarGradeDaTela(state.subId, obrasPorDia);
-    const dia = document.getElementById("diaExportar").value;
+    try {
+      const gradeAtual = await salvarGradeDaTela(state.subId, obrasPorDia);
+      const dia = document.getElementById("diaExportar").value;
 
-    const texto = await gerarGradeExportada({
-      sub: state.subConfig,
-      tipo: "dia",
-      dia,
-      grade: gradeAtual,
-      obras,
-      membros
-    });
+      const texto = await gerarGradeExportada({
+        sub: state.subConfig,
+        tipo: "dia",
+        dia,
+        grade: gradeAtual,
+        obras,
+        membros
+      });
 
-    abrirExportacao(`Grade de ${dia}`, texto);
+      abrirExportacao(`Grade de ${dia}`, texto);
+    } catch (error) {
+      console.error(error);
+      mostrarToast("Erro ao exportar grade do dia. Veja o console.");
+    }
   });
 
   document.getElementById("exportarSemanaButton").addEventListener("click", async () => {
-    const gradeAtual = await salvarGradeDaTela(state.subId, obrasPorDia);
+    try {
+      const gradeAtual = await salvarGradeDaTela(state.subId, obrasPorDia);
 
-    const texto = await gerarGradeExportada({
-      sub: state.subConfig,
-      tipo: "semana",
-      dia: null,
-      grade: gradeAtual,
-      obras,
-      membros
-    });
+      const texto = await gerarGradeExportada({
+        sub: state.subConfig,
+        tipo: "semana",
+        dia: null,
+        grade: gradeAtual,
+        obras,
+        membros
+      });
 
-    abrirExportacao("Grade da semana", texto);
+      abrirExportacao("Grade da semana", texto);
+    } catch (error) {
+      console.error(error);
+      mostrarToast("Erro ao exportar grade da semana. Veja o console.");
+    }
   });
 }
 
@@ -205,8 +220,13 @@ function abrirExportacao(titulo, texto) {
   `);
 
   document.getElementById("copiarExportacaoButton").addEventListener("click", async () => {
-    const conteudo = document.getElementById("textoExportado").value;
-    await copiarTexto(conteudo);
-    mostrarToast("Grade copiada.");
+    try {
+      const conteudo = document.getElementById("textoExportado").value;
+      await copiarTexto(conteudo);
+      mostrarToast("Grade copiada.");
+    } catch (error) {
+      console.error(error);
+      mostrarToast("Não foi possível copiar a grade.");
+    }
   });
 }

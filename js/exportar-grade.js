@@ -21,14 +21,14 @@ function isSemObra(obra) {
 
 function regraLeituraPrincipal(obra, modelo = "normal") {
   if (obra?.isPoesia) {
-    if (modelo === "trono") {
+    if (modelo === "trono" || modelo === "lamina") {
       return "Leiam os especiais votando e deixando pelo menos 1 comentário + 5 capítulos deixando no 𝐌𝐈́𝐍𝐈𝐌𝐎 3 comentários.";
     }
 
     return "Leiam os especiais votando e deixando pelo menos 1 comentário + 5 capítulos deixando no mínimo 3 comentários.";
   }
 
-  if (modelo === "trono") {
+  if (modelo === "trono" || modelo === "lamina") {
     return "Leiam os especiais votando e deixando pelo menos 1 comentário + 2 capítulos comentando no 𝐌𝐈́𝐍𝐈𝐌𝐎 6 vezes em cada.";
   }
 
@@ -37,14 +37,14 @@ function regraLeituraPrincipal(obra, modelo = "normal") {
 
 function regraLeituraAlternativa(obra, modelo = "normal") {
   if (obra?.alternativaIsPoesia) {
-    if (modelo === "trono") {
+    if (modelo === "trono" || modelo === "lamina") {
       return "Leiam os especiais votando e deixando pelo menos 1 comentário + 5 capítulos deixando no 𝐌𝐈́𝐍𝐈𝐌𝐎 3 comentários.";
     }
 
     return "Leiam os especiais votando e deixando pelo menos 1 comentário + 5 capítulos deixando no mínimo 3 comentários.";
   }
 
-  if (modelo === "trono") {
+  if (modelo === "trono" || modelo === "lamina") {
     return "Leiam os especiais votando e deixando pelo menos 1 comentário + 2 capítulos comentando no 𝐌𝐈́𝐍𝐈𝐌𝐎 6 vezes em cada.";
   }
 

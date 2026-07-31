@@ -11,7 +11,8 @@ import {
   abrirModal,
   fecharModal,
   escapeHTML,
-  mostrarToast
+  mostrarToast,
+  confirmarAcao
 } from "./utils.js";
 
 import {
@@ -90,9 +91,13 @@ export async function renderSubsPage(context) {
       const subId = button.dataset.excluirSub;
       const sub = subs.find(item => item.id === subId);
 
-      const confirmar = confirm(
-        `Tem certeza que deseja excluir o sub ${sub?.nome || subId}?\n\nNão é recomendado excluir subs que já têm dados cadastrados.`
-      );
+      const confirmar = await confirmarAcao({
+        titulo: "Excluir sub?",
+        mensagem: `Tem certeza que deseja excluir o sub ${sub?.nome || subId}? Isso também remove membros, obras, grade e verificações dele.`,
+        confirmarTexto: "Sim, excluir",
+        cancelarTexto: "Cancelar",
+        perigo: true
+      });
 
       if (!confirmar) return;
 
@@ -101,9 +106,14 @@ export async function renderSubsPage(context) {
         return;
       }
 
-      await excluirSub(subId);
-      mostrarToast("Sub excluído.");
-      await refresh();
+      try {
+        await excluirSub(subId);
+        mostrarToast("Sub excluído.");
+        await refresh();
+      } catch (error) {
+        console.error(error);
+        mostrarToast("Não foi possível excluir o sub. Veja o console para detalhes.");
+      }
     });
   });
 }

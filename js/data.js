@@ -11,8 +11,10 @@ import {
   deleteDoc
 } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
-import { COLLECTION_ROOT, CONFIG_ROOT, DEFAULT_SUBS, DEFAULT_MODELOS } from "./config.js";
+import { COLLECTION_ROOT, CONFIG_ROOT, DEFAULT_SUBS, DEFAULT_MODELOS, SUBS_OFICIAIS } from "./config.js";
 import { getTodayISO, ordenarPorCriacao } from "./utils.js";
+
+const MIGRACAO_SUBS_OFICIAIS_ID = "recadastro_subs_oficiais_modelos_a10_a17_2026_07_31";
 
 function subDoc(subId) {
   return doc(db, COLLECTION_ROOT, subId);
@@ -38,12 +40,67 @@ function verificacaoDoc(subId, dia) {
   return doc(db, COLLECTION_ROOT, subId, "verificacoes", dia);
 }
 
+function subConfigCollection(subId) {
+  return collection(db, COLLECTION_ROOT, subId, "config");
+}
+
 function configDoc(id) {
   return doc(db, CONFIG_ROOT, id);
 }
 
 function modelosPadrao(modelo) {
   return DEFAULT_MODELOS[modelo] || DEFAULT_MODELOS.trono;
+}
+
+function normalizarSubId(subId) {
+  return String(subId || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "")
+    .replace(/^([A-Z]+)-(\d+)$/, "$1$2");
+}
+
+function separarCodigoSub(subId) {
+  const texto = normalizarSubId(subId);
+  const match = texto.match(/^([A-Z]+)(\d+)$/);
+
+  if (!match) {
+    return {
+      prefixo: texto,
+      numero: Number.MAX_SAFE_INTEGER
+    };
+  }
+
+  return {
+    prefixo: match[1],
+    numero: Number(match[2])
+  };
+}
+
+function compararCodigoSub(a, b) {
+  const codigoA = separarCodigoSub(a?.id || a);
+  const codigoB = separarCodigoSub(b?.id || b);
+  const prefixo = codigoA.prefixo.localeCompare(codigoB.prefixo);
+
+  if (prefixo !== 0) return prefixo;
+  if (codigoA.numero !== codigoB.numero) return codigoA.numero - codigoB.numero;
+
+  return String(a?.id || a || "").localeCompare(String(b?.id || b || ""));
+}
+
+async function excluirDocumentosDaColecao(collectionRef) {
+  const snap = await getDocs(collectionRef);
+
+  for (const docSnap of snap.docs) {
+    await deleteDoc(docSnap.ref);
+  }
+}
+
+async function excluirDadosDoSub(subId) {
+  await excluirDocumentosDaColecao(membrosCollection(subId));
+  await excluirDocumentosDaColecao(obrasCollection(subId));
+  await excluirDocumentosDaColecao(verificacoesCollection(subId));
+  await excluirDocumentosDaColecao(subConfigCollection(subId));
 }
 
 function normalizarObra(dados) {
@@ -96,33 +153,56 @@ export async function salvarConfigGeral(id, dados) {
 
 export async function criarSubsPadraoSeNecessario() {
   const snap = await getDocs(collection(db, COLLECTION_ROOT));
+  const subsExistentes = new Map(snap.docs.map(docSnap => [docSnap.id, docSnap.data()]));
+  const migracaoSnap = await getDoc(configDoc(MIGRACAO_SUBS_OFICIAIS_ID));
+  const deveRecadastrarSubsOficiais = !migracaoSnap.exists();
+  const idsOficiais = new Set(SUBS_OFICIAIS);
 
-  if (!snap.empty) {
-    const subsExistentes = new Set(snap.docs.map(docSnap => docSnap.id));
-    const novosSubsPadrao = ["SF04"];
+  for (const subId of SUBS_OFICIAIS) {
+    const sub = DEFAULT_SUBS[subId];
 
-    for (const subId of novosSubsPadrao) {
-      const sub = DEFAULT_SUBS[subId];
+    if (!sub) continue;
 
-      if (sub && !subsExistentes.has(sub.id)) {
-        await setDoc(subDoc(sub.id), {
-          ...sub,
-          criadoEm: getTodayISO(),
-          atualizadoEm: getTodayISO()
-        }, { merge: true });
-      }
+    const existente = subsExistentes.get(sub.id);
+
+    if (!deveRecadastrarSubsOficiais && existente) {
+      continue;
     }
 
+    await setDoc(subDoc(sub.id), {
+      ...sub,
+      criadoEm: existente?.criadoEm || getTodayISO(),
+      atualizadoEm: getTodayISO()
+    });
+  }
+
+  if (!deveRecadastrarSubsOficiais) {
     return;
   }
 
-  for (const sub of Object.values(DEFAULT_SUBS)) {
-    await setDoc(subDoc(sub.id), {
-      ...sub,
-      criadoEm: getTodayISO(),
-      atualizadoEm: getTodayISO()
-    }, { merge: true });
+  const falhasExclusao = [];
+
+  for (const docSnap of snap.docs) {
+    const subId = docSnap.id;
+
+    if (!idsOficiais.has(subId)) {
+      try {
+        await excluirSub(subId);
+      } catch (error) {
+        console.error(`Erro ao excluir o sub antigo ${subId}:`, error);
+        falhasExclusao.push(subId);
+      }
+    }
   }
+
+  if (falhasExclusao.length) {
+    return;
+  }
+
+  await setDoc(configDoc(MIGRACAO_SUBS_OFICIAIS_ID), {
+    aplicadoEm: getTodayISO(),
+    subs: SUBS_OFICIAIS
+  });
 }
 
 export async function listarSubs() {
@@ -133,11 +213,11 @@ export async function listarSubs() {
     ...docSnap.data()
   }));
 
-  return subs.sort((a, b) => String(a.id || "").localeCompare(String(b.id || "")));
+  return subs.sort(compararCodigoSub);
 }
 
 export async function buscarSub(subId) {
-  const snap = await getDoc(subDoc(subId));
+  const snap = await getDoc(subDoc(normalizarSubId(subId)));
 
   if (!snap.exists()) return null;
 
@@ -148,7 +228,7 @@ export async function buscarSub(subId) {
 }
 
 export async function salvarSub(sub) {
-  const id = String(sub.id || "").trim().toUpperCase();
+  const id = normalizarSubId(sub.id);
   const modelo = sub.modelo || "chama";
 
   if (!id) {
@@ -175,9 +255,10 @@ export async function salvarSub(sub) {
 }
 
 export async function atualizarSub(subId, dados) {
+  const id = normalizarSubId(subId);
   const modelo = dados.modelo || "chama";
 
-  await updateDoc(subDoc(subId), {
+  await updateDoc(subDoc(id), {
     nome: dados.nome,
     botao: dados.botao,
     subtitulo: dados.subtitulo,
@@ -195,14 +276,30 @@ export async function atualizarSub(subId, dados) {
 }
 
 export async function excluirSub(subId) {
-  await deleteDoc(subDoc(subId));
+  const id = normalizarSubId(subId);
+
+  if (!id) {
+    throw new Error("Código do sub obrigatório.");
+  }
+
+  try {
+    await excluirDadosDoSub(id);
+  } catch (error) {
+    console.error(`Erro ao limpar dados internos do sub ${id}:`, error);
+  }
+
+  await deleteDoc(subDoc(id));
 }
 
 export async function garantirSub(sub) {
+  const id = normalizarSubId(sub?.id);
   const modelo = sub?.modelo || "chama";
 
-  await setDoc(subDoc(sub.id), {
+  if (!id) return;
+
+  await setDoc(subDoc(id), {
     ...sub,
+    id,
     modelos: {
       ...modelosPadrao(modelo),
       ...(sub?.modelos || {})

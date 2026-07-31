@@ -41,11 +41,10 @@ const state = {
 
 const ICONES_FIXOS_SUBS = {
   A1: "🔥",
-  A2: "📖",
   A6: "𖤐",
   A7: "🗺️",
-  A9: "🫀",
-  A10: "☄️"
+  A10: "☄️",
+  A17: "🌙"
 };
 
 function getSubConfig() {
