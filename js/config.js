@@ -674,6 +674,7 @@ export const ROTAS = {
   DASHBOARD: "dashboard",
   MEMBROS: "membros",
   OBRAS: "obras",
+  IMPORTAR_FICHA: "importar-ficha",
   GRADE: "grade",
   VERIFICACOES: "verificacoes",
   FICHA: "ficha",

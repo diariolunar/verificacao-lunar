@@ -359,6 +359,7 @@ function renderAppShell() {
           ${navButton(ROTAS.DASHBOARD, "🏠", "Início")}
           ${navButton(ROTAS.MEMBROS, "👥", "Membros")}
           ${navButton(ROTAS.OBRAS, "📚", "Obras")}
+          ${navButton(ROTAS.IMPORTAR_FICHA, "📥", "Importar Ficha")}
           ${navButton(ROTAS.GRADE, "📅", "Grade Semanal")}
           ${navButton(ROTAS.VERIFICACOES, "📜", "Verificações")}
           ${navButton(ROTAS.FICHA, "👁️", "Visualizar Ficha")}
@@ -524,6 +525,12 @@ function renderDashboard() {
         <span>Cadastre obras, links e observações fixas.</span>
       </button>
 
+      <button class="dashboard-card" type="button" data-go="${ROTAS.IMPORTAR_FICHA}">
+        <div class="icon">📥</div>
+        <strong>Importar Ficha</strong>
+        <span>Cole uma ficha e cadastre membro e obra automaticamente.</span>
+      </button>
+
       <button class="dashboard-card" type="button" data-go="${ROTAS.GRADE}">
         <div class="icon">📅</div>
         <strong>Grade Semanal</strong>
@@ -600,6 +607,12 @@ async function renderRotaAtual() {
     if (state.rota === ROTAS.OBRAS) {
       const renderObrasPage = await carregarModuloPagina("./obras.js", "renderObrasPage");
       await renderObrasPage(getContext());
+      return;
+    }
+
+    if (state.rota === ROTAS.IMPORTAR_FICHA) {
+      const renderImportarFichaPage = await carregarModuloPagina("./importar-ficha.js", "renderImportarFichaPage");
+      await renderImportarFichaPage(getContext());
       return;
     }
 

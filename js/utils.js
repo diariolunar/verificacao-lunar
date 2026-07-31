@@ -147,7 +147,7 @@ export function confirmarAcao({
 
     card.innerHTML = `
       <h3 style="margin:0 0 10px;font-size:1.25rem;">${escapeHTML(titulo)}</h3>
-      <p style="margin:0;color:#c7b7dd;line-height:1.5;">${escapeHTML(mensagem)}</p>
+      <p style="margin:0;color:#c7b7dd;line-height:1.5;white-space:pre-wrap;">${escapeHTML(mensagem)}</p>
     `;
 
     const actions = document.createElement("div");

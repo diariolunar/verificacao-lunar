@@ -334,13 +334,15 @@ export async function buscarMembro(subId, membroId) {
 }
 
 export async function criarMembro(subId, dados) {
-  await addDoc(membrosCollection(subId), {
+  const ref = await addDoc(membrosCollection(subId), {
     nome: dados.nome || "",
     user: dados.user || "",
     semana: Number(dados.semana || 0),
     criadoEm: getTodayISO(),
     atualizadoEm: getTodayISO()
   });
+
+  return ref.id;
 }
 
 export async function atualizarMembro(subId, membroId, dados) {
@@ -404,11 +406,13 @@ export async function buscarObra(subId, obraId) {
 export async function criarObra(subId, dados) {
   const obra = normalizarObra(dados);
 
-  await addDoc(obrasCollection(subId), {
+  const ref = await addDoc(obrasCollection(subId), {
     ...obra,
     criadoEm: getTodayISO(),
     atualizadoEm: getTodayISO()
   });
+
+  return ref.id;
 }
 
 export async function atualizarObra(subId, obraId, dados) {
