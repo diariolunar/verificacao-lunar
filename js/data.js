@@ -338,6 +338,7 @@ export async function criarMembro(subId, dados) {
     nome: dados.nome || "",
     user: dados.user || "",
     semana: Number(dados.semana || 0),
+    gatilhos: dados.gatilhos || "",
     ativo: dados.ativo !== false,
     criadoEm: getTodayISO(),
     atualizadoEm: getTodayISO()
@@ -353,6 +354,7 @@ export async function atualizarMembro(subId, membroId, dados) {
     nome: dados.nome || "",
     user: dados.user || "",
     semana: Number(dados.semana || 0),
+    gatilhos: dados.gatilhos || "",
     ativo: dados.ativo !== false,
     atualizadoEm: getTodayISO()
   });

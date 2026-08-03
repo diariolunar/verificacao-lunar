@@ -3,6 +3,7 @@ import {
   listarObras,
   criarMembro,
   criarObra,
+  atualizarMembro,
   atualizarObra
 } from "./data.js";
 
@@ -131,12 +132,8 @@ function normalizarRespostaTexto(valor) {
   return resposta;
 }
 
-function montarObservacoes({ gatilhoLeitura, gatilhoObra }) {
+function montarObservacoes({ gatilhoObra }) {
   const linhas = [];
-
-  if (normalizarRespostaTexto(gatilhoLeitura)) {
-    linhas.push(`Gatilho de leitura do autor: ${normalizarRespostaTexto(gatilhoLeitura)}.`);
-  }
 
   if (normalizarRespostaTexto(gatilhoObra)) {
     linhas.push(`Gatilhos da obra: ${normalizarRespostaTexto(gatilhoObra)}.`);
@@ -169,6 +166,7 @@ export function parseFicha(texto, subId) {
   return {
     nome: limparValor(nome),
     user: limparUser(user),
+    gatilhos: normalizarRespostaTexto(gatilhoLeitura),
     obra: {
       titulo: limparValor(titulo),
       link: limparValor(link),
@@ -176,7 +174,7 @@ export function parseFicha(texto, subId) {
       prologoMais1000: ehRespostaSim(prologo),
       capitulosMais4100: normalizarRespostaTexto(capitulosMais4100),
       capitulosMenos500: normalizarRespostaTexto(capitulosMenos500),
-      observacoes: montarObservacoes({ gatilhoLeitura, gatilhoObra })
+      observacoes: montarObservacoes({ gatilhoObra })
     }
   };
 }
@@ -291,15 +289,30 @@ async function importarFicha({ state, dados }) {
     const membroId = await criarMembro(state.subId, {
       nome: dados.nome,
       user: dados.user,
-      semana: 0
+      semana: 0,
+      gatilhos: dados.gatilhos
     });
 
     membro = {
       id: membroId,
       nome: dados.nome,
-      user: dados.user
+      user: dados.user,
+      gatilhos: dados.gatilhos
     };
     membroCriado = true;
+  } else if (dados.gatilhos && !membro.gatilhos) {
+    await atualizarMembro(state.subId, membro.id, {
+      nome: membro.nome,
+      user: membro.user,
+      semana: membro.semana,
+      ativo: membro.ativo !== false,
+      gatilhos: dados.gatilhos
+    });
+
+    membro = {
+      ...membro,
+      gatilhos: dados.gatilhos
+    };
   }
 
   const novaObra = {

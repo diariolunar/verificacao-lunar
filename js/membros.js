@@ -47,6 +47,7 @@ export async function renderMembrosPage(context) {
           <h4>${escapeHTML(membro.nome || "")}</h4>
           <p>User: ${escapeHTML(membro.user || "")}</p>
           <p>Semana atual: ${Number(membro.semana || 0)}</p>
+          <p>Gatilhos: ${escapeHTML(membro.gatilhos || "Nao informado")}</p>
           ${membroAtivo(membro) ? "" : `<p><span class="badge">Desativado</span></p>`}
         </div>
 
@@ -216,6 +217,14 @@ function abrirFormularioMembro({ state, refresh, membro }) {
         />
       </div>
 
+      <div class="form-row">
+        <label for="gatilhosMembro">Gatilhos de leitura</label>
+        <textarea
+          id="gatilhosMembro"
+          placeholder="Ex: abandono, violencia, cobras..."
+        >${escapeHTML(membro?.gatilhos || "")}</textarea>
+      </div>
+
       <div class="form-actions">
         <button class="btn" type="submit">${editando ? "Salvar alteracoes" : "Cadastrar membro"}</button>
         <button class="btn secondary" type="button" id="cancelarMembro">Cancelar</button>
@@ -241,6 +250,7 @@ function abrirFormularioMembro({ state, refresh, membro }) {
     const nome = document.getElementById("nomeMembro")?.value.trim();
     const user = document.getElementById("userMembro")?.value.trim();
     const semana = Number(document.getElementById("semanaMembro")?.value || 0);
+    const gatilhos = document.getElementById("gatilhosMembro")?.value.trim();
 
     if (!nome || !user) {
       mostrarToast("Preencha nome e user do membro.");
@@ -251,6 +261,7 @@ function abrirFormularioMembro({ state, refresh, membro }) {
       nome,
       user,
       semana,
+      gatilhos,
       ativo: membro?.ativo !== false
     };
 

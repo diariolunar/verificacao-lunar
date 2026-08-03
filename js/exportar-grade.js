@@ -230,7 +230,7 @@ function montarBlocoObra({ template, dia, numero, obra, membros, mostrarNumero, 
     capitulosMais4100: valorOuNao(obra.capitulosMais4100),
     capitulosMenos500: valorOuNao(obra.capitulosMenos500),
     gatilhosObra: valorOuNao(obra.observacoes),
-    gatilhosLeitura: "Não",
+    gatilhosLeitura: valorOuNao(membro?.gatilhos),
     regraLeitura: regraLeituraPrincipal(obra, sub?.modelo),
     observacoes: montarObservacoesPrincipal(obra),
     alternativa: montarAlternativa(obra, sub)
