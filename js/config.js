@@ -207,7 +207,7 @@ Obra 02.: {{obra2}}`,
     gradeDiaBlocoCabecalho: `🌈━━━━━━━━━━🤍━━━━━━━━━━🌈
 📋 𝐆𝐑𝐀𝐃𝐄 • {{diaMaiusculoEstilizado}}`,
 
-    gradeObra: `📖 𝐎𝐁𝐑𝐀 𝟏
+    gradeObra: `📖 𝐎𝐁𝐑𝐀 {{numeroObraDecorado}}
 {{diaNomeIcone}} 𝐍𝐨𝐦𝐞: {{autor}}
 {{diaUserIcone}} 𝐔𝐬𝐞𝐫: {{userOriginal}}
 📚 𝐎𝐛𝐫𝐚: {{tituloObra}}
@@ -702,7 +702,7 @@ export const DEFAULT_SUBS = {
     subtitulo: "Sub Lunar A-3",
     cor: "#ec4899",
     modelo: "entreNos",
-    obrasPorDia: 1,
+    obrasPorDia: 2,
     ativo: true,
     icone: "🌈",
     modelos: DEFAULT_MODELOS.entreNos
