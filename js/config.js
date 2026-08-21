@@ -45,7 +45,7 @@ export const MODELOS_SUB = {
   lamina: "Lâmina Sombria"
 };
 
-export const SUBS_OFICIAIS = ["A1", "A6", "A7", "A10", "A17"];
+export const SUBS_OFICIAIS = ["A1", "A2", "A6", "A7", "A10", "A17"];
 
 export const DEFAULT_MODELOS = {
   chama: {
@@ -105,57 +105,57 @@ Obra 02.: {{obra2}}`,
   },
 
   pagina: {
-    fichaCabecalho: `🧚‍♂PAGINA LIVRE 𝑨-𝟐 🧝‍♀🧌🦹‍♂🧞‍♂ VERIFICAÇÕES 🧛‍♂🧜‍♂
-
-🌙 𝐋𝐞𝐮
+    fichaCabecalho: `🧚‍♀️ 𝐕𝐄𝐑𝐈𝐅𝐈𝐂𝐀𝐂̧𝐎̃𝐄𝐒 🧚‍♀️
+🌙𝐋𝐞𝐮
 ☠ 𝐍𝐚̃𝐨 𝐥𝐞𝐮
 💅 𝐉𝐮𝐬𝐭𝐢𝐟𝐢𝐜𝐚𝐝𝐨
 🌼 𝐉𝐚́ 𝐡𝐚𝐯𝐢𝐚 𝐥𝐢𝐝𝐨 𝐚𝐧𝐭𝐞𝐬
-🙍 𝐅𝐚𝐥𝐭𝐚 𝐚𝐥𝐠𝐨
+🙍 𝐅𝐚𝐥𝐭𝐚 𝐚𝐥𝐠𝐨 (𝐜𝐨𝐦𝐞𝐧𝐭𝐚́𝐫𝐢𝐨 𝐨𝐮 𝐯𝐨𝐭𝐨)
 ✨𝐎𝐛𝐫𝐚 𝐝𝐨 𝐝𝐢𝐚
-⏳ 𝐒𝐞𝐦 𝐨𝐛𝐫𝐚`,
+⏳ 𝐒𝐞𝐦 𝐨𝐛𝐫𝐚
+⚰ 𝐒𝐚𝐢𝐮 𝐝𝐨 𝐠𝐫𝐮𝐩𝐨
+🧕🏻 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐞𝐦 𝐚𝐧𝐝𝐚𝐦𝐞𝐧𝐭𝐨 𝐧𝐨 𝐦𝐨𝐦𝐞𝐧𝐭𝐨 𝐝𝐚 𝐯𝐞𝐫𝐢𝐟𝐢𝐜𝐚𝐜̧𝐚̃𝐨
+⚠ 𝐈𝐧𝐟𝐫𝐚𝐜̧𝐚̃𝐨 𝐝𝐚𝐬 𝐫𝐞𝐠𝐫𝐚𝐬
+📲 𝐏𝐫𝐢𝐧𝐭𝐬 𝐧𝐨 𝐩𝐯
+⛔ 𝐑𝐞𝐦𝐨𝐯𝐢𝐝𝐨 𝐩𝐨𝐫 𝐢𝐧𝐟𝐫𝐚𝐜̧𝐚̃𝐨 𝐝𝐚𝐬 𝐫𝐞𝐠𝐫𝐚𝐬
+⏰ Leitura feita em tempo estimado`,
 
-    fichaMembro: `_______________
+    fichaMembro: `🌊━━━━━━━━━━━🏝️━━━━━━━━━━━🌊
+🌺 𝐍𝐨𝐦𝐞: {{nome}}
+🌊 𝐔𝐬𝐞𝐫: {{user}}
+☀️ ➤ 𝐒𝐄𝐌𝐀𝐍𝐀: {{semana}}
+🌴 ➤ 𝐃𝐈𝐀: {{dias}}
+🐚 ➤ 𝐏𝐎𝐍𝐓𝐎𝐒: {{pontos}}
+📝 ➤ 𝐅𝐄𝐄𝐃𝐁𝐀𝐂𝐊: {{feedbacks}}
+📚 ➤CAPÍTULOS EXTRAS: {{extras}}
+📖 ➤ 𝐋𝐄𝐈𝐓𝐔𝐑𝐀 𝐋𝐔𝐍𝐀𝐑: {{leituraLunar}}
+🌙 𝐎𝐁𝐑𝐀 𝟏: {{obra1}}
+🌙 O𝐁𝐑𝐀 𝟐: {{obra2}}`,
 
-🧙‍♂🧚‍♂ PAGINA LIVRE 𝑨-𝟐 🧛‍♂🧜‍♂
-
-🧝‍♀ Nome: {{nome}}
-🦇 User: {{user}}
-
-🌎 Semanas: {{semana}}
-🗺 Dias: {{dias}}
-🧭 Pontos: {{pontos}}
-🏗 Feedback: {{feedbacks}}
-📚 Capítulos Extras: {{extras}}
-🌌 Leitura Lunar:
-
-🏘 Obra 01: {{obra1}}
-🏘 Obra 02: {{obra2}}`,
-
-    fichaRodape: `________________________
-
+    fichaRodape: `🌊━━━━━━━━━━━🏝️━━━━━━━━━━━🌊
 🚨𝐀𝐓𝐄𝐍𝐂̧𝐀̃𝐎🚨
+𝐏𝐚𝐫𝐚 𝐠𝐚𝐫𝐚𝐧𝐭𝐢𝐫 𝐚 𝐨𝐫𝐠𝐚𝐧𝐢𝐳𝐚𝐜̧𝐚̃𝐨 𝐞 𝐞𝐟𝐢𝐜𝐢𝐞̂𝐧𝐜𝐢𝐚 𝐝𝐨 𝐠𝐫𝐮𝐩𝐨, 𝐞́ 𝐢𝐦𝐩𝐨𝐫𝐭𝐚𝐧𝐭𝐞 𝐪𝐮𝐞 𝐭𝐨𝐝𝐨𝐬 𝐞𝐬𝐭𝐞𝐣𝐚𝐦 𝐞𝐦 𝐝𝐢𝐚 𝐜𝐨𝐦 𝐬𝐮𝐚𝐬 𝐥𝐞𝐢𝐭𝐮𝐫𝐚𝐬. 𝐒𝐞 𝐯𝐨𝐜𝐞̂ 𝐟𝐢𝐜𝐨𝐮 𝐝𝐞𝐯𝐞𝐧𝐝𝐨 𝐥𝐞𝐢𝐭𝐮𝐫𝐚, 𝐩𝐨𝐫 𝐟𝐚𝐯𝐨𝐫, 𝐞𝐧𝐯𝐢𝐞 𝐨𝐬 𝐩𝐫𝐢𝐧𝐭𝐬 𝐧𝐨 𝐩𝐫𝐢𝐯𝐚𝐝𝐨 𝐩𝐚𝐫𝐚 𝐪𝐮𝐞 𝐞𝐮 𝐩𝐨𝐬𝐬𝐚 𝐚𝐭𝐮𝐚𝐥𝐢𝐳𝐚𝐫 𝐬𝐞𝐮𝐬 𝐫𝐞𝐠𝐢𝐬𝐭𝐫𝐨𝐬.
+𝐈𝐬𝐬𝐨 𝐞𝐯𝐢𝐭𝐚𝐫𝐚́ 𝐪𝐮𝐞 𝐞𝐮 𝐩𝐞𝐫𝐜𝐚 𝐭𝐞𝐦𝐩𝐨 𝐜𝐨𝐧𝐟𝐞𝐫𝐢𝐧𝐝𝐨 𝐚 𝐦𝐞𝐬𝐦𝐚 𝐜𝐨𝐢𝐬𝐚 𝐝𝐮𝐚𝐬 𝐯𝐞𝐳𝐞𝐬. 𝐀𝐥𝐞́𝐦 𝐝𝐢𝐬𝐬𝐨, 𝐬𝐞 𝐯𝐨𝐜𝐞̂ 𝐞𝐧𝐜𝐨𝐧𝐭𝐫𝐚𝐫 𝐚𝐥𝐠𝐮𝐦 𝐞𝐫𝐫𝐨 𝐧𝐚𝐬 𝐯𝐞𝐫𝐢𝐟𝐢𝐜𝐚𝐜̧𝐨̃𝐞𝐬, 𝐧𝐚̃𝐨 𝐡𝐞𝐬𝐢𝐭𝐞 𝐞𝐦 𝐦𝐞 𝐜𝐡𝐚𝐦𝐚𝐫 𝐧𝐨 𝐩𝐫𝐢𝐯𝐚𝐝𝐨. 𝐄𝐬𝐭𝐨𝐮 𝐚𝐪𝐮𝐢 𝐩𝐚𝐫𝐚 𝐚𝐣𝐮𝐝𝐚𝐫 𝐞 𝐫𝐞𝐬𝐨𝐥𝐯𝐞𝐫 𝐪𝐮𝐚𝐥𝐪𝐮𝐞𝐫 𝐩𝐫𝐨𝐛𝐥𝐞𝐦𝐚!
+😉 𝐕𝐚𝐦𝐨𝐬 𝐦𝐚𝐧𝐭𝐞𝐫 𝐨 𝐠𝐫𝐮𝐩𝐨 𝐨𝐫𝐠𝐚𝐧𝐢𝐳𝐚𝐝𝐨 𝐞 𝐟𝐨𝐜𝐚𝐝𝐨 𝐧𝐚𝐬 𝐡𝐢𝐬𝐭𝐨́𝐫𝐢𝐚𝐬 𝐢𝐧𝐜𝐫𝐢́𝐯𝐞𝐢𝐬 𝐪𝐮𝐞  𝐜𝐨𝐦𝐩𝐚𝐫𝐭𝐢𝐥𝐡𝐚𝐦𝐨𝐬! 𝐎𝐛𝐫𝐢𝐠𝐚𝐝𝐚 𝐩𝐞𝐥𝐚 𝐜𝐨𝐨𝐩𝐞𝐫𝐚𝐜̧𝐚̃𝐨! 📚👍`,
 
-𝐏𝐚𝐫𝐚 𝐠𝐚𝐫𝐚𝐧𝐭𝐢𝐫 𝐚 𝐨𝐫𝐠𝐚𝐧𝐢𝐳𝐚𝐜̧𝐚̃𝐨, 𝐞́ 𝐢𝐦𝐩𝐨𝐫𝐭𝐚𝐧𝐭𝐞 𝐪𝐮𝐞 𝐭𝐨𝐝𝐨𝐬 𝐞𝐬𝐭𝐞𝐣𝐚𝐦 𝐞𝐦 𝐝𝐢𝐚.`,
+    gradeSemanaCabecalho: `✨ PÁGINA LIVRE — 𝐀-2 ✨`,
 
-    gradeSemanaCabecalho: `🧙‍♂️🧚‍♂️ PAGINA LIVRE 𝑨-𝟐 🧌🧝‍♀️ GRADE DE OBRAS 🧛‍♂️🧜‍♂️`,
+    gradeDiaCabecalho: ``,
 
-    gradeDiaCabecalho: `🧙‍♂️🧚‍♂️ PAGINA LIVRE 𝑨-𝟐 🧌🧝‍♀️ GRADE DE OBRAS 🧛‍♂️🧜‍♂️`,
+    gradeDiaBlocoCabecalho: `🐉✨🧙‍♀️ ⋆｡˚✦ ─ ⭒ ─ ✦˚｡⋆ 🏰✨🧚‍♀️
+{{diaMaiusculo}}`,
 
-    gradeObra: `🧚‍♂️ {{diaMaiusculo}} {{numeroObra}} 🧜‍♂️
+    gradeObra: `⤷ {{numeroObraIcone}} 𝐎𝐁𝐑𝐀 {{numeroObraDecorado}} ˎˊ˗
+👤 𝐍𝐎𝐌𝐄: {{autor}}
+🧙‍♀️ 𝐔𝐒𝐄𝐑: {{userOriginal}}
+📖 𝐎𝐁𝐑𝐀: {{tituloObra}}
+🔗 𝐋𝐈𝐍𝐊: {{linkMarkdown}}
+{{observacoesOuRegra}}`,
 
-🧝‍♀️ Autor: {{autor}}
-🦇 User: {{user}}
-🛕 Nome da Obra: {{tituloObra}}
-🛸 Link: {{link}}
+    gradeSeparador: `· · ───── · 🧙‍♀️ · ───── · ·`,
 
-🛎️Obs.: {{regraLeitura}}
-{{observacoes}}
-{{alternativa}}`,
-
-    gradeSeparador: `---------■`,
-
-    gradeRodape: ``
+    gradeRodape: ``,
+    renderSemObra: true
   },
 
   trono: {
@@ -617,6 +617,19 @@ export const DEFAULT_SUBS = {
     obrasPorDia: 2,
     ativo: true,
     modelos: DEFAULT_MODELOS.chama
+  },
+
+  A2: {
+    id: "A2",
+    nome: "Página Livre",
+    botao: "🧚‍♀️ A-2 Página Livre",
+    subtitulo: "Sub Lunar A-2",
+    cor: "#ec4899",
+    modelo: "pagina",
+    obrasPorDia: 2,
+    ativo: true,
+    icone: "🧚‍♀️",
+    modelos: DEFAULT_MODELOS.pagina
   },
 
   A6: {

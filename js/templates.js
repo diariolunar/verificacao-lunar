@@ -49,11 +49,15 @@ export function getVariaveisGradeTexto() {
 {{diaTitulo}}
 {{diaMaiusculo}}
 {{numeroObra}}
+{{numeroObraIcone}}
+{{numeroObraDecorado}}
 {{autor}}
 {{nome}}
 {{user}}
+{{userOriginal}}
 {{tituloObra}}
 {{link}}
+{{linkMarkdown}}
 {{prologoMais1000}}
 {{capitulosMais4100}}
 {{capitulosMenos500}}
@@ -61,5 +65,6 @@ export function getVariaveisGradeTexto() {
 {{gatilhosLeitura}}
 {{regraLeitura}}
 {{observacoes}}
+{{observacoesOuRegra}}
 {{alternativa}}`;
 }
