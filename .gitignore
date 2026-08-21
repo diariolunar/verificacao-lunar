@@ -1,2 +1,5 @@
 .vercel
 .env*
+android/build/
+dist-apk/
+*.keystore

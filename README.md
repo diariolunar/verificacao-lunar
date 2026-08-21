@@ -24,3 +24,15 @@ Sistema estático em HTML, CSS e JavaScript puro com Firebase Auth e Firestore.
 ## Observação
 
 Os dados do sistema antigo ficam preservados porque a V2 usa `v2_subs`, não `subs`.
+
+## APK Android
+
+O APK é um wrapper Android WebView que abre a produção em `https://verificacao-lunar-89sx.vercel.app`.
+
+Para gerar novamente:
+
+```powershell
+.\android\build-apk.ps1
+```
+
+O arquivo assinado para instalação fica em `dist-apk\verificacao-lunar.apk`.
