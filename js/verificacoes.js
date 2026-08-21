@@ -79,6 +79,10 @@ function statusContaLeitura(status) {
   return STATUS_QUE_CONTAM_LEITURA.includes(status);
 }
 
+function statusNaoLeu(status) {
+  return status === "☠";
+}
+
 function statusPermiteFeedbackEExtra(status) {
   return status === "🌙";
 }
@@ -141,15 +145,22 @@ function calcularPontosMembro({ registro, gradeDia, obras, membroId }) {
     return 0;
   }
 
-  const cumpriuTodas = obrasObrigatorias.every(slot => statusContaLeitura(slot.status));
+  const pendenciasSemPenalidade = obrasObrigatorias.filter(slot => {
+    return !statusContaLeitura(slot.status) && !statusNaoLeu(slot.status);
+  });
+  const penalidadeNaoLeu = obrasObrigatorias.filter(slot => statusNaoLeu(slot.status)).length * 20;
 
-  if (!cumpriuTodas) {
-    return 0;
+  if (pendenciasSemPenalidade.length) {
+    return -penalidadeNaoLeu;
   }
 
-  let pontos = 0;
+  let pontos = -penalidadeNaoLeu;
 
   obrasObrigatorias.forEach(slot => {
+    if (statusNaoLeu(slot.status)) {
+      return;
+    }
+
     const ehObraPropria = isObraDoProprioMembro(slot.obra, membroId);
 
     pontos += 5;
