@@ -16,6 +16,7 @@ import { getTodayISO, ordenarPorCriacao } from "./utils.js";
 
 const MIGRACAO_SUBS_OFICIAIS_ID = "recadastro_subs_oficiais_modelos_a10_a17_2026_07_31";
 const MIGRACAO_A3_DUAS_OBRAS_ID = "ajuste_a3_duas_obras_2026_08_20";
+const MIGRACAO_GRADE_PADRAO_A2_A3_ID = "grade_padrao_a2_a3_2026_08_20";
 
 function subDoc(subId) {
   return doc(db, COLLECTION_ROOT, subId);
@@ -157,6 +158,7 @@ export async function criarSubsPadraoSeNecessario() {
   const subsExistentes = new Map(snap.docs.map(docSnap => [docSnap.id, docSnap.data()]));
   const migracaoSnap = await getDoc(configDoc(MIGRACAO_SUBS_OFICIAIS_ID));
   const migracaoA3Snap = await getDoc(configDoc(MIGRACAO_A3_DUAS_OBRAS_ID));
+  const migracaoGradePadraoA2A3Snap = await getDoc(configDoc(MIGRACAO_GRADE_PADRAO_A2_A3_ID));
   const deveRecadastrarSubsOficiais = !migracaoSnap.exists();
   const idsOficiais = new Set(SUBS_OFICIAIS);
 
@@ -192,6 +194,26 @@ export async function criarSubsPadraoSeNecessario() {
       aplicadoEm: getTodayISO(),
       sub: subA3.id,
       obrasPorDia: subA3.obrasPorDia
+    });
+  }
+
+  if (!migracaoGradePadraoA2A3Snap.exists()) {
+    const subsAtualizados = ["A2", "A3"];
+
+    for (const subId of subsAtualizados) {
+      const sub = DEFAULT_SUBS[subId];
+      const existente = subsExistentes.get(sub.id);
+
+      await setDoc(subDoc(sub.id), {
+        ...sub,
+        criadoEm: existente?.criadoEm || getTodayISO(),
+        atualizadoEm: getTodayISO()
+      }, { merge: true });
+    }
+
+    await setDoc(configDoc(MIGRACAO_GRADE_PADRAO_A2_A3_ID), {
+      aplicadoEm: getTodayISO(),
+      subs: subsAtualizados
     });
   }
 

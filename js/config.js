@@ -141,22 +141,23 @@ Obra 02.: {{obra2}}`,
 
     gradeSemanaCabecalho: `✨ PÁGINA LIVRE — 𝐀-2 ✨`,
 
-    gradeDiaCabecalho: ``,
-
-    gradeDiaBlocoCabecalho: `🐉✨🧙‍♀️ ⋆｡˚✦ ─ ⭒ ─ ✦˚｡⋆ 🏰✨🧚‍♀️
+    gradeDiaCabecalho: `🐉✨🧙‍♀️ ⋆｡˚✦ ─ ⭒ ─ ✦˚｡⋆ 🏰✨🧚‍♀️
 {{diaMaiusculo}}`,
 
-    gradeObra: `⤷ {{numeroObraIcone}} 𝐎𝐁𝐑𝐀 {{numeroObraDecorado}} ˎˊ˗
+    gradeObra: `🐉✨🧙‍♀️ ⋆｡˚✦ ─ ⭒ ─ ✦˚｡⋆ 🏰✨🧚‍♀️
+{{diaMaiusculo}}
+⤷ {{numeroObraIcone}} 𝐎𝐁𝐑𝐀 {{numeroObraDecorado}} ˎˊ˗
 👤 𝐍𝐎𝐌𝐄: {{autor}}
-🧙‍♀️ 𝐔𝐒𝐄𝐑: {{userOriginal}}
+🧙‍♀️ 𝐔𝐒𝐄𝐑: {{user}}
 📖 𝐎𝐁𝐑𝐀: {{tituloObra}}
-🔗 𝐋𝐈𝐍𝐊: {{linkMarkdown}}
-{{observacoesOuRegra}}`,
+🔗 𝐋𝐈𝐍𝐊: {{link}}
+📜 OBS: {{regraLeitura}}
+{{observacoes}}
+{{alternativa}}`,
 
     gradeSeparador: `· · ───── · 🧙‍♀️ · ───── · ·`,
 
-    gradeRodape: ``,
-    renderSemObra: true
+    gradeRodape: ``
   },
 
   entreNos: {
@@ -202,23 +203,23 @@ Obra 02.: {{obra2}}`,
 
     gradeSemanaCabecalho: ``,
 
-    gradeDiaCabecalho: ``,
-
-    gradeDiaBlocoCabecalho: `🌈━━━━━━━━━━🤍━━━━━━━━━━🌈
+    gradeDiaCabecalho: `🌈━━━━━━━━━━🤍━━━━━━━━━━🌈
 📋 𝐆𝐑𝐀𝐃𝐄 • {{diaMaiusculoEstilizado}}`,
 
-    gradeObra: `📖 𝐎𝐁𝐑𝐀 {{numeroObraDecorado}}
+    gradeObra: `🌈━━━━━━━━━━🤍━━━━━━━━━━🌈
+📋 𝐆𝐑𝐀𝐃𝐄 • {{diaMaiusculoEstilizado}}
+📖 𝐎𝐁𝐑𝐀 {{numeroObraDecorado}}
 {{diaNomeIcone}} 𝐍𝐨𝐦𝐞: {{autor}}
-{{diaUserIcone}} 𝐔𝐬𝐞𝐫: {{userOriginal}}
+{{diaUserIcone}} 𝐔𝐬𝐞𝐫: {{user}}
 📚 𝐎𝐛𝐫𝐚: {{tituloObra}}
-🔗 𝐋𝐢𝐧𝐤: {{linkMarkdown}}
-📝 𝐎𝐛𝐬𝐞𝐫𝐯𝐚çõ𝐞𝐬: {{observacoesOuRegra}}`,
+🔗 𝐋𝐢𝐧𝐤: {{link}}
+📝 𝐎𝐛𝐬𝐞𝐫𝐯𝐚çõ𝐞𝐬: {{regraLeitura}}
+{{observacoes}}
+{{alternativa}}`,
 
     gradeSeparador: ``,
 
-    gradeDiaBlocoRodape: `🌈━━━━━━━━━━🤍━━━━━━━━━━🌈`,
-
-    gradeRodape: ``
+    gradeRodape: `🌈━━━━━━━━━━🤍━━━━━━━━━━🌈`
   },
 
   trono: {

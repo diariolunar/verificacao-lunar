@@ -23,20 +23,8 @@ function isSemObraId(obraId) {
   return !obraId || obraId === "__SEM_OBRA__";
 }
 
-function criarObraSemObra(id) {
-  return {
-    id,
-    semObra: true,
-    titulo: "",
-    link: "",
-    membroId: ""
-  };
-}
-
-function getObraDaGrade(obrasPorId, obraId, modelos) {
-  if (isSemObraId(obraId)) {
-    return modelos.renderSemObra ? criarObraSemObra(obraId) : null;
-  }
+function getObraDaGrade(obrasPorId, obraId) {
+  if (isSemObraId(obraId)) return null;
 
   return obrasPorId.get(obraId);
 }
@@ -86,22 +74,6 @@ function formatarLinkMarkdown(link) {
 function regraLeituraPrincipal(obra, modelo = "normal") {
   if (obra?.semObra) return "";
 
-  if (modelo === "pagina") {
-    if (obra?.isPoesia) {
-      return "Ler especiais mais 5 capítulos, deixando pelo menos 3 comentários bem distribuídos";
-    }
-
-    return "Ler especiais mais 2 capítulos, deixando pelo menos 6 comentários bem distribuídos";
-  }
-
-  if (modelo === "entreNos") {
-    if (obra?.isPoesia) {
-      return "Ler cinco capítulos da obra, deixando no mínimo 3 comentários, no início, meio e fim. Não esqueça de curti cada capítulo lido!";
-    }
-
-    return "Ler dois capítulos da obra, deixando no mínimo 6 comentários, no início, meio e fim. Não esqueça de curti cada capítulo lido!";
-  }
-
   if (obra?.isPoesia) {
     if (modelo === "trono" || modelo === "lamina") {
       return "Leiam os especiais votando e deixando pelo menos 1 comentário + 5 capítulos deixando no 𝐌𝐈́𝐍𝐈𝐌𝐎 3 comentários.";
@@ -118,22 +90,6 @@ function regraLeituraPrincipal(obra, modelo = "normal") {
 }
 
 function regraLeituraAlternativa(obra, modelo = "normal") {
-  if (modelo === "pagina") {
-    if (obra?.alternativaIsPoesia) {
-      return "Ler especiais mais 5 capítulos, deixando pelo menos 3 comentários bem distribuídos";
-    }
-
-    return "Ler especiais mais 2 capítulos, deixando pelo menos 6 comentários bem distribuídos";
-  }
-
-  if (modelo === "entreNos") {
-    if (obra?.alternativaIsPoesia) {
-      return "Ler cinco capítulos da obra, deixando no mínimo 3 comentários, no início, meio e fim. Não esqueça de curti cada capítulo lido!";
-    }
-
-    return "Ler dois capítulos da obra, deixando no mínimo 6 comentários, no início, meio e fim. Não esqueça de curti cada capítulo lido!";
-  }
-
   if (obra?.alternativaIsPoesia) {
     if (modelo === "trono" || modelo === "lamina") {
       return "Leiam os especiais votando e deixando pelo menos 1 comentário + 5 capítulos deixando no 𝐌𝐈́𝐍𝐈𝐌𝐎 3 comentários.";
@@ -197,18 +153,14 @@ function montarObservacoesAlternativa(obra) {
 
 function montarObservacoesOuRegra({ observacoes, regraLeitura, modelo }) {
   if (observacoes) {
-    return modelo === "pagina" ? `📜 OBS: ${observacoes}` : observacoes;
+    return observacoes;
   }
 
   if (!regraLeitura) {
     return "";
   }
 
-  if (modelo === "entreNos") {
-    return regraLeitura;
-  }
-
-  return modelo === "pagina" ? `✨ ${regraLeitura} ✨` : regraLeitura;
+  return regraLeitura;
 }
 
 function valorOuNao(valor) {
@@ -268,22 +220,6 @@ function montarAlternativa(obra, sub) {
 
     linhas.push("");
     linhas.push("Lembrem-se: os comentários devem estar bem distribuídos entre o início, o meio e o fim.");
-
-    return linhas.join("\n");
-  }
-
-  if (sub?.modelo === "pagina") {
-    linhas.push("ヘ(.^o^)ノ＼(^_^.)𝒫𝒶𝓇𝒶 𝒬𝓊ℯ𝓂 𝒥𝒶́ ℒℯ𝓊 ヘ(.^o^)ノ＼(^_^.)");
-    linhas.push("");
-    linhas.push(`🎃 Obra: ${obra.alternativaTitulo || ""}`);
-    linhas.push(`👁️ Link: ${obra.alternativaLink || ""}`);
-    linhas.push(`🛎️Obs.: ${regraLeituraAlternativa(obra, sub?.modelo)}`);
-
-    const obs = montarObservacoesAlternativa(obra);
-
-    if (obs) {
-      linhas.push(obs);
-    }
 
     return linhas.join("\n");
   }
@@ -396,7 +332,7 @@ export async function gerarGradeExportada({
   const partes = [];
 
   if (tipo === "dia") {
-    partes.push(modelos.gradeDiaCabecalho || "");
+    partes.push(montarCabecalhoDia(modelos.gradeDiaCabecalho, dia));
 
     partes.push(await montarDia({
       sub,
@@ -439,16 +375,14 @@ export async function gerarGradeExportada({
 }
 
 async function montarDia({ sub, dia, grade, obrasPorId, membros, modelos }) {
-  const obra1 = getObraDaGrade(obrasPorId, grade[dia]?.obra1, modelos);
-  const obra2 = getObraDaGrade(obrasPorId, grade[dia]?.obra2, modelos);
+  const obra1 = getObraDaGrade(obrasPorId, grade[dia]?.obra1);
+  const obra2 = getObraDaGrade(obrasPorId, grade[dia]?.obra2);
 
-  const temObra1 = modelos.renderSemObra ? Boolean(obra1) : !isSemObra(obra1);
-  const temObra2 = modelos.renderSemObra ? Boolean(obra2) : !isSemObra(obra2);
+  const temObra1 = !isSemObra(obra1);
+  const temObra2 = !isSemObra(obra2);
   const mostrarNumero = temObra1 && temObra2;
 
   const blocos = [];
-  const cabecalhoDia = montarCabecalhoDia(modelos.gradeDiaBlocoCabecalho, dia);
-  const rodapeDia = montarCabecalhoDia(modelos.gradeDiaBlocoRodape, dia);
 
   const bloco1 = montarBlocoObra({
     template: modelos.gradeObra,
@@ -477,5 +411,5 @@ async function montarDia({ sub, dia, grade, obrasPorId, membros, modelos }) {
 
   const textoObras = blocos.join(modelos.gradeSeparador ? `\n\n${modelos.gradeSeparador}\n\n` : "\n\n");
 
-  return [cabecalhoDia, textoObras, rodapeDia].filter(Boolean).join("\n");
+  return textoObras;
 }
