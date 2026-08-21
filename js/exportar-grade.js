@@ -49,6 +49,34 @@ function numeroObraDecorado(numero) {
   return Number(numero) === 2 ? "𝟐" : "𝟏";
 }
 
+function getIconesEntreNosDia(dia) {
+  const mapa = {
+    Segunda: { nome: "💜", user: "🌸" },
+    Terça: { nome: "💛", user: "🌻" },
+    Quarta: { nome: "💚", user: "🍀" },
+    Quinta: { nome: "💜", user: "🌸" },
+    Sexta: { nome: "💙", user: "🦋" }
+  };
+
+  return mapa[dia] || { nome: "🌈", user: "🤍" };
+}
+
+function estilizarNegrito(texto) {
+  const mapa = {
+    A: "𝐀", B: "𝐁", C: "𝐂", D: "𝐃", E: "𝐄", F: "𝐅", G: "𝐆", H: "𝐇", I: "𝐈",
+    J: "𝐉", K: "𝐊", L: "𝐋", M: "𝐌", N: "𝐍", O: "𝐎", P: "𝐏", Q: "𝐐", R: "𝐑",
+    S: "𝐒", T: "𝐓", U: "𝐔", V: "𝐕", W: "𝐖", X: "𝐗", Y: "𝐘", Z: "𝐙",
+    Á: "Á", À: "À", Â: "Â", Ã: "Ã", É: "É", Ê: "Ê", Í: "Í", Ó: "Ó", Ô: "Ô",
+    Õ: "Õ", Ú: "Ú", Ç: "Ç"
+  };
+
+  return String(texto || "")
+    .toUpperCase()
+    .split("")
+    .map(char => mapa[char] || char)
+    .join("");
+}
+
 function formatarLinkMarkdown(link) {
   const texto = String(link || "").trim();
 
@@ -64,6 +92,14 @@ function regraLeituraPrincipal(obra, modelo = "normal") {
     }
 
     return "Ler especiais mais 2 capítulos, deixando pelo menos 6 comentários bem distribuídos";
+  }
+
+  if (modelo === "entreNos") {
+    if (obra?.isPoesia) {
+      return "Ler cinco capítulos da obra, deixando no mínimo 3 comentários, no início, meio e fim. Não esqueça de curti cada capítulo lido!";
+    }
+
+    return "Ler dois capítulos da obra, deixando no mínimo 6 comentários, no início, meio e fim. Não esqueça de curti cada capítulo lido!";
   }
 
   if (obra?.isPoesia) {
@@ -88,6 +124,14 @@ function regraLeituraAlternativa(obra, modelo = "normal") {
     }
 
     return "Ler especiais mais 2 capítulos, deixando pelo menos 6 comentários bem distribuídos";
+  }
+
+  if (modelo === "entreNos") {
+    if (obra?.alternativaIsPoesia) {
+      return "Ler cinco capítulos da obra, deixando no mínimo 3 comentários, no início, meio e fim. Não esqueça de curti cada capítulo lido!";
+    }
+
+    return "Ler dois capítulos da obra, deixando no mínimo 6 comentários, no início, meio e fim. Não esqueça de curti cada capítulo lido!";
   }
 
   if (obra?.alternativaIsPoesia) {
@@ -158,6 +202,10 @@ function montarObservacoesOuRegra({ observacoes, regraLeitura, modelo }) {
 
   if (!regraLeitura) {
     return "";
+  }
+
+  if (modelo === "entreNos") {
+    return regraLeitura;
   }
 
   return modelo === "pagina" ? `✨ ${regraLeitura} ✨` : regraLeitura;
@@ -286,14 +334,18 @@ function montarBlocoObra({ template, dia, numero, obra, membros, mostrarNumero, 
   const membro = getMembroDaObra(obra, membros);
   const observacoes = montarObservacoesPrincipal(obra);
   const regraLeitura = regraLeituraPrincipal(obra, sub?.modelo);
+  const iconesEntreNos = getIconesEntreNosDia(dia);
 
   const valores = {
     dia,
     diaTitulo: normalizarDiaTitulo(dia),
     diaMaiusculo: normalizarDiaMaiusculo(dia),
+    diaMaiusculoEstilizado: estilizarNegrito(normalizarDiaMaiusculo(dia)),
     numeroObra: mostrarNumero ? numeroObra(numero) : "",
     numeroObraIcone: numeroObraIconePorNumero(numero),
     numeroObraDecorado: numeroObraDecorado(numero),
+    diaNomeIcone: iconesEntreNos.nome,
+    diaUserIcone: iconesEntreNos.user,
     autor: obra.semObra ? "SEM OBRA" : membro?.nome || "",
     nome: obra.semObra ? "SEM OBRA" : membro?.nome || "",
     user: obra.semObra ? "" : limparUser(membro?.user || ""),
@@ -325,7 +377,8 @@ function montarCabecalhoDia(template, dia) {
   return renderTemplate(template, {
     dia,
     diaTitulo: normalizarDiaTitulo(dia),
-    diaMaiusculo: normalizarDiaMaiusculo(dia)
+    diaMaiusculo: normalizarDiaMaiusculo(dia),
+    diaMaiusculoEstilizado: estilizarNegrito(normalizarDiaMaiusculo(dia))
   });
 }
 
@@ -395,6 +448,7 @@ async function montarDia({ sub, dia, grade, obrasPorId, membros, modelos }) {
 
   const blocos = [];
   const cabecalhoDia = montarCabecalhoDia(modelos.gradeDiaBlocoCabecalho, dia);
+  const rodapeDia = montarCabecalhoDia(modelos.gradeDiaBlocoRodape, dia);
 
   const bloco1 = montarBlocoObra({
     template: modelos.gradeObra,
@@ -423,5 +477,5 @@ async function montarDia({ sub, dia, grade, obrasPorId, membros, modelos }) {
 
   const textoObras = blocos.join(modelos.gradeSeparador ? `\n\n${modelos.gradeSeparador}\n\n` : "\n\n");
 
-  return [cabecalhoDia, textoObras].filter(Boolean).join("\n");
+  return [cabecalhoDia, textoObras, rodapeDia].filter(Boolean).join("\n");
 }

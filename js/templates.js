@@ -48,9 +48,12 @@ export function getVariaveisGradeTexto() {
 {{dia}}
 {{diaTitulo}}
 {{diaMaiusculo}}
+{{diaMaiusculoEstilizado}}
 {{numeroObra}}
 {{numeroObraIcone}}
 {{numeroObraDecorado}}
+{{diaNomeIcone}}
+{{diaUserIcone}}
 {{autor}}
 {{nome}}
 {{user}}
