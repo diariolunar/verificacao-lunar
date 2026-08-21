@@ -5,5 +5,6 @@
     <item name="android:windowLightStatusBar">false</item>
     <item name="android:statusBarColor">#10001f</item>
     <item name="android:navigationBarColor">#10001f</item>
+    <item name="android:windowOptOutEdgeToEdgeEnforcement">true</item>
   </style>
 </resources>
