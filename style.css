@@ -225,6 +225,7 @@ textarea {
   border-radius: 15px;
   background: transparent;
   color: #f3e8ff;
+  text-decoration: none;
   text-align: left;
   transition: 0.18s ease;
 }
@@ -338,6 +339,7 @@ textarea {
   background: rgba(27, 15, 47, 0.88);
   box-shadow: var(--shadow);
   color: var(--text);
+  text-decoration: none;
   text-align: left;
   transition: 0.2s ease;
   min-width: 0;

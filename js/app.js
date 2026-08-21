@@ -30,6 +30,7 @@ import {
 } from "./utils.js";
 
 const root = document.getElementById("root");
+const CONFERIR_OBRAS_URL = "https://conferencialunar-g3gt.vercel.app/dashboard";
 
 const state = {
   user: null,
@@ -272,6 +273,15 @@ function navButton(rota, icon, label) {
   `;
 }
 
+function externalNavButton(url, icon, label) {
+  return `
+    <a class="nav-button" href="${url}">
+      <span>${icon}</span>
+      <span>${label}</span>
+    </a>
+  `;
+}
+
 function renderAppShellSemSub() {
   aplicarTema();
 
@@ -292,6 +302,7 @@ function renderAppShellSemSub() {
 
         <nav class="nav-list">
           ${navButton(ROTAS.SUBS, "⚙️", "Subs")}
+          ${externalNavButton(CONFERIR_OBRAS_URL, "🔎", "Conferir Obras")}
         </nav>
 
         <div class="sidebar-section-title">Acesso</div>
@@ -361,6 +372,7 @@ function renderAppShell() {
           ${navButton(ROTAS.DASHBOARD, "🏠", "Início")}
           ${navButton(ROTAS.MEMBROS, "👥", "Membros")}
           ${navButton(ROTAS.OBRAS, "📚", "Obras")}
+          ${externalNavButton(CONFERIR_OBRAS_URL, "🔎", "Conferir Obras")}
           ${navButton(ROTAS.IMPORTAR_FICHA, "📥", "Importar Ficha")}
           ${navButton(ROTAS.GRADE, "📅", "Grade Semanal")}
           ${navButton(ROTAS.VERIFICACOES, "📜", "Verificações")}
@@ -526,6 +538,12 @@ function renderDashboard() {
         <strong>Obras</strong>
         <span>Cadastre obras, links e observações fixas.</span>
       </button>
+
+      <a class="dashboard-card" href="${CONFERIR_OBRAS_URL}">
+        <div class="icon">🔎</div>
+        <strong>Conferir Obras</strong>
+        <span>Abra a plataforma de conferência das obras cadastradas.</span>
+      </a>
 
       <button class="dashboard-card" type="button" data-go="${ROTAS.IMPORTAR_FICHA}">
         <div class="icon">📥</div>
