@@ -47,6 +47,7 @@ const ICONES_FIXOS_SUBS = {
   A6: "𖤐",
   A7: "🗺️",
   A10: "☄️",
+  A15: "✦",
   A17: "🌙"
 };
 

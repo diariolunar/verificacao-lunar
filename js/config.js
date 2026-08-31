@@ -43,10 +43,11 @@ export const MODELOS_SUB = {
   cicatrizes: "Cicatrizes Literárias",
   ferias: "Sub de Férias",
   quasar: "Quasar",
+  santuario: "Santuário Lunar",
   lamina: "Lâmina Sombria"
 };
 
-export const SUBS_OFICIAIS = ["A1", "A2", "A3", "A6", "A7", "A10", "A17"];
+export const SUBS_OFICIAIS = ["A1", "A2", "A3", "A6", "A7", "A10", "A15", "A17"];
 
 export const DEFAULT_MODELOS = {
   chama: {
@@ -667,6 +668,75 @@ Lembrem-se: os comentários devem estar bem distribuídos entre o início, o mei
 
 🖤 𝐐𝐮𝐞 𝐚𝐬 𝐥𝐚̂𝐦𝐢𝐧𝐚𝐬 𝐬𝐞𝐣𝐚𝐦 𝐞𝐫𝐠𝐮𝐢𝐝𝐚𝐬, 𝐪𝐮𝐞 𝐚𝐬 𝐥𝐞𝐢𝐭𝐮𝐫𝐚𝐬 𝐜𝐨𝐫𝐭𝐞𝐦 𝐚 𝐞𝐬𝐜𝐮𝐫𝐢𝐝𝐚̃𝐨,
 𝐞 𝐪𝐮𝐞 𝐜𝐚𝐝𝐚 𝐨𝐛𝐫𝐚 𝐞𝐧𝐜𝐨𝐧𝐭𝐫𝐞 𝐬𝐞𝐮 𝐟𝐢𝐨 𝐧𝐚 𝐋𝐚̂𝐦𝐢𝐧𝐚 𝐒𝐨𝐦𝐛𝐫𝐢𝐚.`
+  },
+
+  santuario: {
+    fichaCabecalho: `✦🌙🤍 𝐀-𝟏𝟓 ✦ 𝐒𝐀𝐍𝐓𝐔𝐀́𝐑𝐈𝐎 𝐋𝐔𝐍𝐀𝐑 🤍🌙✦
+
+━━━━━━━━━━━ ✦ ━━━━━━━━━━━
+📜 𝐕𝐄𝐑𝐈𝐅𝐈𝐂𝐀𝐂̧𝐀̃𝐎
+━━━━━━━━━━━ ✦ ━━━━━━━━━━━
+
+🌙 𝐋𝐞𝐮
+🌑 𝐍𝐚̃𝐨 𝐥𝐞𝐮
+💅 𝐉𝐮𝐬𝐭𝐢𝐟𝐢𝐜𝐚𝐝𝐨
+📜 𝐉𝐚́ 𝐡𝐚𝐯𝐢𝐚 𝐥𝐢𝐝𝐨 𝐚𝐧𝐭𝐞𝐬
+🙍 𝐅𝐚𝐥𝐭𝐚 𝐚𝐥𝐠𝐨
+✨ 𝐎𝐛𝐫𝐚 𝐝𝐨 𝐝𝐢𝐚
+⏳ 𝐒𝐞𝐦 𝐨𝐛𝐫𝐚
+🕯️ 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐞𝐦 𝐚𝐧𝐝𝐚𝐦𝐞𝐧𝐭𝐨
+🚫 𝐈𝐧𝐟𝐫𝐚𝐜̧𝐚̃𝐨 𝐧𝐨 𝐭𝐞𝐦𝐩𝐨
+⛔ 𝐑𝐞𝐦𝐨𝐯𝐢𝐝𝐨
+
+━━━━━━━━━━━ ✦ ━━━━━━━━━━━
+📖 𝐅𝐈𝐂𝐇𝐀 𝐃𝐎 𝐋𝐄𝐈𝐓𝐎𝐑
+━━━━━━━━━━━ ✦ ━━━━━━━━━━━`,
+
+    fichaMembro: `━━━━━━━━━━━ ✦ ━━━━━━━━━━━
+
+♛ 𝐍𝐨𝐦𝐞: {{nome}}
+✧ 𝐔𝐬𝐞𝐫: {{user}}
+
+🌙 𝐒𝐞𝐦𝐚𝐧𝐚𝐬: {{semana}}
+📅 𝐃𝐢𝐚𝐬: {{dias}}
+⭐ 𝐏𝐨𝐧𝐭𝐨𝐬: {{pontos}}
+💬 𝐅𝐞𝐞𝐝𝐛𝐚𝐜𝐤: {{feedbacks}}
+🔮 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐋𝐮𝐧𝐚𝐫: {{leituraLunar}}
+
+📖 𝐌𝐚𝐧𝐮𝐬𝐜𝐫𝐢𝐭𝐨 𝟎𝟏: {{obra1}}
+📖 𝐌𝐚𝐧𝐮𝐬𝐜𝐫𝐢𝐭𝐨 𝟎𝟐: {{obra2}}
+
+🌠 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐄𝐱𝐭𝐫𝐚: {{extras}}`,
+
+    fichaRodape: `━━━━━━━━━━━ ✦ ━━━━━━━━━━━
+
+🚨 𝐀𝐓𝐄𝐍𝐂̧𝐀̃𝐎 🚨
+
+𝐏𝐚𝐫𝐚 𝐠𝐚𝐫𝐚𝐧𝐭𝐢𝐫 𝐨 𝐛𝐨𝐦 𝐚𝐧𝐝𝐚𝐦𝐞𝐧𝐭𝐨 𝐝𝐨 𝐒𝐚𝐧𝐭𝐮𝐚́𝐫𝐢𝐨 𝐋𝐮𝐧𝐚𝐫, 𝐞́ 𝐢𝐦𝐩𝐨𝐫𝐭𝐚𝐧𝐭𝐞 𝐪𝐮𝐞 𝐭𝐨𝐝𝐨𝐬 𝐞𝐬𝐭𝐞𝐣𝐚𝐦 𝐞𝐦 𝐝𝐢𝐚.`,
+
+    gradeSemanaCabecalho: `✦🌙🤍 𝐀-𝟏𝟓 — 𝐒𝐀𝐍𝐓𝐔𝐀́𝐑𝐈𝐎 𝐋𝐔𝐍𝐀𝐑 🤍🌙✦
+𝐆𝐑𝐀𝐃𝐄 𝐃𝐄 𝐎𝐁𝐑𝐀𝐒 𝐃𝐀 𝐒𝐄𝐌𝐀𝐍𝐀`,
+
+    gradeDiaCabecalho: `✦🌙🤍 𝐀-𝟏𝟓 — 𝐒𝐀𝐍𝐓𝐔𝐀́𝐑𝐈𝐎 𝐋𝐔𝐍𝐀𝐑 🤍🌙✦`,
+
+    gradeObra: `━━━━━━━━━━━ ✦ ━━━━━━━━━━━
+🌙🤍 {{diaMaiusculo}} {{numeroObra}}
+━━━━━━━━━━━ ✦ ━━━━━━━━━━━
+🌙 𝐍𝐎𝐌𝐄: {{autor}}
+✧ 𝐔𝐒𝐄𝐑: {{user}}
+📖 𝐎𝐁𝐑𝐀/𝐌𝐀𝐍𝐔𝐒𝐂𝐑𝐈𝐓𝐎: {{tituloObra}}
+🔗 𝐋𝐈𝐍𝐊: {{link}}
+⚠️ 𝐎𝐁𝐒.: {{regraLeitura}}
+{{observacoes}}
+Lembrem-se: os comentários devem estar bem distribuídos entre o início, o meio e o fim.
+{{alternativa}}`,
+
+    gradeSeparador: ``,
+
+    gradeRodape: `━━━━━━━━━━━ ✦ ━━━━━━━━━━━
+🌙 𝐐𝐮𝐞 𝐜𝐚𝐝𝐚 𝐥𝐞𝐢𝐭𝐮𝐫𝐚 𝐚𝐛𝐫𝐚 𝐮𝐦 𝐩𝐨𝐫𝐭𝐚𝐥,
+𝐪𝐮𝐞 𝐜𝐚𝐝𝐚 𝐟𝐞𝐞𝐝𝐛𝐚𝐜𝐤 𝐬𝐞𝐣𝐚 𝐠𝐮𝐚𝐫𝐝𝐚𝐝𝐨 𝐬𝐨𝐛 𝐚 𝐥𝐮𝐳 𝐝𝐚 𝐥𝐮𝐚,
+𝐞 𝐪𝐮𝐞 𝐚𝐬 𝐨𝐛𝐫𝐚𝐬 𝐝𝐢𝐠𝐧𝐚𝐬 𝐬𝐞𝐣𝐚𝐦 𝐜𝐨𝐧𝐬𝐚𝐠𝐫𝐚𝐝𝐚𝐬 𝐧𝐨 𝐒𝐚𝐧𝐭𝐮𝐚́𝐫𝐢𝐨 𝐋𝐮𝐧𝐚𝐫.`
   }
 };
 
@@ -744,6 +814,19 @@ export const DEFAULT_SUBS = {
     ativo: true,
     icone: "☄️",
     modelos: DEFAULT_MODELOS.quasar
+  },
+
+  A15: {
+    id: "A15",
+    nome: "Santuário Lunar",
+    botao: "✦🌙🤍 A-15 • Santuário Lunar",
+    subtitulo: "Sub Lunar A-15",
+    cor: "#c4b5fd",
+    modelo: "santuario",
+    obrasPorDia: 2,
+    ativo: true,
+    icone: "✦",
+    modelos: DEFAULT_MODELOS.santuario
   },
 
   A17: {
