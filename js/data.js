@@ -18,6 +18,7 @@ import { getTodayISO, ordenarPorCriacao } from "./utils.js";
 const MIGRACAO_SUBS_OFICIAIS_ID = "recadastro_subs_oficiais_modelos_a10_a17_2026_07_31";
 const MIGRACAO_A3_DUAS_OBRAS_ID = "ajuste_a3_duas_obras_2026_08_20";
 const MIGRACAO_GRADE_PADRAO_A2_A3_ID = "grade_padrao_a2_a3_2026_08_20";
+const SUBS_EXCLUIDOS_ID = "subs_excluidos_intencionalmente";
 
 function subDoc(subId) {
   return doc(db, COLLECTION_ROOT, subId);
@@ -164,13 +165,19 @@ export async function criarSubsPadraoSeNecessario() {
   const migracaoSnap = await getDoc(configDoc(MIGRACAO_SUBS_OFICIAIS_ID));
   const migracaoA3Snap = await getDoc(configDoc(MIGRACAO_A3_DUAS_OBRAS_ID));
   const migracaoGradePadraoA2A3Snap = await getDoc(configDoc(MIGRACAO_GRADE_PADRAO_A2_A3_ID));
+  const subsExcluidosSnap = await getDoc(configDoc(SUBS_EXCLUIDOS_ID));
+  const subsExcluidos = new Set(
+    Object.entries(subsExcluidosSnap.data() || {})
+      .filter(([id, excluido]) => id !== "atualizadoEm" && excluido === true)
+      .map(([id]) => id)
+  );
   const deveRecadastrarSubsOficiais = !migracaoSnap.exists();
   const idsOficiais = new Set(SUBS_OFICIAIS);
 
   for (const subId of SUBS_OFICIAIS) {
     const sub = DEFAULT_SUBS[subId];
 
-    if (!sub) continue;
+    if (!sub || subsExcluidos.has(sub.id)) continue;
 
     const existente = subsExistentes.get(sub.id);
 
@@ -189,11 +196,13 @@ export async function criarSubsPadraoSeNecessario() {
     const subA3 = DEFAULT_SUBS.A3;
     const existenteA3 = subsExistentes.get(subA3.id);
 
-    await setDoc(subDoc(subA3.id), {
-      ...subA3,
-      criadoEm: existenteA3?.criadoEm || getTodayISO(),
-      atualizadoEm: getTodayISO()
-    }, { merge: true });
+    if (!subsExcluidos.has(subA3.id)) {
+      await setDoc(subDoc(subA3.id), {
+        ...subA3,
+        criadoEm: existenteA3?.criadoEm || getTodayISO(),
+        atualizadoEm: getTodayISO()
+      }, { merge: true });
+    }
 
     await setDoc(configDoc(MIGRACAO_A3_DUAS_OBRAS_ID), {
       aplicadoEm: getTodayISO(),
@@ -208,6 +217,8 @@ export async function criarSubsPadraoSeNecessario() {
     for (const subId of subsAtualizados) {
       const sub = DEFAULT_SUBS[subId];
       const existente = subsExistentes.get(sub.id);
+
+      if (subsExcluidos.has(sub.id)) continue;
 
       await setDoc(subDoc(sub.id), {
         ...sub,
@@ -233,7 +244,7 @@ export async function criarSubsPadraoSeNecessario() {
 
     if (!idsOficiais.has(subId)) {
       try {
-        await excluirSub(subId);
+        await excluirSub(subId, { registrarExclusao: false });
       } catch (error) {
         console.error(`Erro ao excluir o sub antigo ${subId}:`, error);
         falhasExclusao.push(subId);
@@ -281,7 +292,9 @@ export async function salvarSub(sub) {
     throw new Error("Código do sub obrigatório.");
   }
 
-  await setDoc(subDoc(id), {
+  const batch = writeBatch(db);
+
+  batch.set(subDoc(id), {
     id,
     nome: sub.nome || id,
     botao: sub.botao || sub.nome || id,
@@ -298,6 +311,13 @@ export async function salvarSub(sub) {
     atualizadoEm: getTodayISO(),
     criadoEm: sub.criadoEm || getTodayISO()
   }, { merge: true });
+
+  batch.set(configDoc(SUBS_EXCLUIDOS_ID), {
+    [id]: false,
+    atualizadoEm: getTodayISO()
+  }, { merge: true });
+
+  await batch.commit();
 }
 
 export async function atualizarSub(subId, dados) {
@@ -321,7 +341,7 @@ export async function atualizarSub(subId, dados) {
   });
 }
 
-export async function excluirSub(subId) {
+export async function excluirSub(subId, { registrarExclusao = true } = {}) {
   const id = normalizarSubId(subId);
 
   if (!id) {
@@ -334,7 +354,20 @@ export async function excluirSub(subId) {
     console.error(`Erro ao limpar dados internos do sub ${id}:`, error);
   }
 
-  await deleteDoc(subDoc(id));
+  if (!registrarExclusao) {
+    await deleteDoc(subDoc(id));
+    return;
+  }
+
+  const batch = writeBatch(db);
+
+  batch.delete(subDoc(id));
+  batch.set(configDoc(SUBS_EXCLUIDOS_ID), {
+    [id]: true,
+    atualizadoEm: getTodayISO()
+  }, { merge: true });
+
+  await batch.commit();
 }
 
 export async function garantirSub(sub) {
