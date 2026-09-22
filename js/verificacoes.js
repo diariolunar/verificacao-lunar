@@ -552,20 +552,25 @@ export async function renderVerificacoesPage(context) {
     `;
 
   view.innerHTML = `
-    <section class="card">
-      <div class="card-header">
+    <details class="card weekly-check-dropdown">
+      <summary class="weekly-check-summary">
         <div>
           <h3>🌠 Verificações semanais</h3>
           <p>Leitura Lunar e Chuva de Estrelas são registradas uma única vez por semana.</p>
         </div>
+        <span class="weekly-check-chevron" aria-hidden="true">⌄</span>
+      </summary>
 
-        <button class="btn" type="button" id="salvarVerificacaoSemanalButton">Salvar atividades semanais</button>
-      </div>
+      <div class="weekly-check-content">
+        <div class="weekly-check-list">
+          ${cardsSemanais}
+        </div>
 
-      <div class="weekly-check-list">
-        ${cardsSemanais}
+        <div class="form-actions">
+          <button class="btn" type="button" id="salvarVerificacaoSemanalButton">Salvar atividades semanais</button>
+        </div>
       </div>
-    </section>
+    </details>
 
     <section class="card">
       <div class="card-header">
