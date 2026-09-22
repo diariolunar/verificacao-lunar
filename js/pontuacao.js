@@ -1,6 +1,7 @@
 import {
   listarMembros,
-  listarVerificacoes
+  listarVerificacoes,
+  buscarVerificacaoSemanal
 } from "./data.js";
 
 import { DIAS_SEMANA, STATUS_QUE_CONTAM_LEITURA } from "./config.js";
@@ -107,13 +108,35 @@ function calcularPontosDia(registro) {
   return pontos + pontosAdicionais;
 }
 
-function calcularPontuacaoMembroSemana(membro, verificacoes) {
+function getAtividadesSemanaisMembro(membroId, verificacoes, verificacaoSemanal) {
+  const registroSemanal = verificacaoSemanal?.membros?.[membroId];
+
+  if (registroSemanal) {
+    return {
+      leituraLunar: Boolean(registroSemanal.leituraLunar),
+      chuvaEstrelas: Boolean(registroSemanal.chuvaEstrelas)
+    };
+  }
+
+  return {
+    leituraLunar: DIAS_SEMANA.some(dia => {
+      return Boolean(verificacoes?.[dia]?.membros?.[membroId]?.leituraLunar);
+    }),
+    chuvaEstrelas: false
+  };
+}
+
+function calcularPontuacaoMembroSemana(membro, verificacoes, verificacaoSemanal) {
   let pontos = 0;
   let feedbacks = 0;
   let extras = 0;
   let pontosAdicionais = 0;
   let diasComRegistro = 0;
-  let leituraLunar = false;
+  const atividadesSemanais = getAtividadesSemanaisMembro(
+    membro.id,
+    verificacoes,
+    verificacaoSemanal
+  );
 
   DIAS_SEMANA.forEach(dia => {
     const registro = verificacoes?.[dia]?.membros?.[membro.id];
@@ -138,9 +161,6 @@ function calcularPontuacaoMembroSemana(membro, verificacoes) {
       }
     });
 
-    if (registro.leituraLunar) {
-      leituraLunar = true;
-    }
   });
 
   return {
@@ -153,7 +173,8 @@ function calcularPontuacaoMembroSemana(membro, verificacoes) {
     extras,
     pontosAdicionais,
     diasComRegistro,
-    leituraLunar
+    leituraLunar: atividadesSemanais.leituraLunar,
+    chuvaEstrelas: atividadesSemanais.chuvaEstrelas
   };
 }
 
@@ -171,14 +192,19 @@ export async function renderPontuacaoPage(context) {
 
   const view = document.getElementById("view");
 
-  const [membros, verificacoes] = await Promise.all([
+  const [membros, verificacoes, verificacaoSemanal] = await Promise.all([
     listarMembros(state.subId),
-    listarVerificacoes(state.subId)
+    listarVerificacoes(state.subId),
+    buscarVerificacaoSemanal(state.subId)
   ]);
   const membrosAtivos = membros.filter(membroAtivo);
 
   const ranking = ordenarRanking(
-    membrosAtivos.map(membro => calcularPontuacaoMembroSemana(membro, verificacoes))
+    membrosAtivos.map(membro => calcularPontuacaoMembroSemana(
+      membro,
+      verificacoes,
+      verificacaoSemanal
+    ))
   );
 
   const totalPontos = ranking.reduce((acc, item) => acc + item.pontos, 0);
@@ -198,6 +224,7 @@ export async function renderPontuacaoPage(context) {
           <p>Feedbacks: ${item.feedbacks ? repetirCheck(item.feedbacks) : "—"}</p>
           <p>Extras: ${item.extras ? repetirCheck(item.extras) : "—"}</p>
           <p>Leitura Lunar: ${item.leituraLunar ? "✅" : "—"}</p>
+          <p>Chuva de Estrelas: ${item.chuvaEstrelas ? "✅" : "—"}</p>
         </div>
 
         <div class="points-pill">

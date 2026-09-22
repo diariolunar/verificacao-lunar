@@ -38,6 +38,7 @@ export function getVariaveisFichaTexto() {
 {{feedbacks}}
 {{extras}}
 {{leituraLunar}}
+{{chuvaEstrelas}}
 {{obra1}}
 {{obra2}}`;
 }

@@ -3,7 +3,10 @@ import {
   listarObras,
   buscarGrade,
   buscarVerificacaoDia,
-  salvarVerificacaoDia
+  salvarVerificacaoDia,
+  buscarVerificacaoSemanal,
+  salvarVerificacaoSemanal,
+  listarVerificacoes
 } from "./data.js";
 
 import {
@@ -59,10 +62,6 @@ function getExtraQtdRegistro(registro, numeroObra) {
   }
 
   return valor;
-}
-
-function getLeituraLunarRegistro(registro) {
-  return Boolean(registro?.leituraLunar);
 }
 
 function getPontosAdicionaisRegistro(registro) {
@@ -274,7 +273,6 @@ function montarCardObra({ numero, obra, registro, membroId }) {
 
 function montarCardMembro({ membro, registro, obra1, obra2, pontos }) {
   const registroComTravas = aplicarTravasObraPropria(registro, membro.id, obra1, obra2);
-  const leituraLunarMarcada = getLeituraLunarRegistro(registroComTravas);
   const pontosAdicionais = getPontosAdicionaisRegistro(registroComTravas);
 
   return `
@@ -291,15 +289,6 @@ function montarCardMembro({ membro, registro, obra1, obra2, pontos }) {
         </div>
       </div>
 
-      <label class="checkbox-row" style="margin-bottom: 14px;">
-        <input
-          type="checkbox"
-          data-field="leituraLunar"
-          ${leituraLunarMarcada ? "checked" : ""}
-        />
-        🌌 Fez Leitura Lunar da semana
-      </label>
-
       <div class="form-row" style="margin-bottom: 14px;">
         <label>Pontos adicionais</label>
         <input
@@ -315,6 +304,57 @@ function montarCardMembro({ membro, registro, obra1, obra2, pontos }) {
       <div class="check-columns">
         ${montarCardObra({ numero: 1, obra: obra1, registro: registroComTravas, membroId: membro.id })}
         ${montarCardObra({ numero: 2, obra: obra2, registro: registroComTravas, membroId: membro.id })}
+      </div>
+    </article>
+  `;
+}
+
+function getRegistroSemanalMembro({ membroId, verificacaoSemanal, verificacoes }) {
+  const registroSalvo = verificacaoSemanal?.membros?.[membroId];
+
+  if (registroSalvo) {
+    return {
+      leituraLunar: Boolean(registroSalvo.leituraLunar),
+      chuvaEstrelas: Boolean(registroSalvo.chuvaEstrelas)
+    };
+  }
+
+  const leituraLunarLegada = DIAS_SEMANA.some(dia => {
+    return Boolean(verificacoes?.[dia]?.membros?.[membroId]?.leituraLunar);
+  });
+
+  return {
+    leituraLunar: leituraLunarLegada,
+    chuvaEstrelas: false
+  };
+}
+
+function montarVerificacaoSemanalMembro({ membro, registro }) {
+  return `
+    <article class="weekly-check-member" data-weekly-member="${membro.id}">
+      <div>
+        <h4>${escapeHTML(membro.nome || "")}</h4>
+        <p>${escapeHTML(membro.user || "")}</p>
+      </div>
+
+      <div class="weekly-check-options">
+        <label class="checkbox-row">
+          <input
+            type="checkbox"
+            data-weekly-field="leituraLunar"
+            ${registro.leituraLunar ? "checked" : ""}
+          />
+          🌌 Leitura Lunar
+        </label>
+
+        <label class="checkbox-row">
+          <input
+            type="checkbox"
+            data-weekly-field="chuvaEstrelas"
+            ${registro.chuvaEstrelas ? "checked" : ""}
+          />
+          🌠 Chuva de Estrelas
+        </label>
       </div>
     </article>
   `;
@@ -448,14 +488,16 @@ function filtrarCardsMembros(termo) {
 export async function renderVerificacoesPage(context) {
   const { state, setSubtitle } = context;
 
-  setSubtitle("Marque leituras, feedbacks, extras e Leitura Lunar semanal.");
+  setSubtitle("Registre as leituras do dia e as atividades semanais.");
 
   const view = document.getElementById("view");
 
-  const [membros, obras, grade] = await Promise.all([
+  const [membros, obras, grade, verificacaoSemanal, verificacoes] = await Promise.all([
     listarMembros(state.subId),
     listarObras(state.subId),
-    buscarGrade(state.subId)
+    buscarGrade(state.subId),
+    buscarVerificacaoSemanal(state.subId),
+    listarVerificacoes(state.subId)
   ]);
   const membrosAtivos = membros.filter(membroAtivo);
   const idsMembrosAtivos = new Set(membrosAtivos.map(membro => membro.id));
@@ -467,6 +509,21 @@ export async function renderVerificacoesPage(context) {
 
   const obra1 = getObraPorId(obrasAtivas, gradeDia.obra1);
   const obra2 = getObraPorId(obrasAtivas, gradeDia.obra2);
+
+  const cardsSemanais = membrosAtivos.length
+    ? membrosAtivos.map(membro => montarVerificacaoSemanalMembro({
+      membro,
+      registro: getRegistroSemanalMembro({
+        membroId: membro.id,
+        verificacaoSemanal,
+        verificacoes
+      })
+    })).join("")
+    : `
+      <div class="empty-state">
+        Nenhum membro ativo neste sub.
+      </div>
+    `;
 
   const cards = membrosAtivos.length
     ? membrosAtivos.map(membro => {
@@ -498,7 +555,22 @@ export async function renderVerificacoesPage(context) {
     <section class="card">
       <div class="card-header">
         <div>
-          <h3>📜 Verificações</h3>
+          <h3>🌠 Verificações semanais</h3>
+          <p>Leitura Lunar e Chuva de Estrelas são registradas uma única vez por semana.</p>
+        </div>
+
+        <button class="btn" type="button" id="salvarVerificacaoSemanalButton">Salvar atividades semanais</button>
+      </div>
+
+      <div class="weekly-check-list">
+        ${cardsSemanais}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <div>
+          <h3>📜 Verificações diárias</h3>
           <p>Escolha o dia, marque os status e salve. Obras do próprio membro ficam travadas automaticamente como ✨ e entram na ficha apenas depois de salvar a verificação.</p>
         </div>
       </div>
@@ -557,6 +629,32 @@ export async function renderVerificacoesPage(context) {
     filtrarCardsMembros(event.target.value);
   });
 
+  document.getElementById("salvarVerificacaoSemanalButton")?.addEventListener("click", async () => {
+    const dadosMembros = {};
+
+    document.querySelectorAll("[data-weekly-member]").forEach(card => {
+      const membroId = card.dataset.weeklyMember;
+      dadosMembros[membroId] = {};
+
+      card.querySelectorAll("[data-weekly-field]").forEach(campo => {
+        dadosMembros[membroId][campo.dataset.weeklyField] = campo.checked;
+      });
+    });
+
+    try {
+      await salvarVerificacaoSemanal(state.subId, {
+        membros: {
+          ...(verificacaoSemanal?.membros || {}),
+          ...dadosMembros
+        }
+      });
+      mostrarToast("Atividades semanais salvas.");
+    } catch (error) {
+      console.error(error);
+      mostrarToast("Erro ao salvar atividades semanais.");
+    }
+  });
+
   document.querySelectorAll("[data-member-card]").forEach(card => {
     card.addEventListener("change", () => {
       atualizarEstadoCard({
@@ -600,7 +698,10 @@ export async function renderVerificacoesPage(context) {
         obra2
       );
 
-      dadosMembros[membroId] = registro;
+      dadosMembros[membroId] = {
+        ...(verificacaoSalva?.membros?.[membroId] || {}),
+        ...registro
+      };
     });
 
     try {

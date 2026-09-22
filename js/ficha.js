@@ -1,6 +1,7 @@
 import {
   listarMembros,
-  listarVerificacoes
+  listarVerificacoes,
+  buscarVerificacaoSemanal
 } from "./data.js";
 
 import { DIAS_SEMANA, STATUS_QUE_CONTAM_LEITURA } from "./config.js";
@@ -53,10 +54,6 @@ function getPontosAdicionais(registro) {
   }
 
   return Math.floor(valor);
-}
-
-function getLeituraLunar(registro) {
-  return Boolean(registro?.leituraLunar);
 }
 
 function statusContaLeitura(status) {
@@ -120,11 +117,33 @@ function calcularPontosDia(registro) {
   return pontos + pontosAdicionais;
 }
 
-function montarDadosMembro(membro, verificacoes) {
+function getAtividadesSemanaisMembro(membroId, verificacoes, verificacaoSemanal) {
+  const registroSemanal = verificacaoSemanal?.membros?.[membroId];
+
+  if (registroSemanal) {
+    return {
+      leituraLunar: Boolean(registroSemanal.leituraLunar),
+      chuvaEstrelas: Boolean(registroSemanal.chuvaEstrelas)
+    };
+  }
+
+  return {
+    leituraLunar: DIAS_SEMANA.some(dia => {
+      return Boolean(verificacoes?.[dia]?.membros?.[membroId]?.leituraLunar);
+    }),
+    chuvaEstrelas: false
+  };
+}
+
+function montarDadosMembro(membro, verificacoes, verificacaoSemanal) {
   let pontos = 0;
   let feedbacks = 0;
   let extras = 0;
-  let leituraLunar = false;
+  const atividadesSemanais = getAtividadesSemanaisMembro(
+    membro.id,
+    verificacoes,
+    verificacaoSemanal
+  );
 
   const obra1 = [];
   const obra2 = [];
@@ -156,9 +175,6 @@ function montarDadosMembro(membro, verificacoes) {
       }
     });
 
-    if (getLeituraLunar(registro)) {
-      leituraLunar = true;
-    }
   });
 
   return {
@@ -169,7 +185,8 @@ function montarDadosMembro(membro, verificacoes) {
     pontos,
     feedbacks: repetirCheck(feedbacks),
     extras: repetirCheck(extras),
-    leituraLunar: leituraLunar ? "✅" : "",
+    leituraLunar: atividadesSemanais.leituraLunar ? "✅" : "",
+    chuvaEstrelas: atividadesSemanais.chuvaEstrelas ? "✅" : "",
     obra1: obra1.join(""),
     obra2: obra2.join("")
   };
@@ -188,6 +205,12 @@ function contemLabelLeituraLunar(linha) {
   return texto.includes("leitura lunar");
 }
 
+function contemLabelChuvaEstrelas(linha) {
+  const texto = normalizarLinhaParaBusca(linha);
+
+  return texto.includes("chuva de estrelas");
+}
+
 function inserirLeituraLunarNoBloco(bloco, leituraLunar) {
   const valor = leituraLunar || "";
 
@@ -195,12 +218,17 @@ function inserirLeituraLunarNoBloco(bloco, leituraLunar) {
     return bloco.replaceAll("{{leituraLunar}}", valor);
   }
 
+  const linhas = bloco.split("\n");
+
+  if (!linhas.some(contemLabelLeituraLunar)) {
+    return `${bloco}\n🌌 Leitura Lunar: ${valor}`.trimEnd();
+  }
+
   if (!valor) {
     return bloco;
   }
 
-  return bloco
-    .split("\n")
+  return linhas
     .map(linha => {
       if (!contemLabelLeituraLunar(linha)) {
         return linha;
@@ -224,18 +252,38 @@ function inserirLeituraLunarNoBloco(bloco, leituraLunar) {
     .join("\n");
 }
 
-function gerarFicha({ sub, membros, verificacoes }) {
+function inserirChuvaEstrelasNoBloco(bloco, chuvaEstrelas) {
+  const linhas = bloco.split("\n");
+
+  if (linhas.some(contemLabelChuvaEstrelas)) {
+    return bloco;
+  }
+
+  const indiceLeituraLunar = linhas.findIndex(contemLabelLeituraLunar);
+  const linhaChuva = `🌠 Chuva de Estrelas: ${chuvaEstrelas || ""}`.trimEnd();
+
+  if (indiceLeituraLunar < 0) {
+    return `${bloco}\n${linhaChuva}`;
+  }
+
+  linhas.splice(indiceLeituraLunar + 1, 0, linhaChuva);
+
+  return linhas.join("\n");
+}
+
+function gerarFicha({ sub, membros, verificacoes, verificacaoSemanal }) {
   const modelos = getModelosDoSub(sub);
   const partes = [];
 
   partes.push(modelos.fichaCabecalho || "");
 
   membros.forEach(membro => {
-    const dados = montarDadosMembro(membro, verificacoes);
+    const dados = montarDadosMembro(membro, verificacoes, verificacaoSemanal);
 
     let bloco = renderTemplate(modelos.fichaMembro || "", dados);
 
     bloco = inserirLeituraLunarNoBloco(bloco, dados.leituraLunar);
+    bloco = inserirChuvaEstrelasNoBloco(bloco, dados.chuvaEstrelas);
 
     partes.push(bloco);
   });
@@ -252,16 +300,18 @@ export async function renderFichaPage(context) {
 
   const view = document.getElementById("view");
 
-  const [membros, verificacoes] = await Promise.all([
+  const [membros, verificacoes, verificacaoSemanal] = await Promise.all([
     listarMembros(state.subId),
-    listarVerificacoes(state.subId)
+    listarVerificacoes(state.subId),
+    buscarVerificacaoSemanal(state.subId)
   ]);
   const membrosAtivos = membros.filter(membroAtivo);
 
   const textoFicha = gerarFicha({
     sub: state.subConfig,
     membros: membrosAtivos,
-    verificacoes
+    verificacoes,
+    verificacaoSemanal
   });
 
   view.innerHTML = `

@@ -498,7 +498,7 @@ async function resetarFichaDaSemana() {
 
   const confirmar = await confirmarAcao({
     titulo: "Resetar ficha da semana?",
-    mensagem: "Isso vai apagar as verificações salvas da semana atual deste sub. Membros, obras e grade não serão apagados.",
+    mensagem: "Isso vai apagar as verificações diárias e as atividades semanais deste sub. Membros, obras e grade não serão apagados.",
     confirmarTexto: "Sim, resetar",
     cancelarTexto: "Cancelar",
     perigo: true
@@ -561,7 +561,7 @@ function renderDashboard() {
       <button class="dashboard-card" type="button" data-go="${ROTAS.VERIFICACOES}">
         <div class="icon">📜</div>
         <strong>Verificações</strong>
-        <span>Marque leituras, feedbacks, extras e Leitura Lunar.</span>
+        <span>Marque leituras, feedbacks, extras e atividades semanais.</span>
       </button>
 
       <button class="dashboard-card" type="button" data-go="${ROTAS.FICHA}">
@@ -579,7 +579,7 @@ function renderDashboard() {
       <button class="dashboard-card" type="button" id="resetFichaDashboardButton">
         <div class="icon">🧹</div>
         <strong>Resetar Ficha da Semana</strong>
-        <span>Limpa as verificações salvas e inicia uma nova semana de ficha.</span>
+        <span>Limpa verificações diárias e atividades semanais para iniciar uma nova ficha.</span>
       </button>
     </div>
   `;

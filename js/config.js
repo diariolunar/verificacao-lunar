@@ -1,4 +1,4 @@
-export const APP_VERSION = "2.3.0";
+export const APP_VERSION = "2.4.0";
 
 export const COLLECTION_ROOT = "v2_subs";
 
@@ -73,7 +73,8 @@ export const DEFAULT_MODELOS = {
 👑 Pontos: {{pontos}}
 📈 Feedback: {{feedbacks}}
 📚 Capítulos Extras: {{extras}}
-LEITURA LUNAR:
+LEITURA LUNAR: {{leituraLunar}}
+CHUVA DE ESTRELAS: {{chuvaEstrelas}}
 
 Obra 01.: {{obra1}}
 Obra 02.: {{obra2}}`,
@@ -131,6 +132,7 @@ Obra 02.: {{obra2}}`,
 📝 ➤ 𝐅𝐄𝐄𝐃𝐁𝐀𝐂𝐊: {{feedbacks}}
 📚 ➤CAPÍTULOS EXTRAS: {{extras}}
 📖 ➤ 𝐋𝐄𝐈𝐓𝐔𝐑𝐀 𝐋𝐔𝐍𝐀𝐑: {{leituraLunar}}
+🌠 ➤ 𝐂𝐇𝐔𝐕𝐀 𝐃𝐄 𝐄𝐒𝐓𝐑𝐄𝐋𝐀𝐒: {{chuvaEstrelas}}
 🌙 𝐎𝐁𝐑𝐀 𝟏: {{obra1}}
 🌙 O𝐁𝐑𝐀 𝟐: {{obra2}}`,
 
@@ -188,6 +190,7 @@ Obra 02.: {{obra2}}`,
 ✨ ➤ 𝐏𝐎𝐍𝐓𝐎𝐒: {{pontos}}
 📝 ➤ 𝐅𝐄𝐄𝐃𝐁𝐀𝐂𝐊: {{feedbacks}}
 📖 ➤ 𝐋𝐄𝐈𝐓𝐔𝐑𝐀 𝐋𝐔𝐍𝐀𝐑: {{leituraLunar}}
+🌠 ➤ 𝐂𝐇𝐔𝐕𝐀 𝐃𝐄 𝐄𝐒𝐓𝐑𝐄𝐋𝐀𝐒: {{chuvaEstrelas}}
 
 🌙 𝐎𝐁𝐑𝐀 𝟏: {{obra1}}
 🌙 𝐎𝐁𝐑𝐀 𝟐: {{obra2}}`,
@@ -257,7 +260,8 @@ Obra 02.: {{obra2}}`,
 📅 𝐃𝐢𝐚𝐬: {{dias}}
 ⭐ 𝐏𝐨𝐧𝐭𝐨𝐬: {{pontos}}
 💬 𝐅𝐞𝐞𝐝𝐛𝐚𝐜𝐤: {{feedbacks}}
-🔮 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐋𝐮𝐧𝐚𝐫:
+🔮 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐋𝐮𝐧𝐚𝐫: {{leituraLunar}}
+🌠 𝐂𝐡𝐮𝐯𝐚 𝐝𝐞 𝐄𝐬𝐭𝐫𝐞𝐥𝐚𝐬: {{chuvaEstrelas}}
 
 📕 𝐆𝐫𝐢𝐦𝐨́𝐫𝐢𝐨 𝟎𝟏: {{obra1}}
 📕 𝐆𝐫𝐢𝐦𝐨́𝐫𝐢𝐨 𝟎𝟐: {{obra2}}
@@ -328,7 +332,8 @@ e que as obras dignas encontrem seu lugar no 𝐓𝐫𝐨𝐧𝐨 𝐏𝐫𝐨�
 📅 𝐃𝐢𝐚𝐬: {{dias}}
 ⭐ 𝐏𝐨𝐧𝐭𝐨𝐬: {{pontos}}
 💬 𝐅𝐞𝐞𝐝𝐛𝐚𝐜𝐤: {{feedbacks}}
-🌌 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐋𝐮𝐧𝐚𝐑:
+🌌 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐋𝐮𝐧𝐚𝐑: {{leituraLunar}}
+🌠 𝐂𝐡𝐮𝐯𝐚 𝐝𝐞 𝐄𝐬𝐭𝐫𝐞𝐥𝐚𝐬: {{chuvaEstrelas}}
 
 📖 𝐌𝐮𝐧𝐝𝐨 𝟎𝟏: {{obra1}}
 📖 𝐌𝐮𝐧𝐝𝐨 𝟎𝟐: {{obra2}}
@@ -404,7 +409,8 @@ nas 𝐌𝐚𝐫𝐠𝐞𝐧𝐬 𝐝𝐞 𝐌𝐮𝐧𝐝𝐨𝐬.`
 💌 𝑫𝒊𝒂𝒔: {{dias}}
 👑 𝑷𝒐𝒏𝒕𝒐𝒔: {{pontos}}
 📊 𝑭𝒆𝒅𝒃𝒆𝒆𝒄𝒌: {{feedbacks}}
-🌟𝑳𝒆𝒊𝒕𝒖𝒓𝒂 𝑳𝒖𝒏𝒂𝒓:
+🌟𝑳𝒆𝒊𝒕𝒖𝒓𝒂 𝑳𝒖𝒏𝒂𝒓: {{leituraLunar}}
+🌠 𝑪𝒉𝒖𝒗𝒂 𝒅𝒆 𝑬𝒔𝒕𝒓𝒆𝒍𝒂𝒔: {{chuvaEstrelas}}
 
 *OBRA 1*: {{obra1}}
 *OBRA 2*: {{obra2}}
@@ -469,6 +475,7 @@ nas 𝐌𝐚𝐫𝐠𝐞𝐧𝐬 𝐝𝐞 𝐌𝐮𝐧𝐝𝐨𝐬.`
 💬 Feedbacks: {{feedbacks}}
 📚 Capítulos Extras: {{extras}}
 🌌 Leitura Lunar: {{leituraLunar}}
+🌠 Chuva de Estrelas: {{chuvaEstrelas}}
 
 📖 Obra 01: {{obra1}}
 📖 Obra 02: {{obra2}}`,
@@ -552,6 +559,7 @@ Se sim, informe quais.
 💌  Dias: {{dias}}
 👑 Pontos: {{pontos}}
 📚 Leitura Lunar: {{leituraLunar}}
+🌠 Chuva de Estrelas: {{chuvaEstrelas}}
 
 🌋 Obra 01: {{obra1}}
 Feedback: {{feedbacks}}
@@ -623,6 +631,7 @@ Caso encontre algum erro na verificação, chame no PV para correção.
 ⭐ 𝐏𝐨𝐧𝐭𝐨𝐬: {{pontos}}
 💬 𝐅𝐞𝐞𝐝𝐛𝐚𝐜𝐤: {{feedbacks}}
 🌑 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐋𝐮𝐧𝐚𝐫: {{leituraLunar}}
+🌠 𝐂𝐡𝐮𝐯𝐚 𝐝𝐞 𝐄𝐬𝐭𝐫𝐞𝐥𝐚𝐬: {{chuvaEstrelas}}
 
 📖 𝐎𝐛𝐫𝐚 𝟎𝟏: {{obra1}}
 ⚫ 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐄𝐱𝐭𝐫𝐚: {{extras}}`,
@@ -702,6 +711,7 @@ Lembrem-se: os comentários devem estar bem distribuídos entre o início, o mei
 ⭐ 𝐏𝐨𝐧𝐭𝐨𝐬: {{pontos}}
 💬 𝐅𝐞𝐞𝐝𝐛𝐚𝐜𝐤: {{feedbacks}}
 🔮 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐋𝐮𝐧𝐚𝐫: {{leituraLunar}}
+🌠 𝐂𝐡𝐮𝐯𝐚 𝐝𝐞 𝐄𝐬𝐭𝐫𝐞𝐥𝐚𝐬: {{chuvaEstrelas}}
 
 📖 𝐌𝐚𝐧𝐮𝐬𝐜𝐫𝐢𝐭𝐨 𝟎𝟏: {{obra1}}
 📖 𝐌𝐚𝐧𝐮𝐬𝐜𝐫𝐢𝐭𝐨 𝟎𝟐: {{obra2}}

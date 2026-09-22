@@ -38,6 +38,10 @@ function gradeDoc(subId) {
   return doc(db, COLLECTION_ROOT, subId, "config", "gradeSemanal");
 }
 
+function verificacaoSemanalDoc(subId) {
+  return doc(db, COLLECTION_ROOT, subId, "config", "verificacaoSemanal");
+}
+
 function verificacaoDoc(subId, dia) {
   return doc(db, COLLECTION_ROOT, subId, "verificacoes", dia);
 }
@@ -551,8 +555,25 @@ export async function salvarVerificacaoDia(subId, dia, dados) {
   });
 }
 
+export async function buscarVerificacaoSemanal(subId) {
+  const snap = await getDoc(verificacaoSemanalDoc(subId));
+
+  if (!snap.exists()) return null;
+
+  return snap.data();
+}
+
+export async function salvarVerificacaoSemanal(subId, dados) {
+  await setDoc(verificacaoSemanalDoc(subId), {
+    ...dados,
+    atualizadoEm: getTodayISO()
+  });
+}
+
 export async function limparVerificacoesDaSemana(subId, diasSemana) {
   for (const dia of diasSemana) {
     await deleteDoc(verificacaoDoc(subId, dia));
   }
+
+  await deleteDoc(verificacaoSemanalDoc(subId));
 }

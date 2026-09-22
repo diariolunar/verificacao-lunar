@@ -797,6 +797,43 @@ textarea[readonly] {
   gap: 14px;
 }
 
+.weekly-check-list {
+  display: grid;
+  gap: 10px;
+}
+
+.weekly-check-member {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(320px, auto);
+  align-items: center;
+  gap: 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-soft);
+}
+
+.weekly-check-member h4,
+.weekly-check-member p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.weekly-check-member p {
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+.weekly-check-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(150px, 1fr));
+  gap: 8px 18px;
+}
+
+.weekly-check-options .checkbox-row {
+  margin: 0;
+}
+
 .check-slot {
   display: grid;
   gap: 14px;
@@ -1015,6 +1052,11 @@ pre {
   .grade-columns,
   .check-columns,
   .sub-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .weekly-check-member,
+  .weekly-check-options {
     grid-template-columns: 1fr;
   }
 
