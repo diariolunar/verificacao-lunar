@@ -3,9 +3,9 @@ import {
   listarObras,
   buscarGrade,
   buscarVerificacaoDia,
-  salvarVerificacaoDia,
   buscarVerificacaoSemanal,
   salvarVerificacaoSemanal,
+  salvarVerificacoesCompletas,
   listarVerificacoes
 } from "./data.js";
 
@@ -485,6 +485,26 @@ function filtrarCardsMembros(termo) {
   });
 }
 
+function coletarAtividadesSemanais(verificacaoSemanal) {
+  const dadosMembros = {};
+
+  document.querySelectorAll("[data-weekly-member]").forEach(card => {
+    const membroId = card.dataset.weeklyMember;
+    dadosMembros[membroId] = {};
+
+    card.querySelectorAll("[data-weekly-field]").forEach(campo => {
+      dadosMembros[membroId][campo.dataset.weeklyField] = campo.checked;
+    });
+  });
+
+  return {
+    membros: {
+      ...(verificacaoSemanal?.membros || {}),
+      ...dadosMembros
+    }
+  };
+}
+
 export async function renderVerificacoesPage(context) {
   const { state, setSubtitle } = context;
 
@@ -576,7 +596,7 @@ export async function renderVerificacoesPage(context) {
       <div class="card-header">
         <div>
           <h3>📜 Verificações diárias</h3>
-          <p>Escolha o dia, marque os status e salve. Obras do próprio membro ficam travadas automaticamente como ✨ e entram na ficha apenas depois de salvar a verificação.</p>
+          <p>Escolha o dia, marque os status e salve. As atividades semanais também são salvas junto. Obras do próprio membro ficam travadas automaticamente como ✨ e entram na ficha apenas depois de salvar a verificação.</p>
         </div>
       </div>
 
@@ -635,24 +655,11 @@ export async function renderVerificacoesPage(context) {
   });
 
   document.getElementById("salvarVerificacaoSemanalButton")?.addEventListener("click", async () => {
-    const dadosMembros = {};
-
-    document.querySelectorAll("[data-weekly-member]").forEach(card => {
-      const membroId = card.dataset.weeklyMember;
-      dadosMembros[membroId] = {};
-
-      card.querySelectorAll("[data-weekly-field]").forEach(campo => {
-        dadosMembros[membroId][campo.dataset.weeklyField] = campo.checked;
-      });
-    });
-
     try {
-      await salvarVerificacaoSemanal(state.subId, {
-        membros: {
-          ...(verificacaoSemanal?.membros || {}),
-          ...dadosMembros
-        }
-      });
+      await salvarVerificacaoSemanal(
+        state.subId,
+        coletarAtividadesSemanais(verificacaoSemanal)
+      );
       mostrarToast("Atividades semanais salvas.");
     } catch (error) {
       console.error(error);
@@ -710,11 +717,14 @@ export async function renderVerificacoesPage(context) {
     });
 
     try {
-      await salvarVerificacaoDia(state.subId, diaAtual, {
-        membros: dadosMembros
-      });
+      await salvarVerificacoesCompletas(
+        state.subId,
+        diaAtual,
+        { membros: dadosMembros },
+        coletarAtividadesSemanais(verificacaoSemanal)
+      );
 
-      mostrarToast("Verificação salva.");
+      mostrarToast("Verificação e atividades semanais salvas.");
     } catch (error) {
       console.error(error);
       mostrarToast("Erro ao salvar verificação.");

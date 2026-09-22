@@ -8,7 +8,8 @@ import {
   addDoc,
   setDoc,
   updateDoc,
-  deleteDoc
+  deleteDoc,
+  writeBatch
 } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
 import { COLLECTION_ROOT, CONFIG_ROOT, DEFAULT_SUBS, DEFAULT_MODELOS, SUBS_OFICIAIS } from "./config.js";
@@ -568,6 +569,24 @@ export async function salvarVerificacaoSemanal(subId, dados) {
     ...dados,
     atualizadoEm: getTodayISO()
   });
+}
+
+export async function salvarVerificacoesCompletas(subId, dia, dadosDia, dadosSemanais) {
+  const batch = writeBatch(db);
+  const atualizadoEm = getTodayISO();
+
+  batch.set(verificacaoDoc(subId, dia), {
+    ...dadosDia,
+    dia,
+    atualizadoEm
+  });
+
+  batch.set(verificacaoSemanalDoc(subId), {
+    ...dadosSemanais,
+    atualizadoEm
+  });
+
+  await batch.commit();
 }
 
 export async function limparVerificacoesDaSemana(subId, diasSemana) {
