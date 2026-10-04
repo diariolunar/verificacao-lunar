@@ -5,6 +5,11 @@ import {
   mostrarToast
 } from "./utils.js";
 
+import {
+  buscarPreparacaoAtividade,
+  salvarPreparacaoAtividade
+} from "./data.js";
+
 const SUBS_SUPORTADOS = new Set(["A1", "A6", "A7", "A17"]);
 
 function campoTexto(id, label, tipo = "text", atributos = "") {
@@ -25,6 +30,15 @@ function obterDadosComuns(form) {
     user: String(dados.get("user") || "").trim(),
     link: String(dados.get("link") || "").trim()
   };
+}
+
+function preencherDadosComuns(form, dados = {}) {
+  const valores = dados || {};
+
+  form.elements.nomeObra.value = valores.obra || "";
+  form.elements.autor.value = valores.autor || "";
+  form.elements.user.value = valores.user || "";
+  form.elements.link.value = valores.link || "";
 }
 
 function abrirExportacao(titulo, texto) {
@@ -231,6 +245,9 @@ function camposComuns() {
 export async function renderPrepararLeituraLunarPage(context) {
   const { state, setSubtitle } = context;
   const subId = garantirSubSuportado(state);
+  const buscarPreparacao = context.buscarPreparacaoAtividade || buscarPreparacaoAtividade;
+  const salvarPreparacao = context.salvarPreparacaoAtividade || salvarPreparacaoAtividade;
+  const dadosSalvos = await buscarPreparacao(subId, "leituraLunar");
 
   setSubtitle("Prepare e exporte a Leitura Lunar no padrão do sub.");
 
@@ -271,6 +288,7 @@ export async function renderPrepararLeituraLunarPage(context) {
         </div>
 
         <div class="form-actions">
+          <button class="btn secondary" type="button" id="salvarLeituraLunarButton">Salvar</button>
           <button class="btn" type="submit">Exportar</button>
         </div>
       </form>
@@ -281,6 +299,11 @@ export async function renderPrepararLeituraLunarPage(context) {
   const selectCapitulos = document.getElementById("temCapitulosLongos");
   const capitulosRow = document.getElementById("capitulosLongosRow");
   const capitulosInput = document.getElementById("capitulosLongos");
+
+  preencherDadosComuns(form, dadosSalvos);
+  form.elements.prologoMaisDeMil.value = dadosSalvos?.prologoMaisDeMil || "nao";
+  form.elements.temCapitulosLongos.value = dadosSalvos?.temCapitulosLongos ? "sim" : "nao";
+  capitulosInput.value = dadosSalvos?.capitulosLongos || "";
 
   function atualizarCampoCapitulos() {
     const mostrar = selectCapitulos.value === "sim";
@@ -294,17 +317,33 @@ export async function renderPrepararLeituraLunarPage(context) {
   selectCapitulos.addEventListener("change", atualizarCampoCapitulos);
   atualizarCampoCapitulos();
 
-  form.addEventListener("submit", event => {
-    event.preventDefault();
-
+  function coletarLeituraLunar() {
     const comuns = obterDadosComuns(form);
     const dados = new FormData(form);
-    const texto = gerarLeituraLunar(subId, {
+
+    return {
       ...comuns,
       prologoMaisDeMil: String(dados.get("prologoMaisDeMil") || "nao"),
       temCapitulosLongos: String(dados.get("temCapitulosLongos") || "nao") === "sim",
       capitulosLongos: String(dados.get("capitulosLongos") || "").trim()
-    });
+    };
+  }
+
+  document.getElementById("salvarLeituraLunarButton")?.addEventListener("click", async () => {
+    if (!form.reportValidity()) return;
+
+    try {
+      await salvarPreparacao(subId, "leituraLunar", coletarLeituraLunar());
+      mostrarToast("Leitura Lunar salva.");
+    } catch (error) {
+      console.error(error);
+      mostrarToast("Não foi possível salvar a Leitura Lunar.");
+    }
+  });
+
+  form.addEventListener("submit", event => {
+    event.preventDefault();
+    const texto = gerarLeituraLunar(subId, coletarLeituraLunar());
 
     abrirExportacao("Leitura Lunar", texto);
   });
@@ -313,6 +352,9 @@ export async function renderPrepararLeituraLunarPage(context) {
 export async function renderPrepararChuvaEstrelasPage(context) {
   const { state, setSubtitle } = context;
   const subId = garantirSubSuportado(state);
+  const buscarPreparacao = context.buscarPreparacaoAtividade || buscarPreparacaoAtividade;
+  const salvarPreparacao = context.salvarPreparacaoAtividade || salvarPreparacaoAtividade;
+  const dadosSalvos = await buscarPreparacao(subId, "chuvaEstrelas");
 
   setSubtitle("Prepare e exporte a Chuva de Estrelas no padrão do sub.");
 
@@ -335,6 +377,7 @@ export async function renderPrepararChuvaEstrelasPage(context) {
         </div>
 
         <div class="form-actions">
+          <button class="btn secondary" type="button" id="salvarChuvaEstrelasButton">Salvar</button>
           <button class="btn" type="submit">Exportar</button>
         </div>
       </form>
@@ -342,16 +385,36 @@ export async function renderPrepararChuvaEstrelasPage(context) {
   `;
 
   const form = document.getElementById("prepararChuvaEstrelasForm");
-  form.addEventListener("submit", event => {
-    event.preventDefault();
+  preencherDadosComuns(form, dadosSalvos);
+  form.elements.numeroCapitulos.value = dadosSalvos?.numeroCapitulos || "";
+  form.elements.prazo.value = dadosSalvos?.prazo || "";
 
+  function coletarChuvaEstrelas() {
     const comuns = obterDadosComuns(form);
     const dados = new FormData(form);
-    const texto = gerarChuvaEstrelas(subId, {
+
+    return {
       ...comuns,
       numeroCapitulos: String(dados.get("numeroCapitulos") || "").trim(),
       prazo: String(dados.get("prazo") || "")
-    });
+    };
+  }
+
+  document.getElementById("salvarChuvaEstrelasButton")?.addEventListener("click", async () => {
+    if (!form.reportValidity()) return;
+
+    try {
+      await salvarPreparacao(subId, "chuvaEstrelas", coletarChuvaEstrelas());
+      mostrarToast("Chuva de Estrelas salva.");
+    } catch (error) {
+      console.error(error);
+      mostrarToast("Não foi possível salvar a Chuva de Estrelas.");
+    }
+  });
+
+  form.addEventListener("submit", event => {
+    event.preventDefault();
+    const texto = gerarChuvaEstrelas(subId, coletarChuvaEstrelas());
 
     abrirExportacao("Chuva de Estrelas", texto);
   });

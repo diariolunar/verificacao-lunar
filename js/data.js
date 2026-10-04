@@ -44,6 +44,10 @@ function verificacaoSemanalDoc(subId) {
   return doc(db, COLLECTION_ROOT, subId, "config", "verificacaoSemanal");
 }
 
+function preparacaoAtividadeDoc(subId, atividade) {
+  return doc(db, COLLECTION_ROOT, subId, "config", `preparacao_${atividade}`);
+}
+
 function verificacaoDoc(subId, dia) {
   return doc(db, COLLECTION_ROOT, subId, "verificacoes", dia);
 }
@@ -599,6 +603,21 @@ export async function buscarVerificacaoSemanal(subId) {
 
 export async function salvarVerificacaoSemanal(subId, dados) {
   await setDoc(verificacaoSemanalDoc(subId), {
+    ...dados,
+    atualizadoEm: getTodayISO()
+  });
+}
+
+export async function buscarPreparacaoAtividade(subId, atividade) {
+  const snap = await getDoc(preparacaoAtividadeDoc(subId, atividade));
+
+  if (!snap.exists()) return null;
+
+  return snap.data();
+}
+
+export async function salvarPreparacaoAtividade(subId, atividade, dados) {
+  await setDoc(preparacaoAtividadeDoc(subId, atividade), {
     ...dados,
     atualizadoEm: getTodayISO()
   });
