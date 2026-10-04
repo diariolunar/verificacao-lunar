@@ -31,6 +31,7 @@ import {
 
 const root = document.getElementById("root");
 const CONFERIR_OBRAS_URL = "https://conferencialunar-g3gt.vercel.app/dashboard";
+const SUBS_COM_PREPARACAO_SEMANAL = new Set(["A1", "A6", "A7", "A17"]);
 
 const state = {
   user: null,
@@ -53,6 +54,14 @@ const ICONES_FIXOS_SUBS = {
 
 function getSubConfig() {
   return state.subConfig;
+}
+
+function subTemPreparacaoSemanal() {
+  return SUBS_COM_PREPARACAO_SEMANAL.has(String(state.subId || "").toUpperCase());
+}
+
+function rotaEhPreparacaoSemanal(rota) {
+  return rota === ROTAS.PREPARAR_LEITURA_LUNAR || rota === ROTAS.PREPARAR_CHUVA_ESTRELAS;
 }
 
 function getSubIcon(sub) {
@@ -375,6 +384,12 @@ function renderAppShell() {
           ${navButton(ROTAS.OBRAS, "📚", "Obras")}
           ${externalNavButton(CONFERIR_OBRAS_URL, "🔎", "Conferir Obras")}
           ${navButton(ROTAS.IMPORTAR_FICHA, "📥", "Importar Ficha")}
+          ${
+            subTemPreparacaoSemanal()
+              ? `${navButton(ROTAS.PREPARAR_LEITURA_LUNAR, "🌙", "Preparar L. Lunar")}
+                 ${navButton(ROTAS.PREPARAR_CHUVA_ESTRELAS, "✨", "Preparar C. Estrelas")}`
+              : ""
+          }
           ${navButton(ROTAS.GRADE, "📅", "Grade Semanal")}
           ${navButton(ROTAS.VERIFICACOES, "📜", "Verificações")}
           ${navButton(ROTAS.FICHA, "👁️", "Visualizar Ficha")}
@@ -552,6 +567,24 @@ function renderDashboard() {
         <span>Cole uma ficha e cadastre membro e obra automaticamente.</span>
       </button>
 
+      ${
+        subTemPreparacaoSemanal()
+          ? `
+            <button class="dashboard-card" type="button" data-go="${ROTAS.PREPARAR_LEITURA_LUNAR}">
+              <div class="icon">🌙</div>
+              <strong>Preparar L. Lunar</strong>
+              <span>Preencha os dados da obra e exporte a Leitura Lunar.</span>
+            </button>
+
+            <button class="dashboard-card" type="button" data-go="${ROTAS.PREPARAR_CHUVA_ESTRELAS}">
+              <div class="icon">✨</div>
+              <strong>Preparar C. Estrelas</strong>
+              <span>Preencha a obra, os capítulos e o prazo da Chuva de Estrelas.</span>
+            </button>
+          `
+          : ""
+      }
+
       <button class="dashboard-card" type="button" data-go="${ROTAS.GRADE}">
         <div class="icon">📅</div>
         <strong>Grade Semanal</strong>
@@ -631,9 +664,34 @@ async function renderRotaAtual() {
       return;
     }
 
+    if (rotaEhPreparacaoSemanal(state.rota) && !subTemPreparacaoSemanal()) {
+      state.rota = ROTAS.DASHBOARD;
+      setRotaAtual(ROTAS.DASHBOARD);
+      renderDashboard();
+      return;
+    }
+
     if (state.rota === ROTAS.IMPORTAR_FICHA) {
       const renderImportarFichaPage = await carregarModuloPagina("./importar-ficha.js", "renderImportarFichaPage");
       await renderImportarFichaPage(getContext());
+      return;
+    }
+
+    if (state.rota === ROTAS.PREPARAR_LEITURA_LUNAR) {
+      const renderPrepararLeituraLunarPage = await carregarModuloPagina(
+        "./preparar-atividades.js",
+        "renderPrepararLeituraLunarPage"
+      );
+      await renderPrepararLeituraLunarPage(getContext());
+      return;
+    }
+
+    if (state.rota === ROTAS.PREPARAR_CHUVA_ESTRELAS) {
+      const renderPrepararChuvaEstrelasPage = await carregarModuloPagina(
+        "./preparar-atividades.js",
+        "renderPrepararChuvaEstrelasPage"
+      );
+      await renderPrepararChuvaEstrelasPage(getContext());
       return;
     }
 

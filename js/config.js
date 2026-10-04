@@ -858,6 +858,8 @@ export const ROTAS = {
   MEMBROS: "membros",
   OBRAS: "obras",
   IMPORTAR_FICHA: "importar-ficha",
+  PREPARAR_LEITURA_LUNAR: "preparar-leitura-lunar",
+  PREPARAR_CHUVA_ESTRELAS: "preparar-chuva-estrelas",
   GRADE: "grade",
   VERIFICACOES: "verificacoes",
   FICHA: "ficha",
