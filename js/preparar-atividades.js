@@ -160,7 +160,7 @@ export function gerarChuvaEstrelas(subId, dados) {
 🏮 Número de Capítulos: ${dados.numeroCapitulos}
 
 🍂 PRAZO: Sábado - Dia ${prazo} às 12h
-♦️ Enviar o vídeo ou os prints para o ADM Dhu: +55 21 98440-2626
+♦️ Enviar o vídeo ou os prints para a ADM Duda: +55 35 9868-4945
 
 🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶`,
     A6: `𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐
@@ -176,7 +176,7 @@ export function gerarChuvaEstrelas(subId, dados) {
 ♦️ Número de Capítulos: ${dados.numeroCapitulos}
 
 👁️  PRAZO: Sábado - Dia ${prazo} às 12h
-📖 Enviar o vídeo ou os prints para o ADM Dhu: +55 21 98440-2626
+📖 Enviar o vídeo ou os prints para a ADM Duda: +55 35 9868-4945
 
 𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐`,
     A7: `🗺️✦━━━━━━━━━━━━━━━━━━━━━━━━━━━━━✦🗺️
@@ -191,7 +191,7 @@ export function gerarChuvaEstrelas(subId, dados) {
 🛣️  Número de Capítulos: ${dados.numeroCapitulos}
 
 🧭  PRAZO: Sábado - Dia ${prazo} às 12h
-🌍  Enviar o vídeo ou os prints para o ADM Dhu: +55 21 98440-2626
+🌍  Enviar o vídeo ou os prints para a ADM Duda: +55 35 9868-4945
 
 ━━━━━━━━━━━ ✦ ━━━━━━━━━━━
 
@@ -209,7 +209,7 @@ e que cada obra encontre seu caminho nas 𝐌𝐚𝐫𝐠𝐞𝐧𝐬 𝐝𝐞 �
 ♠️ Número de Capítulos: ${dados.numeroCapitulos}
 
 🌒 PRAZO: Sábado - Dia ${prazo} às 12h
-⚔️ Enviar o vídeo ou os prints para o ADM Dhu: +55 21 98440-2626
+⚔️ Enviar o vídeo ou os prints para a ADM Duda: +55 35 9868-4945
 
 ⚔️✦━━━━━━━━━━━━━━━━━━━━━━━━━━━━━✦⚔️
 🖤 𝐌𝐚𝐢𝐬 𝐮𝐦𝐚 𝐥𝐚̂𝐦𝐢𝐧𝐚 𝐟𝐨𝐢 𝐬𝐚𝐜𝐚𝐝𝐚,
