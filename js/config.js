@@ -47,7 +47,7 @@ export const MODELOS_SUB = {
   lamina: "Lâmina Sombria"
 };
 
-export const SUBS_OFICIAIS = ["A1", "A2", "A3", "A6", "A7", "A10", "A15", "A17"];
+export const SUBS_OFICIAIS = ["A1", "A2", "A3", "A6", "A7", "A10", "A15", "A17", "PORTAL"];
 
 export const DEFAULT_MODELOS = {
   chama: {
@@ -750,6 +750,64 @@ Lembrem-se: os comentários devem estar bem distribuídos entre o início, o mei
   }
 };
 
+const PORTAL_LUNAR_MODELOS = {
+  fichaCabecalho: `☾🌙✨ 𝐕𝐄𝐑𝐈𝐅𝐈𝐂𝐀𝐂̧𝐎̃𝐄𝐒 — 𝐏𝐎𝐑𝐓𝐀𝐋 𝐋𝐔𝐍𝐀𝐑 ✨🌙☽
+🌜 𝐎𝐧𝐝𝐞 𝐜𝐚𝐝𝐚 𝐭𝐫𝐚𝐯𝐞𝐬𝐬𝐢𝐚 𝐞́ 𝐜𝐨𝐧𝐟𝐢𝐫𝐦𝐚𝐝𝐚 𝐬𝐨𝐛 𝐚 𝐥𝐮𝐳 𝐝𝐚 𝐋𝐮𝐚 🌛
+🌙𝐋𝐞𝐮
+☠ 𝐍𝐚̃𝐨 𝐥𝐞𝐮
+💅 𝐉𝐮𝐬𝐭𝐢𝐟𝐢𝐜𝐚𝐝𝐨
+🌼 𝐉𝐚́ 𝐡𝐚𝐯𝐢𝐚 𝐥𝐢𝐝𝐨 𝐚𝐧𝐭𝐞𝐬
+🙍 𝐅𝐚𝐥𝐭𝐚 𝐚𝐥𝐠𝐨 (𝐜𝐨𝐦𝐞𝐧𝐭𝐚́𝐫𝐢𝐨 𝐨𝐮 𝐯𝐨𝐭𝐨)
+✨𝐎𝐛𝐫𝐚 𝐝𝐨 𝐝𝐢𝐚
+⏳ 𝐒𝐞𝐦 𝐨𝐛𝐫𝐚
+⚰ 𝐒𝐚𝐢𝐮 𝐝𝐨 𝐠𝐫𝐮𝐩𝐨
+🧕🏻 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐞𝐦 𝐚𝐧𝐝𝐚𝐦𝐞𝐧𝐭𝐨 𝐧𝐨 𝐦𝐨𝐦𝐞𝐧𝐭𝐨 𝐝𝐚 𝐯𝐞𝐫𝐢𝐟𝐢𝐜𝐚𝐜̧𝐚̃𝐨
+⚠ 𝐈𝐧𝐟𝐫𝐚𝐜̧𝐚̃𝐨 𝐝𝐚𝐬 𝐫𝐞𝐠𝐫𝐚𝐬
+🚫 𝐈𝐧𝐟𝐫𝐚𝐜̧𝐚̃𝐨 𝐧𝐨 𝐭𝐞𝐦𝐩𝐨 𝐝𝐞 𝐥𝐞𝐢𝐭𝐮𝐫𝐚 (𝐭𝐞𝐦𝐩𝐨 𝐢𝐧𝐟𝐞𝐫𝐢𝐨𝐫)
+📲 𝐏𝐫𝐢𝐧𝐭𝐬 𝐧𝐨 𝐩𝐯
+⛔ 𝐑𝐞𝐦𝐨𝐯𝐢𝐝𝐨 𝐩𝐨𝐫 𝐢𝐧𝐟𝐫𝐚𝐜̧𝐚̃𝐨 𝐝𝐚𝐬 𝐫𝐞𝐠𝐫𝐚𝐬
+⏰ 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐟𝐞𝐢𝐭𝐚 𝐞𝐦 𝐭𝐞𝐦𝐩𝐨 𝐞𝐬𝐭𝐢𝐦𝐚𝐝𝐨`,
+
+  fichaMembro: `━━━━━━━━━━━ ☾ ━━━━━━━━━━━
+📙𝐍𝐨𝐦𝐞: {{nome}}
+🦐𝐔𝐬𝐞𝐫: {{user}}
+🏆 𝐒𝐞𝐦𝐚𝐧𝐚𝐬: {{semana}}
+💌 𝐃𝐢𝐚𝐬: {{dias}}
+👑 𝐏𝐨𝐧𝐭𝐨𝐬: {{pontos}}
+📈 𝐅𝐞𝐞𝐝𝐛𝐚𝐜𝐤: {{feedbacks}}
+📚 𝐂𝐚𝐩𝐢́𝐭𝐮𝐥𝐨𝐬 𝐄𝐱𝐭𝐫𝐚𝐬: {{extras}}
+🐦‍🔥 𝐋𝐞𝐢𝐭𝐮𝐫𝐚 𝐋𝐮𝐧𝐚𝐫: {{leituraLunar}}
+🌠 𝐂𝐡𝐮𝐯𝐚 𝐝𝐞 𝐄𝐬𝐭𝐫𝐞𝐥𝐚𝐬: {{chuvaEstrelas}}
+𝐎𝐛𝐫𝐚 𝟎𝟏.: {{obra1}}
+𝐎𝐛𝐫𝐚 𝟎𝟐.: {{obra2}}`,
+
+  fichaRodape: `━━━━━━━━━━━ ☾ ━━━━━━━━━━━
+🚨𝐀𝐓𝐄𝐍𝐂̧𝐀̃𝐎🚨
+𝐏𝐚𝐫𝐚 𝐠𝐚𝐫𝐚𝐧𝐭𝐢𝐫 𝐚 𝐨𝐫𝐠𝐚𝐧𝐢𝐳𝐚𝐜̧𝐚̃𝐨 𝐝𝐨 𝐏𝐨𝐫𝐭𝐚𝐥 𝐋𝐮𝐧𝐚𝐫, 𝐞́ 𝐢𝐦𝐩𝐨𝐫𝐭𝐚𝐧𝐭𝐞 𝐪𝐮𝐞 𝐭𝐨𝐝𝐚𝐬 𝐚𝐬 𝐥𝐞𝐢𝐭𝐮𝐫𝐚𝐬 𝐞𝐬𝐭𝐞𝐣𝐚𝐦 𝐞𝐦 𝐝𝐢𝐚. ☽`,
+
+  gradeSemanaCabecalho: `☾⋆⁺₊ ✦ 𝑷𝒐𝒓𝒕𝒂𝒍 𝑳𝒖𝒏𝒂𝒓 ✦ ₊⁺⋆☽
+🌙 𝐆𝐑𝐀𝐃𝐄 𝐃𝐄 𝐎𝐁𝐑𝐀𝐒 𝐃𝐀 𝐒𝐄𝐌𝐀𝐍𝐀`,
+
+  gradeDiaCabecalho: `☾⋆⁺₊ ✦ 𝑷𝒐𝒓𝒕𝒂𝒍 𝑳𝒖𝒏𝒂𝒓 ✦ ₊⁺⋆☽`,
+
+  gradeObra: `🌙 𝐎𝐁𝐑𝐀 𝟎{{numeroObraDecorado}} — {{diaMaiusculoEstilizado}}
+✨ 𝐍𝐎𝐌𝐄: {{nome}}
+🌒 𝐔𝐒𝐄𝐑: {{user}}
+📖 𝐎𝐁𝐑𝐀: {{tituloObra}}
+🔗 𝐋𝐈𝐍𝐊: {{link}}
+━━━━━━━━━━━ ☾ ━━━━━━━━━━━
+🌕 𝐎𝐁𝐒:
+Leia os especiais, vote e deixe pelo menos 1 comentário em cada.
+Em seguida, leia 2 capítulos, deixando no mínimo 6 comentários em cada um.
+{{observacoes}}
+{{alternativa}}`,
+
+  gradeSeparador: `━━━━━━━━━━━ ✦ ━━━━━━━━━━━`,
+
+  gradeRodape: `━━━━━━━━━━━ ☾ ━━━━━━━━━━━
+☾ 𝐐𝐮𝐞 𝐚 𝐭𝐫𝐚𝐯𝐞𝐬𝐬𝐢𝐚 𝐜𝐨𝐦𝐞𝐜𝐞 𝐞𝐧𝐭𝐫𝐞 𝐩𝐚́𝐠𝐢𝐧𝐚𝐬. ☽`
+};
+
 export const DEFAULT_SUBS = {
   A1: {
     id: "A1",
@@ -850,6 +908,19 @@ export const DEFAULT_SUBS = {
     ativo: true,
     icone: "🌙",
     modelos: DEFAULT_MODELOS.lamina
+  },
+
+  PORTAL: {
+    id: "PORTAL",
+    nome: "Sub Especial Portal Lunar",
+    botao: "☾🌙 Sub Especial Portal Lunar",
+    subtitulo: "Sub Especial • 10 participantes",
+    cor: "#00c8ff",
+    modelo: "santuario",
+    obrasPorDia: 2,
+    ativo: true,
+    icone: "☾",
+    modelos: PORTAL_LUNAR_MODELOS
   }
 };
 
