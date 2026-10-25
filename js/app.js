@@ -31,7 +31,6 @@ import {
 
 const root = document.getElementById("root");
 const CONFERIR_OBRAS_URL = "https://conferencialunar-g3gt.vercel.app/dashboard";
-const SUBS_COM_PREPARACAO_SEMANAL = new Set(["A1", "A6", "A7", "A17"]);
 
 const state = {
   user: null,
@@ -57,7 +56,7 @@ function getSubConfig() {
 }
 
 function subTemPreparacaoSemanal() {
-  return SUBS_COM_PREPARACAO_SEMANAL.has(String(state.subId || "").toUpperCase());
+  return Boolean(state.subId);
 }
 
 function rotaEhPreparacaoSemanal(rota) {

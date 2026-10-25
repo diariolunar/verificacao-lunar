@@ -45,6 +45,7 @@ function verificacaoSemanalDoc(subId) {
 }
 
 const SUBS_COM_PREPARACAO_COMPARTILHADA = ["A1", "A6", "A7", "A17"];
+const SUBS_COM_EDICAO_DE_PREPARACAO = new Set(["A6", "A7"]);
 
 function preparacaoAtividadeLegadaDoc(subId, atividade) {
   return doc(db, COLLECTION_ROOT, subId, "config", `preparacao_${atividade}`);
@@ -639,6 +640,10 @@ export async function buscarPreparacaoAtividade(subId, atividade) {
 }
 
 export async function salvarPreparacaoAtividade(subId, atividade, dados) {
+  if (!SUBS_COM_EDICAO_DE_PREPARACAO.has(normalizarSubId(subId))) {
+    throw new Error("A preparação semanal só pode ser alterada pelos subs A6 e A7.");
+  }
+
   await setDoc(preparacaoAtividadeCompartilhadaDoc(atividade), {
     ...dados,
     compartilhadaEntreSubs: SUBS_COM_PREPARACAO_COMPARTILHADA,
