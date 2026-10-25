@@ -302,7 +302,7 @@ export async function renderPrepararLeituraLunarPage(context) {
 
   preencherDadosComuns(form, dadosSalvos);
   form.elements.prologoMaisDeMil.value = dadosSalvos?.prologoMaisDeMil || "nao";
-  form.elements.temCapitulosLongos.value = dadosSalvos?.temCapitulosLongos ? "sim" : "nao";
+  form.elements.temCapitulosLongos.value = dadosSalvos?.temCapitulosLongos === true || dadosSalvos?.temCapitulosLongos === "sim" ? "sim" : "nao";
   capitulosInput.value = dadosSalvos?.capitulosLongos || "";
 
   function atualizarCampoCapitulos() {

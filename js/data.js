@@ -44,8 +44,14 @@ function verificacaoSemanalDoc(subId) {
   return doc(db, COLLECTION_ROOT, subId, "config", "verificacaoSemanal");
 }
 
-function preparacaoAtividadeDoc(subId, atividade) {
+const SUBS_COM_PREPARACAO_COMPARTILHADA = ["A1", "A6", "A7", "A17"];
+
+function preparacaoAtividadeLegadaDoc(subId, atividade) {
   return doc(db, COLLECTION_ROOT, subId, "config", `preparacao_${atividade}`);
+}
+
+function preparacaoAtividadeCompartilhadaDoc(atividade) {
+  return configDoc(`preparacao_compartilhada_${atividade}`);
 }
 
 function verificacaoDoc(subId, dia) {
@@ -609,16 +615,34 @@ export async function salvarVerificacaoSemanal(subId, dados) {
 }
 
 export async function buscarPreparacaoAtividade(subId, atividade) {
-  const snap = await getDoc(preparacaoAtividadeDoc(subId, atividade));
+  const compartilhada = await getDoc(preparacaoAtividadeCompartilhadaDoc(atividade));
 
-  if (!snap.exists()) return null;
+  if (compartilhada.exists()) return compartilhada.data();
 
-  return snap.data();
+  // Preserva o que ja estava salvo no sub aberto e o torna a base compartilhada.
+  const legada = await getDoc(preparacaoAtividadeLegadaDoc(subId, atividade));
+
+  if (legada.exists()) {
+    const dados = legada.data();
+
+    await setDoc(preparacaoAtividadeCompartilhadaDoc(atividade), {
+      ...dados,
+      compartilhadaEntreSubs: SUBS_COM_PREPARACAO_COMPARTILHADA,
+      migradaDoSub: subId,
+      atualizadoEm: dados.atualizadoEm || getTodayISO()
+    });
+
+    return dados;
+  }
+
+  return null;
 }
 
 export async function salvarPreparacaoAtividade(subId, atividade, dados) {
-  await setDoc(preparacaoAtividadeDoc(subId, atividade), {
+  await setDoc(preparacaoAtividadeCompartilhadaDoc(atividade), {
     ...dados,
+    compartilhadaEntreSubs: SUBS_COM_PREPARACAO_COMPARTILHADA,
+    salvaNoSub: subId,
     atualizadoEm: getTodayISO()
   });
 }
