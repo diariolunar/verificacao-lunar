@@ -10,8 +10,7 @@ import {
   salvarPreparacaoAtividade
 } from "./data.js";
 
-const SUBS_COM_MODELO = new Set(["A1", "A6", "A7", "A17"]);
-const SUBS_COM_EDICAO = new Set(["A6", "A7"]);
+const SUBS_SUPORTADOS = new Set(["A1", "A6", "A7", "A17"]);
 
 function campoTexto(id, label, tipo = "text", atributos = "") {
   return `
@@ -222,36 +221,14 @@ e que cada obra encontre seu caminho nas 𝐌𝐚𝐫𝐠𝐞𝐧𝐬 𝐝𝐞 �
   return modelos[subId];
 }
 
-function obterSubId(state) {
+function garantirSubSuportado(state) {
   const subId = String(state.subId || "").toUpperCase();
 
-  if (!subId) {
-    throw new Error("Selecione um sub antes de preparar a atividade.");
+  if (!SUBS_SUPORTADOS.has(subId)) {
+    throw new Error("Preparação semanal indisponível para este sub.");
   }
 
   return subId;
-}
-
-function subPodeEditar(subId) {
-  return SUBS_COM_EDICAO.has(subId);
-}
-
-function subTemModelo(subId) {
-  return SUBS_COM_MODELO.has(subId);
-}
-
-function tornarFormularioSomenteLeitura(form) {
-  form.querySelectorAll("input").forEach(input => {
-    input.readOnly = true;
-    input.tabIndex = -1;
-  });
-
-  form.querySelectorAll("select").forEach(select => {
-    select.tabIndex = -1;
-    select.setAttribute("aria-readonly", "true");
-    select.addEventListener("keydown", event => event.preventDefault());
-    select.addEventListener("mousedown", event => event.preventDefault());
-  });
 }
 
 function camposComuns() {
@@ -267,9 +244,7 @@ function camposComuns() {
 
 export async function renderPrepararLeituraLunarPage(context) {
   const { state, setSubtitle } = context;
-  const subId = obterSubId(state);
-  const podeEditar = subPodeEditar(subId);
-  const possuiModelo = subTemModelo(subId);
+  const subId = garantirSubSuportado(state);
   const buscarPreparacao = context.buscarPreparacaoAtividade || buscarPreparacaoAtividade;
   const salvarPreparacao = context.salvarPreparacaoAtividade || salvarPreparacaoAtividade;
   const dadosSalvos = await buscarPreparacao(subId, "leituraLunar");
@@ -282,7 +257,7 @@ export async function renderPrepararLeituraLunarPage(context) {
       <div class="card-header">
         <div>
           <h3>🌙 Preparar Leitura Lunar</h3>
-          <p>${podeEditar ? "Preencha os dados compartilhados para gerar o texto no padrão de " + escapeHTML(subId) + "." : "Dados compartilhados. Apenas A6 e A7 podem alterar esta preparação."}</p>
+          <p>Preencha os dados para gerar o texto no padrão de ${escapeHTML(subId)}.</p>
         </div>
       </div>
 
@@ -313,10 +288,9 @@ export async function renderPrepararLeituraLunarPage(context) {
         </div>
 
         <div class="form-actions">
-          ${podeEditar ? '<button class="btn secondary" type="button" id="salvarLeituraLunarButton">Salvar</button>' : ""}
-          ${possuiModelo ? '<button class="btn" type="submit">Exportar</button>' : ""}
+          <button class="btn secondary" type="button" id="salvarLeituraLunarButton">Salvar</button>
+          <button class="btn" type="submit">Exportar</button>
         </div>
-        ${possuiModelo ? "" : '<p class="muted">O modelo de exportação deste sub ainda não foi cadastrado.</p>'}
       </form>
     </section>
   `;
@@ -342,8 +316,6 @@ export async function renderPrepararLeituraLunarPage(context) {
 
   selectCapitulos.addEventListener("change", atualizarCampoCapitulos);
   atualizarCampoCapitulos();
-
-  if (!podeEditar) tornarFormularioSomenteLeitura(form);
 
   function coletarLeituraLunar() {
     const comuns = obterDadosComuns(form);
@@ -371,7 +343,6 @@ export async function renderPrepararLeituraLunarPage(context) {
 
   form.addEventListener("submit", event => {
     event.preventDefault();
-    if (!possuiModelo) return;
     const texto = gerarLeituraLunar(subId, coletarLeituraLunar());
 
     abrirExportacao("Leitura Lunar", texto);
@@ -380,9 +351,7 @@ export async function renderPrepararLeituraLunarPage(context) {
 
 export async function renderPrepararChuvaEstrelasPage(context) {
   const { state, setSubtitle } = context;
-  const subId = obterSubId(state);
-  const podeEditar = subPodeEditar(subId);
-  const possuiModelo = subTemModelo(subId);
+  const subId = garantirSubSuportado(state);
   const buscarPreparacao = context.buscarPreparacaoAtividade || buscarPreparacaoAtividade;
   const salvarPreparacao = context.salvarPreparacaoAtividade || salvarPreparacaoAtividade;
   const dadosSalvos = await buscarPreparacao(subId, "chuvaEstrelas");
@@ -395,7 +364,7 @@ export async function renderPrepararChuvaEstrelasPage(context) {
       <div class="card-header">
         <div>
           <h3>✨ Preparar Chuva de Estrelas</h3>
-          <p>${podeEditar ? "Preencha os dados compartilhados para gerar o texto no padrão de " + escapeHTML(subId) + "." : "Dados compartilhados. Apenas A6 e A7 podem alterar esta preparação."}</p>
+          <p>Preencha os dados para gerar o texto no padrão de ${escapeHTML(subId)}.</p>
         </div>
       </div>
 
@@ -408,10 +377,9 @@ export async function renderPrepararChuvaEstrelasPage(context) {
         </div>
 
         <div class="form-actions">
-          ${podeEditar ? '<button class="btn secondary" type="button" id="salvarChuvaEstrelasButton">Salvar</button>' : ""}
-          ${possuiModelo ? '<button class="btn" type="submit">Exportar</button>' : ""}
+          <button class="btn secondary" type="button" id="salvarChuvaEstrelasButton">Salvar</button>
+          <button class="btn" type="submit">Exportar</button>
         </div>
-        ${possuiModelo ? "" : '<p class="muted">O modelo de exportação deste sub ainda não foi cadastrado.</p>'}
       </form>
     </section>
   `;
@@ -420,8 +388,6 @@ export async function renderPrepararChuvaEstrelasPage(context) {
   preencherDadosComuns(form, dadosSalvos);
   form.elements.numeroCapitulos.value = dadosSalvos?.numeroCapitulos || "";
   form.elements.prazo.value = dadosSalvos?.prazo || "";
-
-  if (!podeEditar) tornarFormularioSomenteLeitura(form);
 
   function coletarChuvaEstrelas() {
     const comuns = obterDadosComuns(form);
@@ -448,7 +414,6 @@ export async function renderPrepararChuvaEstrelasPage(context) {
 
   form.addEventListener("submit", event => {
     event.preventDefault();
-    if (!possuiModelo) return;
     const texto = gerarChuvaEstrelas(subId, coletarChuvaEstrelas());
 
     abrirExportacao("Chuva de Estrelas", texto);
