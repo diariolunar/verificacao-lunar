@@ -14,8 +14,6 @@ import {
   limparUser
 } from "./utils.js";
 
-const SUBS_SUPORTADOS = ["A1", "A6", "A7", "A17"];
-
 const CAMPOS_OBRA = [
   { chave: "titulo", label: "Nome da obra" },
   { chave: "link", label: "Link" },
@@ -63,13 +61,14 @@ function valorAposDoisPontos(linha) {
   return limparValor(partes.slice(1).join(":"));
 }
 
-function extrairCampo(texto, labels, { inline = false } = {}) {
+function extrairCampo(texto, labels, { inline = false, ignorarLabels = [] } = {}) {
   const linhas = linhasDaFicha(texto);
 
   for (let index = 0; index < linhas.length; index++) {
     const linha = linhas[index];
 
     if (!linhaTemLabel(linha, labels)) continue;
+    if (ignorarLabels.length && linhaTemLabel(linha, ignorarLabels)) continue;
 
     const valorInline = valorAposDoisPontos(linha);
 
@@ -143,11 +142,12 @@ function montarObservacoes({ gatilhoObra }) {
 }
 
 export function parseFicha(texto, subId) {
-  const nome = subId === "A1"
-    ? extrairCampo(texto, ["autor"], { inline: true })
-    : extrairCampo(texto, ["nome"]);
+  const nomeAutor = extrairCampo(texto, ["autor", "autora"], { inline: true });
+  const nome = nomeAutor || extrairCampo(texto, ["nome"], {
+    ignorarLabels: ["nome da obra", "obra"]
+  });
 
-  const user = extrairCampo(texto, ["user"], { inline: subId === "A1" });
+  const user = extrairCampo(texto, ["user"]);
   const titulo = extrairCampo(texto, [
     "nome da obra",
     "grimo rio obra",
@@ -160,8 +160,16 @@ export function parseFicha(texto, subId) {
   const prologo = extrairRespostaDepoisDaPergunta(texto, ["prologo", "1k"]);
   const capitulosMais4100 = extrairRespostaDepoisDaPergunta(texto, ["4 1k"]);
   const capitulosMenos500 = extrairRespostaDepoisDaPergunta(texto, ["500"]);
-  const gatilhoLeitura = extrairRespostaDepoisDaPergunta(texto, ["voce tem algum gatilho"]);
-  const gatilhoObra = extrairRespostaDepoisDaPergunta(texto, ["obra tem algum gatilho", "obra possui algum gatilho"]);
+  const gatilhoLeitura = extrairRespostaDepoisDaPergunta(texto, [
+    "voce tem algum gatilho",
+    "voce possui algum gatilho",
+    "gatilho de leitura"
+  ]);
+  const gatilhoObra = extrairRespostaDepoisDaPergunta(texto, [
+    "obra tem algum gatilho",
+    "obra possui algum gatilho",
+    "obra contem gatilhos"
+  ]);
 
   return {
     nome: limparValor(nome),
@@ -362,7 +370,6 @@ export async function renderImportarFichaPage(context) {
   setSubtitle("Importe membro e obra a partir de uma ficha pronta.");
 
   const view = document.getElementById("view");
-  const suportado = SUBS_SUPORTADOS.includes(subId);
 
   view.innerHTML = `
     <section class="card">
@@ -373,17 +380,11 @@ export async function renderImportarFichaPage(context) {
         </div>
       </div>
 
-      ${
-        suportado
-          ? ""
-          : `<div class="note-warning">Importação automática disponível apenas para A1, A6, A7 e A17.</div>`
-      }
-
       <div class="grid">
-        <textarea id="textoFichaImportar" placeholder="Cole a ficha aqui..." ${suportado ? "" : "disabled"}></textarea>
+        <textarea id="textoFichaImportar" placeholder="Cole a ficha aqui..."></textarea>
 
         <div class="form-actions">
-          <button class="btn secondary" type="button" id="previsualizarFichaButton" ${suportado ? "" : "disabled"}>Pré-visualizar</button>
+          <button class="btn secondary" type="button" id="previsualizarFichaButton">Pré-visualizar</button>
           <button class="btn" type="button" id="importarFichaButton" disabled>Importar ficha</button>
         </div>
 
