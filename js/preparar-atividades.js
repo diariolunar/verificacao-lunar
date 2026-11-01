@@ -66,6 +66,7 @@ function abrirExportacao(titulo, texto) {
 export function gerarLeituraLunar(subId, dados) {
   const prologo = dados.prologoMaisDeMil === "sim" ? "Sim" : "Não";
   const capitulos = dados.temCapitulosLongos ? dados.capitulosLongos : "Não";
+  const capitulosCurtos = dados.temCapitulosCurtos ? dados.capitulosCurtos : "Não";
 
   const modelos = {
     A1: `🏮🔥 Cʜᴀᴍᴀ ᴇᴛᴇʀɴᴀ 🅐 ❶ 🐦‍🔥🍁
@@ -81,6 +82,8 @@ export function gerarLeituraLunar(subId, dados) {
 🔶 Prólogo com mais de 1.000 palavras? ${prologo}
 
 🏮 Capítulos com mais de 4.100 palavras? ${capitulos}
+
+🍁 Capítulos com menos de 500 palavras? ${capitulosCurtos}
 
 🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶`,
     A6: `𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐
@@ -98,6 +101,8 @@ export function gerarLeituraLunar(subId, dados) {
 
 📖 A obra ultrapassa 4.1k palavras? Se sim, quais capítulos? Apenas números: ${capitulos}
 
+🗝️ A obra tem capítulos com 500 palavras ou menos? Se sim, quais capítulos? Apenas números: ${capitulosCurtos}
+
 𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐𖤐`,
     A7: `🗺️✦━━━━━━━━━━━━━━━━━━━━━━━━━━━━━✦🗺️
                 🌙 LEITURA LUNAR ✨
@@ -112,6 +117,8 @@ export function gerarLeituraLunar(subId, dados) {
 🧭  O prólogo contém mais de mil palavras? ${prologo}
 
 🌍 A obra tem capítulos que ultrapassa 4.1k palavras? Quais? ${capitulos}
+
+🗝️ A obra tem capítulos com 500 palavras ou menos? Quais? ${capitulosCurtos}
 
 ━━━━━━━━━━━ ✦ ━━━━━━━━━━━
 
@@ -130,6 +137,8 @@ e que cada obra encontre seu caminho nas 𝐌𝐚𝐫𝐠𝐞𝐧𝐬 𝐝𝐞 �
 🌒 𝐎 𝐩𝐫𝐨́𝐥𝐨𝐠𝐨 𝐜𝐨𝐧𝐭𝐞́𝐦 𝐦𝐚𝐢𝐬 𝐝𝐞 𝟏𝐊 𝐝𝐞 𝐩𝐚𝐥𝐚𝐯𝐫𝐚𝐬? ${prologo}
 
 ⚔️ 𝐀𝐥𝐠𝐮𝐦 𝐜𝐚𝐩𝐢́𝐭𝐮𝐥𝐨 𝐮𝐥𝐭𝐫𝐚𝐩𝐚𝐬𝐬𝐚 𝟒.𝟏𝐊 𝐩𝐚𝐥𝐚𝐯𝐫𝐚𝐬? ${capitulos}
+
+🛡️ 𝐀𝐥𝐠𝐮𝐦 𝐜𝐚𝐩𝐢́𝐭𝐮𝐥𝐨 𝐭𝐞𝐦 𝟓𝟎𝟎 𝐩𝐚𝐥𝐚𝐯𝐫𝐚𝐬 𝐨𝐮 𝐦𝐞𝐧𝐨𝐬? ${capitulosCurtos}
 
 ⚔️✦━━━━━━━━━━━━━━━━━━━━━━━━━━━━━✦⚔️
 🖤 𝐌𝐚𝐢𝐬 𝐮𝐦𝐚 𝐥𝐚̂𝐦𝐢𝐧𝐚 𝐟𝐨𝐢 𝐬𝐚𝐜𝐚𝐝𝐚, 𝐦𝐚𝐢𝐬 𝐮𝐦𝐚
@@ -280,11 +289,24 @@ export async function renderPrepararLeituraLunarPage(context) {
               <option value="sim">Sim</option>
             </select>
           </div>
+
+          <div class="form-row">
+            <label for="temCapitulosCurtos">Algum capítulo tem menos de 500 palavras?</label>
+            <select id="temCapitulosCurtos" name="temCapitulosCurtos" required>
+              <option value="nao">Não</option>
+              <option value="sim">Sim</option>
+            </select>
+          </div>
         </div>
 
         <div class="form-row" id="capitulosLongosRow" hidden>
           <label for="capitulosLongos">Quais capítulos?</label>
           <input id="capitulosLongos" name="capitulosLongos" type="text" placeholder="Ex.: 1, 4, 7" />
+        </div>
+
+        <div class="form-row" id="capitulosCurtosRow" hidden>
+          <label for="capitulosCurtos">Quais capítulos têm menos de 500 palavras?</label>
+          <input id="capitulosCurtos" name="capitulosCurtos" type="text" placeholder="Ex.: 2, 5, 8" />
         </div>
 
         <div class="form-actions">
@@ -299,11 +321,16 @@ export async function renderPrepararLeituraLunarPage(context) {
   const selectCapitulos = document.getElementById("temCapitulosLongos");
   const capitulosRow = document.getElementById("capitulosLongosRow");
   const capitulosInput = document.getElementById("capitulosLongos");
+  const selectCapitulosCurtos = document.getElementById("temCapitulosCurtos");
+  const capitulosCurtosRow = document.getElementById("capitulosCurtosRow");
+  const capitulosCurtosInput = document.getElementById("capitulosCurtos");
 
   preencherDadosComuns(form, dadosSalvos);
   form.elements.prologoMaisDeMil.value = dadosSalvos?.prologoMaisDeMil || "nao";
   form.elements.temCapitulosLongos.value = dadosSalvos?.temCapitulosLongos === true || dadosSalvos?.temCapitulosLongos === "sim" ? "sim" : "nao";
   capitulosInput.value = dadosSalvos?.capitulosLongos || "";
+  form.elements.temCapitulosCurtos.value = dadosSalvos?.temCapitulosCurtos === true || dadosSalvos?.temCapitulosCurtos === "sim" ? "sim" : "nao";
+  capitulosCurtosInput.value = dadosSalvos?.capitulosCurtos || "";
 
   function atualizarCampoCapitulos() {
     const mostrar = selectCapitulos.value === "sim";
@@ -317,6 +344,18 @@ export async function renderPrepararLeituraLunarPage(context) {
   selectCapitulos.addEventListener("change", atualizarCampoCapitulos);
   atualizarCampoCapitulos();
 
+  function atualizarCampoCapitulosCurtos() {
+    const mostrar = selectCapitulosCurtos.value === "sim";
+    capitulosCurtosRow.hidden = !mostrar;
+    capitulosCurtosRow.style.display = mostrar ? "grid" : "none";
+    capitulosCurtosInput.required = mostrar;
+
+    if (!mostrar) capitulosCurtosInput.value = "";
+  }
+
+  selectCapitulosCurtos.addEventListener("change", atualizarCampoCapitulosCurtos);
+  atualizarCampoCapitulosCurtos();
+
   function coletarLeituraLunar() {
     const comuns = obterDadosComuns(form);
     const dados = new FormData(form);
@@ -325,7 +364,9 @@ export async function renderPrepararLeituraLunarPage(context) {
       ...comuns,
       prologoMaisDeMil: String(dados.get("prologoMaisDeMil") || "nao"),
       temCapitulosLongos: String(dados.get("temCapitulosLongos") || "nao") === "sim",
-      capitulosLongos: String(dados.get("capitulosLongos") || "").trim()
+      capitulosLongos: String(dados.get("capitulosLongos") || "").trim(),
+      temCapitulosCurtos: String(dados.get("temCapitulosCurtos") || "nao") === "sim",
+      capitulosCurtos: String(dados.get("capitulosCurtos") || "").trim()
     };
   }
 
